@@ -55,11 +55,11 @@ class XboardInstall extends Command
             $enableSqlite = getenv('ENABLE_SQLITE', false);
             $enableRedis = getenv('ENABLE_REDIS', false);
             $adminAccount = getenv('ADMIN_ACCOUNT', false);
-            $this->info("__    __ ____                      _  ");
-            $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
-            $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
-            $this->info(" / /\ \ | |_) | (_) | (_| | | | (_| | ");
-            $this->info("/_/  \_\|____/ \___/ \__,_|_|  \__,_| ");
+            $this->info(' __  __ _                         _   ____  _           ');
+            $this->info(' \ \/ /| |__   ___   __ _ _ __ __| | |  _ \| |_   _ ___ ');
+            $this->info('  \  / | \'_ \ / _ \ / _` | \'__/ _` | | |_) | | | | / __|');
+            $this->info('  /  \ | |_) | (_) | (_| | | | (_| | |  __/| | |_| \__ \\');
+            $this->info(' /_/\_\|_.__/ \___/ \__,_|_|  \__,_| |_|   |_|\__,_|___/');
             if (
                 (File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED'))
                 || (getenv('INSTALLED', false) && $isDocker)
