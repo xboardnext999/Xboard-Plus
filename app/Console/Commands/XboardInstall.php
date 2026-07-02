@@ -73,6 +73,7 @@ class XboardInstall extends Command
             }
             if (is_dir(base_path() . '/.env')) {
                 $this->error('😔：安装失败，Docker环境下安装请保留空的 .env 文件');
+                $this->warn('请在宿主机项目目录执行：rm -rf .env && touch .env，然后重新运行安装命令');
                 return;
             }
             // 选择数据库类型

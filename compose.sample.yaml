@@ -8,6 +8,9 @@
 #
 # For aaPanel native (openresty on host) users that prefer host networking:
 # use compose.host.sample.yaml.
+#
+# Before running xboard:install, create the bind-mounted env file once:
+#   touch .env
 services:
   xboard:
     image: xboard-plus:latest

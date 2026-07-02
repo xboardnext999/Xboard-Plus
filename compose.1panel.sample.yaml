@@ -9,6 +9,9 @@
 #   - Database Host: the container name shown in 1Panel under
 #                    Database -> Connection Info -> Host
 #   - Redis: choose the built-in Redis (already provided by this image)
+#
+# Before running xboard:install, create the bind-mounted env file once:
+#   touch .env
 services:
   xboard:
     image: xboard-plus:latest

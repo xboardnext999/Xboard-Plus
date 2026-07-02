@@ -8,6 +8,9 @@
 #                  └─→ ws-server  (WebSocket)   /api/v2/server/ws → :8076
 #   horizon      (queue worker, no public port)
 #   redis        (state)
+#
+# Before running xboard:install, create the bind-mounted env file once:
+#   touch .env
 services:
   caddy:
     image: caddy:2-alpine

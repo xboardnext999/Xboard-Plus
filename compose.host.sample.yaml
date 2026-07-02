@@ -1,3 +1,6 @@
+#
+# Before running xboard:install, create the bind-mounted env file once:
+#   touch .env
 services:
   xboard:
     image: xboard-plus:latest
