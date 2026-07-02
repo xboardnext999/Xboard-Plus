@@ -65,11 +65,12 @@ cd /www/wwwroot/your-domain
 chattr -i .user.ini
 rm -rf .htaccess 404.html 502.html index.html .user.ini
 
-# Clone the compose branch
-git clone -b compose --depth 1 https://github.com/cedar2025/Xboard.git ./
+# Clone repository
+git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git ./
 
 # Prepare configuration file
 cp compose.host.sample.yaml compose.yaml
+docker compose build xboard
 
 # Install dependencies and initialize
 docker compose run -it --rm xboard php artisan xboard:install

@@ -11,7 +11,13 @@
 #   - Redis: choose the built-in Redis (already provided by this image)
 services:
   xboard:
-    image: ghcr.io/cedar2025/xboard:latest
+    image: xboard-plus:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        REPO_URL: https://github.com/xboardnext999/Xboard-Plus.git
+        BRANCH_NAME: master
     restart: unless-stopped
     ports:
       - "7001:7001"

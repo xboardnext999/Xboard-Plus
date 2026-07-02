@@ -74,7 +74,7 @@ chattr -i .user.ini
 rm -rf .htaccess 404.html 502.html index.html .user.ini
 
 # Clone repository
-git clone https://github.com/cedar2025/Xboard.git ./
+git clone https://github.com/xboardnext999/Xboard-Plus.git ./
 
 # Install dependencies
 sh init.sh

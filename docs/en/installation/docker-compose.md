@@ -15,11 +15,12 @@ systemctl start docker
 
 ### 2. Deployment Steps
 
-1. Clone the `compose` branch (it ships `compose.sample.yaml` and the other `compose.*.sample.yaml` variants):
+1. Clone the repository (it ships `compose.sample.yaml` and the other `compose.*.sample.yaml` variants):
    ```bash
-   git clone -b compose --depth 1 https://github.com/cedar2025/Xboard
-   cd Xboard
+   git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git
+   cd Xboard-Plus
    cp compose.sample.yaml compose.yaml
+   docker compose build xboard
    ```
 
 2. Install database:  
@@ -37,7 +38,7 @@ docker compose run -it --rm \
 docker compose run -it --rm xboard php artisan xboard:install
 ```
 > Please save the admin dashboard URL, username, and password shown after installation
-> The repository ships **four** compose templates in the `compose` branch — pick the one matching your setup, copy it to `compose.yaml`, then run the install command:
+> The repository ships **four** compose templates — pick the one matching your setup, copy it to `compose.yaml`, build the image, then run the install command:
 >
 > | File | Network | When to use |
 > |------|---------|-------------|
@@ -60,15 +61,17 @@ docker compose up -d
 ### 3. Version Updates
 
 ```bash
-cd Xboard
-docker compose pull && docker compose up -d
+cd Xboard-Plus
+git pull
+docker compose build --pull xboard
+docker compose up -d
 ```
 
 The container always runs `php artisan xboard:update` (migrate + plugin install + version cache + theme refresh) on boot, so no extra command is required.
 
 > **Using a `compose.yaml` from before 2026-04-19?** That template did not auto-run `xboard:update` on container start, so use the following command to upgrade instead:
 > ```bash
-> docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
+> git pull && docker compose build --pull web && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
 > ```
 
 ### 4. Version Rollback
@@ -80,4 +83,4 @@ The container always runs `php artisan xboard:update` (migrate + plugin install 
 
 - If you need to use MySQL, please install it separately and redeploy
 - Code changes require service restart to take effect
-- You can configure Nginx reverse proxy to use port 80 
+- You can configure Nginx reverse proxy to use port 80

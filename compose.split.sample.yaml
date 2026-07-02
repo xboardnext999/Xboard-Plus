@@ -21,7 +21,13 @@ services:
       - ./.docker/caddy/Caddyfile.split:/etc/caddy/Caddyfile:ro
 
   web:
-    image: ghcr.io/cedar2025/xboard:latest
+    image: xboard-plus:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        REPO_URL: https://github.com/xboardnext999/Xboard-Plus.git
+        BRANCH_NAME: master
     restart: unless-stopped
     depends_on:
       - redis
@@ -38,7 +44,7 @@ services:
       ENABLE_WS_SERVER: "false"
 
   horizon:
-    image: ghcr.io/cedar2025/xboard:latest
+    image: xboard-plus:latest
     restart: unless-stopped
     depends_on:
       - redis
@@ -50,7 +56,7 @@ services:
       ENABLE_WS_SERVER: "false"
 
   ws-server:
-    image: ghcr.io/cedar2025/xboard:latest
+    image: xboard-plus:latest
     restart: unless-stopped
     depends_on:
       - redis

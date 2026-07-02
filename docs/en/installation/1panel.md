@@ -60,10 +60,10 @@ apt update && apt install -y git
 yum update && yum install -y git
 
 # Clone repository
-git clone -b compose --depth 1 https://github.com/cedar2025/Xboard ./
+git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git ./
 # (Optional shortcut: skip the clone and just fetch the sample file with
-#  curl -fsSL https://raw.githubusercontent.com/cedar2025/Xboard/master/compose.sample.yaml -o compose.yaml
-#  — the running PHP code is in the Docker image, not in the clone.)
+#  curl -fsSL https://raw.githubusercontent.com/xboardnext999/Xboard-Plus/master/compose.1panel.sample.yaml -o compose.yaml
+#  — then build the local Docker image from this repository.)
 
 # Configure Docker Compose
 ```
@@ -71,6 +71,7 @@ git clone -b compose --depth 1 https://github.com/cedar2025/Xboard ./
 4. Prepare `compose.yaml` from the **1Panel-specific** sample. This sample joins the external `1panel-network` so the container can reach the 1Panel-managed MySQL/Redis containers by their hostname:
 ```bash
 cp compose.1panel.sample.yaml compose.yaml
+docker compose build xboard
 ```
 The file is gitignored so your edits survive `git pull`. See [docker-compose.md](./docker-compose.md) for tuning environment variables (`RESOURCE_PROFILE`, `ENABLE_HORIZON`, `ENABLE_REDIS`, etc.) and the other `compose.*.sample.yaml` alternatives.
 

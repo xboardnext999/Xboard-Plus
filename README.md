@@ -1,4 +1,4 @@
-# Xboard
+# Xboard Plus
 
 <div align="center">
 
@@ -11,7 +11,7 @@
 
 ## 📖 Introduction
 
-Xboard is a modern panel system built on Laravel 11, focusing on providing a clean and efficient user experience.
+Xboard Plus is a modern panel system built on Laravel 12, focusing on providing a clean and efficient user experience.
 
 ## ✨ Features
 
@@ -24,8 +24,10 @@ Xboard is a modern panel system built on Laravel 11, focusing on providing a cle
 ## 🚀 Quick Start
 
 ```bash
-git clone -b compose --depth 1 https://github.com/cedar2025/Xboard && \
-cd Xboard && \
+git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git && \
+cd Xboard-Plus && \
+cp compose.sample.yaml compose.yaml && \
+docker compose build xboard && \
 docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
     -e ENABLE_REDIS=true \
@@ -103,4 +105,4 @@ Issues and Pull Requests are welcome to help improve the project.
 
 ## 📈 Star History
 
-[![Stargazers over time](https://starchart.cc/cedar2025/Xboard.svg)](https://starchart.cc/cedar2025/Xboard)
+[![Stargazers over time](https://starchart.cc/xboardnext999/Xboard-Plus.svg)](https://starchart.cc/xboardnext999/Xboard-Plus)
