@@ -11,6 +11,7 @@
 #   - Redis: choose the built-in Redis (already provided by this image)
 #
 # Before running xboard:install, create the bind-mounted env file once:
+#   [ ! -d .env ] || rm -rf .env
 #   touch .env
 services:
   xboard:

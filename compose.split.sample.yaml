@@ -10,6 +10,7 @@
 #   redis        (state)
 #
 # Before running xboard:install, create the bind-mounted env file once:
+#   [ ! -d .env ] || rm -rf .env
 #   touch .env
 services:
   caddy:

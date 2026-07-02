@@ -70,13 +70,14 @@ git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git ./
 
 # Prepare configuration file
 cp compose.host.sample.yaml compose.yaml
+[ ! -d .env ] || rm -rf .env
 touch .env
-docker compose build xboard
+docker compose build --build-arg CACHEBUST=$(date +%s) xboard
 
 # Install dependencies and initialize
 docker compose run -it --rm xboard php artisan xboard:install
 ```
-> Keep `.env` present and empty before installation; if Docker already created it as a directory, run `rm -rf .env && touch .env`.
+> Keep `.env` present and empty before installation; if Docker already created it as a directory, run `[ ! -d .env ] || rm -rf .env; touch .env`.
 > ⚠️ Please save the admin dashboard URL, username, and password shown after installation
 
 #### 3.3 Start Services

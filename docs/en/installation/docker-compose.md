@@ -20,10 +20,11 @@ systemctl start docker
    git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git
    cd Xboard-Plus
    cp compose.sample.yaml compose.yaml
+   [ ! -d .env ] || rm -rf .env
    touch .env
-   docker compose build xboard
+   docker compose build --build-arg CACHEBUST=$(date +%s) xboard
    ```
-   > Docker bind-mounts `./.env` into the container. Keep this file present and empty before installation; if Docker already created it as a directory, run `rm -rf .env && touch .env`.
+   > Docker bind-mounts `./.env` into the container. Keep this file present and empty before installation; if Docker already created it as a directory, run `[ ! -d .env ] || rm -rf .env; touch .env`.
 
 2. Install database:  
 
@@ -65,7 +66,7 @@ docker compose up -d
 ```bash
 cd Xboard-Plus
 git pull
-docker compose build --pull xboard
+docker compose build --pull --build-arg CACHEBUST=$(date +%s) xboard
 docker compose up -d
 ```
 

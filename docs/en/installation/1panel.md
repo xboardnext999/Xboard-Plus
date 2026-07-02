@@ -71,11 +71,12 @@ git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git ./
 4. Prepare `compose.yaml` from the **1Panel-specific** sample. This sample joins the external `1panel-network` so the container can reach the 1Panel-managed MySQL/Redis containers by their hostname:
 ```bash
 cp compose.1panel.sample.yaml compose.yaml
+[ ! -d .env ] || rm -rf .env
 touch .env
-docker compose build xboard
+docker compose build --build-arg CACHEBUST=$(date +%s) xboard
 ```
 The file is gitignored so your edits survive `git pull`. See [docker-compose.md](./docker-compose.md) for tuning environment variables (`RESOURCE_PROFILE`, `ENABLE_HORIZON`, `ENABLE_REDIS`, etc.) and the other `compose.*.sample.yaml` alternatives.
-Keep `.env` present and empty before installation; if Docker already created it as a directory, run `rm -rf .env && touch .env`.
+Keep `.env` present and empty before installation; if Docker already created it as a directory, run `[ ! -d .env ] || rm -rf .env; touch .env`.
 
 5. Initialize Installation:
 ```bash

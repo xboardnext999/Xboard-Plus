@@ -605,7 +605,7 @@ class UserController extends Controller
 
         $subject = $request->input('subject');
         $content = $request->input('content');
-        $appName = admin_setting('app_name', 'XBoard');
+        $appName = admin_setting('app_name', 'Xboard Plus');
         $appUrl = admin_setting('app_url');
 
         $chunkSize = 1000;
