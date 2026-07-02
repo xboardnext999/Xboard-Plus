@@ -19,6 +19,9 @@ use function Laravel\Prompts\select;
 
 class XboardInstall extends Command
 {
+    private const DEFAULT_APP_NAME = 'Xboard Plus';
+    private const DEFAULT_APP_DESCRIPTION = 'Xboard Plus is best!';
+
     /**
      * The name and signature of the console command.
      *
@@ -155,6 +158,7 @@ class XboardInstall extends Command
             );
             $password = Helper::guid(false);
             $this->saveToEnv($envConfig);
+            Config::set('app.key', $envConfig['APP_KEY']);
 
             $installDriverOverrides = [
                 'CACHE_DRIVER' => 'array',
@@ -176,6 +180,12 @@ class XboardInstall extends Command
             Artisan::call("migrate", ['--force' => true]);
             $this->info(Artisan::output());
             $this->info('数据库导入完成');
+            $defaultSecurePath = hash('crc32b', $envConfig['APP_KEY']);
+            admin_setting([
+                'app_name' => self::DEFAULT_APP_NAME,
+                'app_description' => self::DEFAULT_APP_DESCRIPTION,
+                'secure_path' => $defaultSecurePath,
+            ]);
             $this->info('开始注册管理员账号');
             if (!self::registerAdmin($email, $password)) {
                 abort(500, '管理员账号注册失败，请重试');
@@ -188,7 +198,6 @@ class XboardInstall extends Command
             $this->info("管理员邮箱：{$email}");
             $this->info("管理员密码：{$password}");
 
-            $defaultSecurePath = hash('crc32b', config('app.key'));
             $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
             $envConfig['INSTALLED'] = true;
             $this->saveToEnv($envConfig);

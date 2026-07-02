@@ -62,7 +62,7 @@ Route::get('/', function (Request $request) {
             'title' => admin_setting('app_name', 'Xboard Plus'),
             'theme' => $theme,
             'version' => app(UpdateService::class)->getCurrentVersion(),
-            'description' => admin_setting('app_description', 'Xboard Plus'),
+            'description' => admin_setting('app_description', 'Xboard Plus is best!'),
             'logo' => admin_setting('logo'),
             'theme_config' => $themeService->getConfig($theme)
         ];

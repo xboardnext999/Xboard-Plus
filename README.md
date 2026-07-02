@@ -47,7 +47,7 @@ docker compose up -d
 > 🚨 **Important:** This version involves significant changes. Please strictly follow the upgrade documentation and backup your database before upgrading. Note that upgrading and migration are different processes, do not confuse them.
 
 ### Development Guides
-- [Plugin Development Guide](./docs/en/development/plugin-development-guide.md) - Complete guide for developing XBoard plugins
+- [Plugin Development Guide](./docs/en/development/plugin-development-guide.md) - Complete guide for developing Xboard Plus plugins
 
 ### Deployment Guides
 - [Deploy with 1Panel](./docs/en/installation/1panel.md)
