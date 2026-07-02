@@ -1,0 +1,8 @@
+*
+!.gitignore
+!Epays/
+!Epays/**
+!LineStatusTipPlus/
+!LineStatusTipPlus/**
+!XboardNext/
+!XboardNext/**

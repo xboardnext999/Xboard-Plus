@@ -1,0 +1,10 @@
+{
+    "name": "自定义后台接口",
+    "code": "xboard_next",
+    "version": "1.0.7",
+    "description": "自定义后台接口，对接Xboard NEXT管理后台",
+    "author": "Xboard NEXT Development Team",
+    "require": {
+        "xboard": ">=1.0.0"
+    }
+}
