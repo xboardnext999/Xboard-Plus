@@ -36,7 +36,7 @@ docker compose run -it --rm \
 docker compose up -d
 ```
 
-> After installation, visit: http://SERVER_IP:7001  
+> After installation, visit: http://SERVER_IP:8001
 > ⚠️ Make sure to save the admin credentials shown during installation
 
 ## 📖 Documentation

@@ -42,7 +42,7 @@ docker compose run -it --rm xboard php artisan xboard:install
 >
 > | File | Network | When to use |
 > |------|---------|-------------|
-> | `compose.sample.yaml` | bridge + ports `7001:7001` | bare docker, custom reverse proxy, aaPanel + Docker (default) |
+> | `compose.sample.yaml` | bridge + ports `8001:8001` | bare docker, custom reverse proxy, aaPanel + Docker (default) |
 > | `compose.host.sample.yaml` | `network_mode: host` | aaPanel native (openresty on host) |
 > | `compose.1panel.sample.yaml` | bridge + external `1panel-network` | 1Panel users (so the container can reach 1Panel-managed MySQL/Redis) |
 > | `compose.split.sample.yaml` | multi-container (web/horizon/ws-server/redis split) | K8s migration, advanced scaling |
@@ -55,8 +55,8 @@ docker compose up -d
 ```
 
 4. Access the site:
-- Default port: 7001
-- Website URL: http://your-server-ip:7001
+- Default port: 8001
+- Website URL: http://your-server-ip:8001
 
 ### 3. Version Updates
 

@@ -18,7 +18,7 @@
 	}
 }
 
-:{$CADDY_LISTEN_PORT:7001} {
+:{$CADDY_LISTEN_PORT:8001} {
 	@ws path /ws
 	reverse_proxy @ws 127.0.0.1:{$WS_PORT:8076}
 

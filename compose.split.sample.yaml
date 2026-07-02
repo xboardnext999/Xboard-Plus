@@ -4,7 +4,7 @@
 # relevant to that role.
 #
 # Topology:
-#   caddy        ──┬─→ web        (HTTP)        :7001 → octane :7001
+#   caddy        ──┬─→ web        (HTTP)        :8001 → octane :8001
 #                  └─→ ws-server  (WebSocket)   /api/v2/server/ws → :8076
 #   horizon      (queue worker, no public port)
 #   redis        (state)
@@ -13,7 +13,7 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
-      - "7001:7001"
+      - "8001:8001"
     depends_on:
       - web
       - ws-server

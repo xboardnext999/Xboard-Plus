@@ -24,7 +24,7 @@ class UpdateService
      */
     public function getCurrentVersion(): string
     {
-        $date = Cache::get(self::CACHE_VERSION_DATE) ?? date('Ymd');
+        $date = Cache::get(self::CACHE_VERSION_DATE) ?? now()->format('Ymd');
         $hash = Cache::rememberForever(self::CACHE_VERSION, function () {
             return $this->getCurrentCommit();
         });
@@ -37,9 +37,10 @@ class UpdateService
     public function updateVersionCache(): void
     {
         try {
-            $result = Process::run('git log -1 --format=%cd:%H --date=format:%Y%m%d');
+            $result = Process::run('git rev-parse HEAD');
             if ($result->successful()) {
-                list($date, $hash) = explode(':', trim($result->output()));
+                $date = now()->format('Ymd');
+                $hash = trim($result->output());
                 Cache::forever(self::CACHE_VERSION_DATE, $date);
                 Cache::forever(self::CACHE_VERSION, substr($hash, 0, 7));
                 // Log::info('Version cache updated: ' . $date . '-' . substr($hash, 0, 7));
@@ -50,10 +51,11 @@ class UpdateService
         }
 
         // Fallback
-        Cache::forever(self::CACHE_VERSION_DATE, date('Ymd'));
+        $date = now()->format('Ymd');
+        Cache::forever(self::CACHE_VERSION_DATE, $date);
         $fallbackHash = $this->getCurrentCommit();
         Cache::forever(self::CACHE_VERSION, $fallbackHash);
-        Log::info('Version cache updated (fallback): ' . date('Ymd') . '-' . $fallbackHash);
+        Log::info('Version cache updated (fallback): ' . $date . '-' . $fallbackHash);
     }
 
     public function checkForUpdates(): array
@@ -455,4 +457,4 @@ class UpdateService
             return [];
         }
     }
-} 
+}
