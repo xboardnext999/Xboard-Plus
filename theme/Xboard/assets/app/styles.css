@@ -53,9 +53,9 @@
   --orange: #d97706;
   --red: #dc2626;
   --shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
-  --body-bg: linear-gradient(135deg, #f8fafc 0%, #eef2ff 48%, #f8fafc 100%);
-  --shell-bg: rgba(255, 255, 255, 0.38);
-  --sidebar-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.86) 48%, rgba(226, 232, 240, 0.82));
+  --body-bg: #f6f8fb;
+  --shell-bg: #f6f8fb;
+  --sidebar-bg: #eff1f5;
   --topbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.68));
   --nav-hover-bg: rgba(15, 23, 42, 0.055);
   --nav-active-bg: linear-gradient(90deg, rgba(15, 23, 42, 0.10), rgba(15, 23, 42, 0.035));
