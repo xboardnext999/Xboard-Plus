@@ -57,18 +57,17 @@ const periods = [
 ];
 
 const navItems = [
-  { key: 'dashboard', label: '仪表盘', group: '', icon: 'dashboard.webp' },
-  { key: 'plans', label: '购买套餐', group: '财务', icon: 'plan.webp' },
-  { key: 'recharge', label: '充值余额', group: '财务', icon: 'wallet.webp' },
-  { key: 'orders', label: '订单记录', group: '财务', icon: 'order.webp' },
+  { key: 'dashboard', label: '仪表盘', group: '概览', icon: 'dashboard.webp' },
   { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
+  { key: 'plans', label: '购买套餐', group: '订阅', icon: 'plan.webp' },
+  { key: 'recharge', label: '充值余额', group: '订阅', icon: 'wallet.webp' },
   { key: 'invite', label: '邀请好友', group: '订阅', icon: 'invite.webp' },
   { key: 'knowledge', label: '使用教程', group: '服务', icon: 'knowledge.webp' },
   { key: 'tickets', label: '工单中心', group: '服务', icon: 'ticket.webp' },
   { key: 'nodes', label: '节点状态', group: '记录', icon: 'node.webp' },
-  { key: 'order-records', label: '订单记录', group: '记录', icon: 'order.webp' },
+  { key: 'orders', label: '订单记录', group: '记录', icon: 'order.webp' },
   { key: 'traffic', label: '流量统计', group: '记录', icon: 'traffic.webp' },
-  { key: 'profile', label: '帐号设置', group: '帐号', icon: 'profile.webp' },
+  { key: 'profile', label: '账号设置', group: '账号', icon: 'profile.webp' },
 ];
 
 const publicRoutes = new Set(['login', 'register', 'forgot']);
@@ -135,7 +134,7 @@ function navGroups() {
 function routeMeta(name) {
   const item = navItems.find((nav) => nav.key === name);
   return {
-    group: item ? item.group : '仪表盘',
+    group: item?.group || '概览',
     label: item?.label || '仪表盘',
   };
 }
@@ -240,10 +239,6 @@ function shell(content, title, subtitle, meta = {}) {
           ${logoMarkup()}
           <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
         </a>
-        <button class="collapse-button" data-toggle-sidebar type="button" aria-label="展开或收起菜单">
-          <span class="collapse-icon collapse-icon-collapse" style="--icon-url: url('${escapeHtml(appAsset('icons/Collapse.webp'))}')" aria-hidden="true"></span>
-          <span class="collapse-icon collapse-icon-expand" style="--icon-url: url('${escapeHtml(appAsset('icons/Expand.webp'))}')" aria-hidden="true"></span>
-        </button>
         <section class="sidebar-hero">
           <h2>${formatTitle(sidebarTitle)}</h2>
           <p>${escapeHtml(sidebarSubtitle)}</p>
@@ -271,7 +266,10 @@ function shell(content, title, subtitle, meta = {}) {
         <header class="topbar">
           <button class="icon-button mobile-menu" data-toggle-menu type="button">☰</button>
           <div class="breadcrumb">
-            <i class="home-icon"></i>
+            <button class="sidebar-toggle-button" data-toggle-sidebar type="button" aria-label="展开或收起菜单">
+              <span class="collapse-icon collapse-icon-collapse" style="--icon-url: url('${escapeHtml(appAsset('icons/Collapse.webp'))}')" aria-hidden="true"></span>
+              <span class="collapse-icon collapse-icon-expand" style="--icon-url: url('${escapeHtml(appAsset('icons/Expand.webp'))}')" aria-hidden="true"></span>
+            </button>
             ${crumbGroup ? `<span>${escapeHtml(crumbGroup)}</span><b>/</b>` : ''}
             <strong>${escapeHtml(meta.crumbTitle || currentMeta.label)}</strong>
           </div>
@@ -1102,7 +1100,6 @@ const views = {
   subscribe: subscribeView,
   plans: plansView,
   orders: ordersView,
-  'order-records': ordersView,
   recharge: rechargeView,
   profile: profileView,
   nodes: nodesView,
