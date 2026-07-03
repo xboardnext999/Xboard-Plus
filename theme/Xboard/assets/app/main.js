@@ -15,6 +15,7 @@ import {
 const settings = window.settings || {};
 const app = document.querySelector('#app');
 const currencySymbol = () => state.comm?.currency_symbol || '¥';
+const themeStorageKey = 'xboard-plus-theme';
 
 const state = {
   guest: {},
@@ -72,6 +73,31 @@ const navItems = [
 
 const publicRoutes = new Set(['login', 'register', 'forgot']);
 
+function storedTheme() {
+  try {
+    return localStorage.getItem(themeStorageKey) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+}
+
+function applyTheme(theme) {
+  const normalized = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = normalized;
+  document.documentElement.style.colorScheme = normalized;
+  try {
+    localStorage.setItem(themeStorageKey, normalized);
+  } catch {
+    // Ignore storage errors in private browsing or locked-down webviews.
+  }
+}
+
+applyTheme(storedTheme());
+
 function route() {
   const raw = (location.hash || '#/dashboard').replace(/^#\/?/, '');
   const [name = 'dashboard', search = ''] = raw.split('?');
@@ -121,6 +147,14 @@ function formatTitle(title) {
 function userInitial() {
   const email = state.user?.email || 'A';
   return escapeHtml(email.slice(0, 1).toUpperCase());
+}
+
+function appDescription() {
+  return settings.description || state.guest?.app_description || state.comm?.app_description || '继续管理你的订阅、节点与余额。';
+}
+
+function themeLabel() {
+  return currentTheme() === 'light' ? '暗黑' : '白天';
 }
 
 function navGroups() {
@@ -225,6 +259,7 @@ function shell(content, title, subtitle, meta = {}) {
   const status = meta.status || '账户状态：已连接';
   const search = meta.search || '搜索菜单 / 节点';
   const crumbGroup = meta.crumbGroup ?? currentMeta.group;
+  const userEmail = user?.email || '当前账号';
   const stats = meta.stats || [
     { label: '余额', value: money(user?.balance, currencySymbol()) },
     { label: '套餐', value: state.subscribe?.plan?.name || '未订阅' },
@@ -237,7 +272,7 @@ function shell(content, title, subtitle, meta = {}) {
       <aside class="sidebar">
         <a class="brand" href="#/dashboard" aria-label="${escapeHtml(appName)}">
           ${logoMarkup()}
-          <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
+          <span><b>${escapeHtml(appName)}</b><small>${escapeHtml(appDescription())}</small></span>
         </a>
         <section class="sidebar-hero">
           <h2>${formatTitle(sidebarTitle)}</h2>
@@ -275,9 +310,22 @@ function shell(content, title, subtitle, meta = {}) {
           </div>
           <div class="top-actions">
             <div class="search-box">${escapeHtml(search)}</div>
+            <button class="theme-toggle" data-toggle-theme type="button" aria-label="切换白天和暗黑模式" title="切换白天和暗黑模式">
+              <span class="theme-icon" aria-hidden="true"></span>
+              <span class="theme-label">${escapeHtml(themeLabel())}</span>
+            </button>
             <span class="round-chip">CN</span>
-            <a class="avatar-chip" href="#/profile">${userInitial()}</a>
-            <button class="icon-button" data-logout type="button" title="退出登录">↗</button>
+            <div class="user-menu">
+              <button class="avatar-chip" data-toggle-user-menu type="button" aria-haspopup="menu" aria-expanded="false">${userInitial()}</button>
+              <div class="user-dropdown" role="menu">
+                <div class="user-dropdown-head">
+                  <strong>${escapeHtml(userEmail)}</strong>
+                  <span>账户菜单</span>
+                </div>
+                <a href="#/profile" role="menuitem">账号设置</a>
+                <button data-logout type="button" role="menuitem">退出登录</button>
+              </div>
+            </div>
           </div>
         </header>
         <section class="content">
@@ -305,12 +353,12 @@ function authShell(content) {
         <div class="auth-visual">
           <a class="brand" href="#/login" aria-label="${escapeHtml(appName)}">
             ${logoMarkup()}
-            <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
+            <span><b>${escapeHtml(appName)}</b><small>${escapeHtml(appDescription())}</small></span>
           </a>
           <section class="page-hero">
             <p><i></i>安全登录</p>
             <h1>欢迎<br>回来</h1>
-            <small>${escapeHtml(settings.description || state.guest.app_description || '继续管理你的订阅、节点与余额。')}</small>
+            <small>${escapeHtml(appDescription())}</small>
           </section>
           <article class="glass-card preview-card accent-orange">
             <div class="card-title-row">
@@ -1173,11 +1221,42 @@ function bindPageEvents() {
     });
   });
 
-  $('[data-logout]')?.addEventListener('click', () => {
-    clearToken();
-    state.bootPromise = null;
-    state.booted = false;
-    go('login');
+  $all('[data-toggle-theme]').forEach((button) => {
+    button.addEventListener('click', () => {
+      applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
+      $all('.theme-label').forEach((label) => {
+        label.textContent = themeLabel();
+      });
+    });
+  });
+
+  $all('[data-toggle-user-menu]').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const menu = button.closest('.user-menu');
+      const isOpen = menu?.classList.toggle('is-open');
+      button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+  });
+
+  if (!window.__xboardUserMenuBound) {
+    window.__xboardUserMenuBound = true;
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('.user-menu')) return;
+      $all('.user-menu.is-open').forEach((menu) => {
+        menu.classList.remove('is-open');
+        menu.querySelector('[data-toggle-user-menu]')?.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+
+  $all('[data-logout]').forEach((button) => {
+    button.addEventListener('click', () => {
+      clearToken();
+      state.bootPromise = null;
+      state.booted = false;
+      go('login');
+    });
   });
 
   $all('[data-copy]').forEach((button) => {
