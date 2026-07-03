@@ -31,7 +31,24 @@ Route::get('/theme-runtime/{theme}/assets/app/{path}', function (string $theme, 
         abort(404);
     }
 
-    return response()->file($file);
+    $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    $contentTypes = [
+        'css' => 'text/css; charset=utf-8',
+        'js' => 'application/javascript; charset=utf-8',
+        'json' => 'application/json; charset=utf-8',
+        'svg' => 'image/svg+xml',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'webp' => 'image/webp',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
+    ];
+
+    return response(File::get($file), 200, [
+        'Content-Type' => $contentTypes[$extension] ?? 'application/octet-stream',
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
 })->where('path', '.*');
 
 Route::get('/recharge', function (Request $request) {
