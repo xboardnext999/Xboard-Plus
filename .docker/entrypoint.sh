@@ -1,6 +1,22 @@
 #!/bin/sh
 set -e
 
+mkdir -p /config
+if [ ! -e /config/.env ]; then
+    touch /config/.env
+fi
+
+if [ -f /www/.env ] && [ ! -L /www/.env ]; then
+    :
+else
+    if [ -d /www/.env ] && [ ! -L /www/.env ]; then
+        rm -rf /www/.env 2>/dev/null || true
+    fi
+fi
+if [ ! -e /www/.env ]; then
+    ln -s /config/.env /www/.env
+fi
+
 # Resolve the binding scheme based on whether the embedded Caddy is enabled.
 #
 # When ENABLE_CADDY=true (default), Caddy owns the public port (8001) and

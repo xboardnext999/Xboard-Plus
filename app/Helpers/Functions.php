@@ -23,7 +23,13 @@ if (!function_exists('admin_setting')) {
         }
 
         $default = config('v2board.' . $key) ?? $default;
-        return $setting->get($key) ?? $default;
+        $value = $setting->get($key) ?? $default;
+
+        return match ([$key, $value]) {
+            ['app_name', 'XBoard'] => 'Xboard Plus',
+            ['app_description', 'XBoard is best!'] => 'Xboard Plus is best!',
+            default => $value,
+        };
     }
 }
 

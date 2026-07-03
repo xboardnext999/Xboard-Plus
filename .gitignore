@@ -6,6 +6,7 @@
 /public/env.example.js
 *.user.ini
 /storage/*.key
+/.docker/env/*
 /vendor
 .env
 .env.*

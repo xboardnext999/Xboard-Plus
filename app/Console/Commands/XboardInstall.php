@@ -74,14 +74,14 @@ class XboardInstall extends Command
             ) {
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
                 $this->info("访问 http(s)://你的站点/{$securePath} 进入管理面板，你可以在用户中心修改你的密码。");
-                $this->warn("如需重新安装请清空目录下 .env 文件的内容（Docker安装方式不可以删除此文件）");
-                $this->warn("快捷清空.env命令：");
-                note('rm .env && touch .env');
+                $this->warn("如需重新安装请清空配置目录下的 .env 文件内容");
+                $this->warn("Docker 快捷清空命令：");
+                note('rm -f .docker/env/.env');
                 return;
             }
             if (is_dir(base_path() . '/.env')) {
-                $this->error('😔：安装失败，Docker环境下安装请保留空的 .env 文件');
-                $this->warn('请在宿主机项目目录执行：rm -rf .env && touch .env，然后重新运行安装命令');
+                $this->error('😔：安装失败，/www/.env 当前是目录，不是文件');
+                $this->warn('请更新 compose.yaml，使用 ./.docker/env:/config 挂载；最新入口脚本会自动创建 /config/.env');
                 return;
             }
             // 选择数据库类型
@@ -266,10 +266,18 @@ class XboardInstall extends Command
     private function configureSqlite(): ?array
     {
         $sqliteFile = '.docker/.data/database.sqlite';
+        $sqlitePath = base_path($sqliteFile);
+        $sqliteDir = dirname($sqlitePath);
+
+        if (!is_dir($sqliteDir) && !mkdir($sqliteDir, 0775, true) && !is_dir($sqliteDir)) {
+            $this->error("SQLite 数据目录创建失败: {$sqliteDir}");
+            return null;
+        }
+
         if (!file_exists(base_path($sqliteFile))) {
-            // 创建空文件
-            if (!touch(base_path($sqliteFile))) {
-                $this->info("sqlite创建成功: $sqliteFile");
+            if (!touch($sqlitePath)) {
+                $this->error("SQLite 数据库文件创建失败: {$sqliteFile}");
+                return null;
             }
         }
 

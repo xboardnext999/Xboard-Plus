@@ -20,11 +20,10 @@ systemctl start docker
    git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git
    cd Xboard-Plus
    cp compose.sample.yaml compose.yaml
-   [ ! -d .env ] || rm -rf .env
-   touch .env
    docker compose build --build-arg CACHEBUST=$(date +%s) xboard
    ```
-   > Docker bind-mounts `./.env` into the container. Keep this file present and empty before installation; if Docker already created it as a directory, run `[ ! -d .env ] || rm -rf .env; touch .env`.
+> The compose template mounts `./.docker/env` to `/config`; the entrypoint creates `/config/.env` automatically.
+> If you copied `compose.yaml` from an older release, replace the old `./.env:/www/.env` volume with `./.docker/env:/config`, or copy the sample again.
 
 2. Install database:  
 
@@ -74,7 +73,7 @@ The container always runs `php artisan xboard:update` (migrate + plugin install 
 
 > **Using a `compose.yaml` from before 2026-04-19?** That template did not auto-run `xboard:update` on container start, so use the following command to upgrade instead:
 > ```bash
-> git pull && docker compose build --pull web && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
+> git pull && docker compose build --pull xboard && docker compose run -it --rm xboard php artisan xboard:update && docker compose up -d
 > ```
 
 ### 4. Version Rollback

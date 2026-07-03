@@ -76,8 +76,17 @@ Route::get('/', function (Request $request) {
     }
 });
 
-//TODO:: 兼容
-Route::get('/' . admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key')))), function () {
+Route::get('/' . (admin_setting('subscribe_path', 's')) . '/{token}', [\App\Http\Controllers\V1\Client\ClientController::class, 'subscribe'])
+    ->middleware('client')
+    ->name('client.subscribe');
+
+Route::get('/{secure_path}', function (string $securePath) {
+    $expectedPath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
+
+    if (!hash_equals((string) $expectedPath, $securePath)) {
+        abort(404);
+    }
+
     return view('admin', [
         'title' => admin_setting('app_name', 'Xboard Plus'),
         'theme_sidebar' => admin_setting('frontend_theme_sidebar', 'light'),
@@ -88,8 +97,4 @@ Route::get('/' . admin_setting('secure_path', admin_setting('frontend_admin_path
         'logo' => admin_setting('logo'),
         'secure_path' => admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))))
     ]);
-});
-
-Route::get('/' . (admin_setting('subscribe_path', 's')) . '/{token}', [\App\Http\Controllers\V1\Client\ClientController::class, 'subscribe'])
-    ->middleware('client')
-    ->name('client.subscribe');
+})->where('secure_path', '[A-Za-z0-9_-]+');

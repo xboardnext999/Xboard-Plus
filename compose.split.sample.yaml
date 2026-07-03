@@ -9,9 +9,7 @@
 #   horizon      (queue worker, no public port)
 #   redis        (state)
 #
-# Before running xboard:install, create the bind-mounted env file once:
-#   [ ! -d .env ] || rm -rf .env
-#   touch .env
+# The entrypoint creates /config/.env automatically; no manual touch is needed.
 services:
   caddy:
     image: caddy:2-alpine
@@ -30,13 +28,12 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        REPO_URL: https://github.com/xboardnext999/Xboard-Plus.git
-        BRANCH_NAME: master
+        CACHEBUST: ${CACHEBUST:-1}
     restart: unless-stopped
     depends_on:
       - redis
     volumes: &shared-volumes
-      - ./.env:/www/.env
+      - ./.docker/env:/config
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
       - ./storage/theme:/www/storage/theme

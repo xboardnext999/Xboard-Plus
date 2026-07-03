@@ -27,8 +27,6 @@ Xboard Plus is a modern panel system built on Laravel 12, focusing on providing 
 git clone --depth 1 https://github.com/xboardnext999/Xboard-Plus.git && \
 cd Xboard-Plus && \
 cp compose.sample.yaml compose.yaml && \
-([ ! -d .env ] || rm -rf .env) && \
-touch .env && \
 docker compose build --build-arg CACHEBUST=$(date +%s) xboard && \
 docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
