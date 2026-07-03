@@ -952,14 +952,15 @@ class NodeSyncDiagnosticController extends Controller
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>节点数据分析</title>
   <style>
-    :root { --bg:#f6f7fb; --card:#fff; --text:#111827; --muted:#64748b; --line:#e5e7eb; --ok:#059669; --warn:#d97706; --bad:#dc2626; --brand:#2563eb; }
+    :root { --bg:#fff; --card:#fff; --text:#111827; --muted:#64748b; --line:#e5e7eb; --ok:#059669; --warn:#d97706; --bad:#dc2626; --brand:#2563eb; }
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    .wrap { max-width:1280px; margin:0 auto; padding:28px; }
-    .top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
-    h1 { margin:0; font-size:26px; letter-spacing:0; }
-    h3 { margin:0 0 12px; }
+    .wrap { width:100%; margin:0; padding:76px 38px 40px; }
+    .top { display:block; margin-bottom:18px; }
+    h1 { margin:0; font-size:24px; line-height:1.3; font-weight:750; letter-spacing:0; }
+    h3 { margin:0 0 8px; font-size:18px; line-height:1.45; font-weight:700; }
     .muted { color:var(--muted); }
+    .page-subtitle { margin-top:6px; font-size:14px; line-height:1.6; }
     .btn { border:0; border-radius:8px; background:var(--brand); color:#fff; padding:10px 14px; cursor:pointer; font-weight:650; }
     .btn.secondary { background:#111827; }
     .btn.ghost { background:#fff; color:#111827; border:1px solid var(--line); }
@@ -1001,7 +1002,7 @@ class NodeSyncDiagnosticController extends Controller
     .warn { color:var(--warn); font-weight:700; }
     .bad { color:var(--bad); font-weight:700; }
     .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
-    .mini-toolbar { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 12px; }
+    .mini-toolbar { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0 12px; }
     .panel { margin-top:16px; }
     .detail-card { padding:0; overflow:hidden; }
     .tabs { display:inline-flex; align-items:center; gap:6px; padding:4px; border:1px solid var(--line); border-radius:8px; background:#f8fafc; }
@@ -1035,7 +1036,8 @@ class NodeSyncDiagnosticController extends Controller
     .node-table .group-cell { display:block; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .node-table .btn { white-space:nowrap; }
     pre { margin:0; max-height:420px; overflow:auto; background:#0f172a; color:#e5e7eb; padding:14px; border-radius:8px; font-size:12px; }
-    @media (max-width: 900px) { .grid { grid-template-columns:1fr; } .wrap { padding:16px; } table { display:block; overflow:auto; } .tabs { width:100%; overflow:auto; } }
+    @media (max-width: 1200px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width: 900px) { .grid { grid-template-columns:1fr; } .wrap { padding:20px 16px 28px; } table { display:block; overflow:auto; } .tabs { width:100%; overflow:auto; } }
   </style>
 </head>
 <body>
@@ -1043,7 +1045,7 @@ class NodeSyncDiagnosticController extends Controller
     <div class="top">
       <div>
         <h1>节点数据分析</h1>
-        <div class="muted">查看节点最近一次用户同步快照，并按 UUID 排查用户是否下发到节点。</div>
+        <div class="muted page-subtitle">查看节点最近一次用户同步快照，并按 UUID 排查用户是否下发到节点。</div>
       </div>
     </div>
     <div class="grid">
