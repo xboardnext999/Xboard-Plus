@@ -20,7 +20,7 @@
   --red: #ff746d;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
   --radius: 12px;
-  --sidebar: 280px;
+  --sidebar: 252px;
   --body-bg: linear-gradient(135deg, #262a3a 0%, #070a0f 38%, #020405 100%);
   --shell-bg: rgba(0, 0, 0, 0.26);
   --sidebar-bg: linear-gradient(142deg, rgba(255, 255, 255, 0.11), rgba(17, 20, 28, 0.76) 34%, rgba(5, 7, 11, 0.92));
@@ -189,9 +189,7 @@ td {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  border-right: 1px solid var(--line);
   background: var(--sidebar-bg);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.035);
 }
 
 .brand {
@@ -416,8 +414,8 @@ td {
 }
 
 .nav-icon {
-  width: 1em;
-  height: 1em;
+  width: 18px;
+  height: 18px;
   border: 1.5px solid currentColor;
   border-radius: 4px;
   opacity: 0.92;
@@ -425,8 +423,8 @@ td {
 }
 
 .nav-icon-image {
-  width: 1em;
-  height: 1em;
+  width: 18px;
+  height: 18px;
   background: currentColor;
   opacity: 0.92;
   flex: 0 0 auto;
@@ -1625,7 +1623,7 @@ td {
 
 @media (max-width: 1240px) {
   :root {
-    --sidebar: 260px;
+    --sidebar: 244px;
   }
 
   .sidebar-hero h2 {
