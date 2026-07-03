@@ -955,7 +955,22 @@ class NodeSyncDiagnosticController extends Controller
     :root { --bg:#fff; --card:#fff; --text:#111827; --muted:#64748b; --line:#e5e7eb; --ok:#059669; --warn:#d97706; --bad:#dc2626; --brand:#2563eb; }
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    .wrap { width:100%; margin:0; padding:76px 38px 40px; }
+    body.theme-dark { --bg:#020617; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1e293b; --brand:#38bdf8; }
+    .admin-topbar { position:fixed; z-index:30; top:0; left:0; right:0; height:64px; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:0 38px; background:var(--bg); border-bottom:1px solid rgba(226,232,240,.78); }
+    body.theme-dark .admin-topbar { border-bottom-color:#1e293b; }
+    .command-search { display:inline-flex; align-items:center; gap:12px; width:340px; max-width:min(340px,42vw); height:42px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); padding:0 12px; box-shadow:0 1px 3px rgba(15,23,42,.08); cursor:pointer; font-weight:650; text-align:left; }
+    .command-search svg { width:18px; height:18px; color:#334155; flex:0 0 auto; }
+    body.theme-dark .command-search svg { color:#cbd5e1; }
+    .command-placeholder { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .command-key { display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:24px; padding:0 7px; border:1px solid var(--line); border-radius:6px; background:#f8fafc; color:#64748b; font-size:12px; font-weight:700; }
+    body.theme-dark .command-key { background:#111827; color:#94a3b8; }
+    .topbar-actions { display:inline-flex; align-items:center; justify-content:flex-end; gap:16px; }
+    .topbar-btn { border:0; background:transparent; color:var(--text); min-width:0; height:34px; padding:0; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; }
+    .topbar-btn svg { width:18px; height:18px; stroke-width:2; }
+    .language-btn { padding:0 2px; font-size:13px; }
+    .language-flag { font-size:15px; line-height:1; }
+    .account-orb { width:34px; height:34px; border-radius:999px; border:2px dashed #86efac; background:radial-gradient(circle at center,#dcfce7 0 38%,transparent 39%), conic-gradient(from 90deg,#86efac,#bbf7d0,#86efac); box-shadow:0 0 0 3px rgba(34,197,94,.12); }
+    .wrap { width:100%; margin:0; padding:94px 38px 40px; }
     .top { display:block; margin-bottom:18px; }
     h1 { margin:0; font-size:24px; line-height:1.3; font-weight:750; letter-spacing:0; }
     h3 { margin:0 0 8px; font-size:18px; line-height:1.45; font-weight:700; }
@@ -985,12 +1000,13 @@ class NodeSyncDiagnosticController extends Controller
     .toolbar.compact input, .toolbar.compact select { height:36px; }
     .tool-search { min-width:260px; flex:1 1 260px; }
     .uuid-input { min-width:160px; }
-    input, select { height:40px; border:1px solid var(--line); border-radius:8px; padding:0 12px; min-width:180px; background:#fff; }
+    input, select { height:40px; border:1px solid var(--line); border-radius:8px; padding:0 12px; min-width:180px; background:var(--card); color:var(--text); }
     input:focus, select:focus { outline:none; border-color:#111827; box-shadow:0 0 0 2px rgba(17,24,39,.12); }
     input[type="checkbox"] { accent-color:#111827; }
     table { width:100%; border-collapse:separate; border-spacing:0; background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
     th, td { padding:11px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; vertical-align:middle; }
     th { background:#f8fafc; color:#475569; font-size:12px; }
+    body.theme-dark th { background:#111827; color:#94a3b8; }
     tr:last-child td { border-bottom:0; }
     .name { white-space:normal; min-width:220px; font-weight:650; }
     .tag { display:inline-flex; align-items:center; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:400; background:#eef2ff; color:#3730a3; }
@@ -1009,18 +1025,18 @@ class NodeSyncDiagnosticController extends Controller
     .tab-btn { border:0; border-radius:6px; background:transparent; color:#475569; height:32px; padding:0 12px; cursor:pointer; font-weight:500; }
     .tab-btn.active { background:#111827; color:#fff; }
     .tab-panel { display:block; padding:16px; }
-    .table-wrap { width:100%; max-height:520px; overflow:auto; border:1px solid #dfe7f1; border-radius:8px; background:#fff; }
+    .table-wrap { width:100%; max-height:520px; overflow:auto; border:1px solid #dfe7f1; border-radius:8px; background:var(--card); }
     .table-wrap table { border:0; border-radius:0; min-width:980px; }
-    .data-table th { height:43px; color:#64748b; font-size:14px; font-weight:750; background:#fff; border-bottom:1px solid #dfe7f1; vertical-align:middle; }
+    .data-table th { height:43px; color:#64748b; font-size:14px; font-weight:750; background:var(--card); border-bottom:1px solid #dfe7f1; vertical-align:middle; }
     .data-table td { height:43px; font-size:14px; font-weight:400; border-bottom:1px solid #dfe7f1; padding-top:6px; padding-bottom:6px; vertical-align:middle; }
     .data-table tr:last-child td { border-bottom:0; }
-    .id-pill { display:inline-flex; align-items:center; justify-content:center; min-width:54px; height:24px; padding:0 9px; border:1px solid #dfe7f1; border-radius:7px; background:#fff; box-shadow:0 1px 2px rgba(15,23,42,.04); font-weight:400; color:#111827; }
+    .id-pill { display:inline-flex; align-items:center; justify-content:center; min-width:54px; height:24px; padding:0 9px; border:1px solid #dfe7f1; border-radius:7px; background:var(--card); box-shadow:0 1px 2px rgba(15,23,42,.04); font-weight:400; color:var(--text); }
     .user-cell { display:inline-flex; align-items:center; gap:8px; min-width:190px; font-weight:400; vertical-align:middle; }
     .status-dot { width:13px; height:13px; border-radius:999px; background:#d1d5db; border:2px solid #f3f4f6; flex:0 0 auto; }
     .status-dot.online { background:#22c55e; border-color:#dcfce7; }
     .count-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border:1px solid #9ca3af; border-radius:7px; background:#f8fafc; font-weight:400; }
-    .status-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:#fff; box-shadow:0 1px 4px rgba(15,23,42,.08); font-weight:400; }
-    .status-pill.ok { color:#111827; }
+    .status-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:var(--card); box-shadow:0 1px 4px rgba(15,23,42,.08); font-weight:400; }
+    .status-pill.ok { color:var(--text); }
     .status-pill.bad { color:#dc2626; }
     .sync-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:#eef2ff; color:#3730a3; font-weight:400; }
     .sync-pill.ok { background:#ecfdf5; color:#047857; }
@@ -1037,10 +1053,29 @@ class NodeSyncDiagnosticController extends Controller
     .node-table .btn { white-space:nowrap; }
     pre { margin:0; max-height:420px; overflow:auto; background:#0f172a; color:#e5e7eb; padding:14px; border-radius:8px; font-size:12px; }
     @media (max-width: 1200px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-    @media (max-width: 900px) { .grid { grid-template-columns:1fr; } .wrap { padding:20px 16px 28px; } table { display:block; overflow:auto; } .tabs { width:100%; overflow:auto; } }
+    @media (max-width: 900px) { .admin-topbar { height:58px; padding:0 16px; } .command-search { width:220px; max-width:calc(100vw - 140px); } .command-key { display:none; } .topbar-actions { gap:12px; } .grid { grid-template-columns:1fr; } .wrap { padding:82px 16px 28px; } table { display:block; overflow:auto; } .tabs { width:100%; overflow:auto; } }
   </style>
 </head>
 <body>
+  <header class="admin-topbar">
+    <button class="command-search" type="button" onclick="focusNodeSearch()" aria-label="搜索菜单和功能">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+      <span class="command-placeholder">搜索菜单和功能...</span>
+      <span class="command-key">⌘K</span>
+    </button>
+    <div class="topbar-actions">
+      <button id="themeToggle" class="topbar-btn" type="button" onclick="toggleTheme()" aria-label="切换主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 7.4A9 9 0 1 1 12 3Z"></path></svg>
+      </button>
+      <button class="topbar-btn language-btn" type="button" aria-label="语言">
+        <span class="language-flag">🇨🇳</span>
+        <span>CN</span>
+      </button>
+      <button class="topbar-btn" type="button" aria-label="账户">
+        <span class="account-orb" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
   <div class="wrap">
     <div class="top">
       <div>
@@ -1150,6 +1185,36 @@ class NodeSyncDiagnosticController extends Controller
         return '';
       }
     }
+
+    function focusNodeSearch() {
+      const input = document.getElementById('filter');
+      if (!input) return;
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      input.focus();
+    }
+
+    function applyTheme(theme) {
+      document.body.classList.toggle('theme-dark', theme === 'dark');
+    }
+
+    function toggleTheme() {
+      const next = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+      try {
+        localStorage.setItem('node-sync-diagnostic-theme', next);
+      } catch (error) {}
+      applyTheme(next);
+    }
+
+    try {
+      applyTheme(localStorage.getItem('node-sync-diagnostic-theme') || 'light');
+    } catch (error) {}
+
+    document.addEventListener('keydown', event => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        focusNodeSearch();
+      }
+    });
 
     function switchTab(name) {
       ['users', 'access'].forEach(tab => {
