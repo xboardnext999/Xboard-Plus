@@ -101,6 +101,8 @@ export async function request(path, options = {}) {
   let url = `${API_BASE}${path}`;
   if (method === 'GET') {
     url = buildUrl(path, options.data);
+  } else if (options.data instanceof FormData) {
+    fetchOptions.body = options.data;
   } else {
     headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
     fetchOptions.body = buildBody(options.data);

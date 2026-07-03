@@ -145,8 +145,21 @@ function formatTitle(title) {
 }
 
 function userInitial() {
-  const email = state.user?.email || 'A';
-  return escapeHtml(email.slice(0, 1).toUpperCase());
+  return escapeHtml(userDisplayName().slice(0, 1).toUpperCase());
+}
+
+function userDisplayName(user = state.user) {
+  const name = String(user?.name || '').trim();
+  if (name) return name;
+  return user?.email ? user.email.split('@')[0] : 'Admin';
+}
+
+function userAvatarMarkup(className = 'avatar-thumb') {
+  const avatar = state.user?.avatar_url || state.user?.avatar;
+  if (avatar) {
+    return `<img class="${escapeHtml(className)}" src="${escapeHtml(avatar)}" alt="">`;
+  }
+  return `<span>${userInitial()}</span>`;
 }
 
 function appDescription() {
@@ -254,12 +267,12 @@ function shell(content, title, subtitle, meta = {}) {
   const version = settings.version ? `v${settings.version}` : '';
   const user = state.user;
   const currentMeta = routeMeta(active);
-  const sidebarTitle = meta.sidebarTitle || `${currentMeta.label}\n${user?.email ? user.email.split('@')[0] : 'Admin'}`;
+  const sidebarTitle = meta.sidebarTitle || `${currentMeta.label}\n${userDisplayName(user)}`;
   const sidebarSubtitle = meta.sidebarSubtitle || `上次登录：${lastLoginDate()}`;
   const status = meta.status || '账户状态：已连接';
-  const search = meta.search || '搜索菜单 / 节点';
   const crumbGroup = meta.crumbGroup ?? currentMeta.group;
   const userEmail = user?.email || '当前账号';
+  const userName = userDisplayName(user);
   const stats = meta.stats || [
     { label: '余额', value: money(user?.balance, currencySymbol()) },
     { label: '套餐', value: state.subscribe?.plan?.name || '未订阅' },
@@ -309,18 +322,17 @@ function shell(content, title, subtitle, meta = {}) {
             <strong>${escapeHtml(meta.crumbTitle || currentMeta.label)}</strong>
           </div>
           <div class="top-actions">
-            <div class="search-box">${escapeHtml(search)}</div>
             <button class="theme-toggle" data-toggle-theme type="button" aria-label="切换白天和暗黑模式" title="切换白天和暗黑模式">
               <span class="theme-icon" aria-hidden="true"></span>
               <span class="theme-label">${escapeHtml(themeLabel())}</span>
             </button>
             <span class="round-chip">CN</span>
             <div class="user-menu">
-              <button class="avatar-chip" data-toggle-user-menu type="button" aria-haspopup="menu" aria-expanded="false">${userInitial()}</button>
+              <button class="avatar-chip" data-toggle-user-menu type="button" aria-haspopup="menu" aria-expanded="false">${userAvatarMarkup()}</button>
               <div class="user-dropdown" role="menu">
                 <div class="user-dropdown-head">
-                  <strong>${escapeHtml(userEmail)}</strong>
-                  <span>账户菜单</span>
+                  <strong>${escapeHtml(userName)}</strong>
+                  <span>${escapeHtml(userEmail)}</span>
                 </div>
                 <a href="#/profile" role="menuitem">账号设置</a>
                 <button data-logout type="button" role="menuitem">退出登录</button>
@@ -604,10 +616,9 @@ async function dashboardView() {
       </div>
     </section>
   `, '节点与订阅\n实时概览', '查看订阅状态、账户余额、节点可用性与近期通知。', {
-    sidebarTitle: `欢迎回来\n${user.email ? user.email.split('@')[0] : 'Admin'}`,
+    sidebarTitle: `欢迎回来\n${userDisplayName(user)}`,
     sidebarSubtitle: `上次登录：${lastLoginDate()}`,
     status: '已同步：2 分钟前',
-    search: '搜索节点 / 订单',
     stats: [
       { label: '余额', value: money(user.balance, currencySymbol()) },
       { label: '套餐', value: planName },
@@ -681,7 +692,6 @@ async function subscribeView() {
     sidebarTitle: '安全订阅\n访问中心',
     sidebarSubtitle: `重置周期：${subscribe.reset_day ? `每月 ${subscribe.reset_day} 日` : '跟随套餐'}`,
     status: '安全状态：已保护',
-    search: '搜索节点 / 导入工具',
     stats: [
       { label: 'UUID', value: subscribe.uuid ? '已同步' : '已同步' },
       { label: '设备', value: `${subscribe.device_limit ?? '不限'}` },
@@ -726,7 +736,6 @@ async function plansView() {
     sidebarTitle: '套餐购买\n与续费',
     sidebarSubtitle: `当前余额：${money(state.user?.balance, currencySymbol())}`,
     status: '支付网关：可用',
-    search: '搜索套餐 / 优惠券',
     stats: [
       { label: '余额', value: money(state.user?.balance, currencySymbol()) },
       { label: '套餐数', value: String(plans.length) },
@@ -847,7 +856,6 @@ async function rechargeView(params) {
     sidebarTitle: '充值中心\n与订单',
     sidebarSubtitle: `当前余额：${money(state.user?.balance, currencySymbol())}`,
     status: '支付网关：可用',
-    search: '搜索订单 / 优惠券',
     stats: [
       { label: '余额', value: money(state.user?.balance, currencySymbol()) },
       { label: '充值单', value: String(records.length) },
@@ -913,6 +921,21 @@ async function profileView() {
           <p>${escapeHtml(user.email)}</p>
         </div>
       </div>
+      <form class="profile-editor" data-identity-form>
+        <div class="profile-avatar-block">
+          <img class="profile-avatar" data-avatar-preview src="${escapeHtml(user.avatar_url || user.avatar || '')}" alt="">
+          <label class="avatar-upload-button">
+            上传头像
+            <input data-avatar-input name="avatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          </label>
+          <small>支持 JPG、PNG、WebP、GIF，最大 2MB。</small>
+        </div>
+        <div class="profile-fields">
+          <label>昵称<input name="name" maxlength="64" value="${escapeHtml(user.name || '')}" placeholder="${escapeHtml(userDisplayName(user))}"></label>
+          <p>昵称会显示在侧边栏欢迎语和右上角账户菜单中。</p>
+          <button class="primary-button" type="submit">保存资料</button>
+        </div>
+      </form>
       ${statCards([
         { label: '余额', value: money(user.balance, currencySymbol()) },
         { label: '佣金余额', value: money(user.commission_balance, currencySymbol()) },
@@ -1432,6 +1455,51 @@ function bindPageEvents() {
       go('recharge');
     } catch (error) {
       toast(error.message, 'error');
+    }
+  });
+
+  $('[data-identity-form]')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = event.submitter;
+    if (button) button.disabled = true;
+    try {
+      await api.post('/user/update', {
+        name: form.querySelector('[name="name"]')?.value.trim() || '',
+      });
+      await refreshUser();
+      toast('资料已保存');
+      render();
+    } catch (error) {
+      toast(error.message, 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+
+  $('[data-avatar-input]')?.addEventListener('change', async (event) => {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      event.currentTarget.value = '';
+      toast('头像不能超过 2MB', 'error');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('avatar', file);
+
+    try {
+      const preview = $('[data-avatar-preview]');
+      if (preview) preview.src = URL.createObjectURL(file);
+      await api.post('/user/avatar', data);
+      await refreshUser();
+      toast('头像已更新');
+      render();
+    } catch (error) {
+      toast(error.message, 'error');
+    } finally {
+      event.currentTarget.value = '';
     }
   });
 

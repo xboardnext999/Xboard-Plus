@@ -19,6 +19,8 @@ use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -90,6 +92,8 @@ class UserController extends Controller
         $user = User::where('id', $request->user()->id)
             ->select([
                 'email',
+                'name',
+                'avatar',
                 'transfer_enable',
                 'last_login_at',
                 'created_at',
@@ -109,7 +113,7 @@ class UserController extends Controller
         if (!$user) {
             return $this->fail([400, __('The user does not exist')]);
         }
-        $user['avatar_url'] = 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon';
+        $user['avatar_url'] = $user->avatar ?: 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon';
         return $this->success($user);
     }
 
@@ -174,10 +178,22 @@ class UserController extends Controller
 
     public function update(UserUpdate $request)
     {
-        $updateData = $request->only([
-            'remind_expire',
-            'remind_traffic'
-        ]);
+        $updateData = [];
+        foreach (['remind_expire', 'remind_traffic'] as $field) {
+            if ($request->has($field)) {
+                $updateData[$field] = $request->input($field);
+            }
+        }
+
+        if ($request->has('name')) {
+            $name = trim((string) $request->input('name'));
+            $updateData['name'] = $name !== '' ? $name : null;
+        }
+
+        if ($request->has('avatar')) {
+            $avatar = trim((string) $request->input('avatar'));
+            $updateData['avatar'] = $avatar !== '' ? $avatar : null;
+        }
 
         $user = $request->user();
         try {
@@ -187,6 +203,53 @@ class UserController extends Controller
         }
 
         return $this->success(true);
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+        ]);
+
+        $file = $request->file('avatar');
+        if (!$file || !$file->isValid()) {
+            return $this->fail([400, __('Upload failed')]);
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+            $extension = 'jpg';
+        }
+
+        $filename = $request->user()->id . '_' . time() . '_' . Str::random(8) . '.' . $extension;
+        try {
+            $storedPath = Storage::disk('public')->putFileAs('avatars', $file, $filename);
+        } catch (\Throwable $e) {
+            return $this->fail([400, __('Upload failed')]);
+        }
+
+        if (!$storedPath) {
+            return $this->fail([400, __('Upload failed')]);
+        }
+
+        $avatar = '/storage/avatars/' . $filename;
+        $user = $request->user();
+        $previousAvatar = (string) $user->avatar;
+        $user->avatar = $avatar;
+
+        if (!$user->save()) {
+            Storage::disk('public')->delete('avatars/' . $filename);
+            return $this->fail([400, __('Save failed')]);
+        }
+
+        if (str_starts_with($previousAvatar, '/storage/avatars/')) {
+            Storage::disk('public')->delete('avatars/' . basename($previousAvatar));
+        }
+
+        return $this->success([
+            'avatar' => $avatar,
+            'avatar_url' => $avatar,
+        ]);
     }
 
     public function transfer(UserTransfer $request)

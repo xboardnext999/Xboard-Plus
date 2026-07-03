@@ -526,19 +526,6 @@ td {
   gap: 9px;
 }
 
-.search-box {
-  min-width: 190px;
-  min-height: 38px;
-  display: flex;
-  align-items: center;
-  border-radius: 10px;
-  background: var(--control-bg);
-  color: var(--muted);
-  padding: 0 14px;
-  font-size: 13px;
-  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.03);
-}
-
 .round-chip,
 .avatar-chip {
   display: grid;
@@ -556,6 +543,7 @@ td {
 .avatar-chip {
   background: linear-gradient(135deg, rgba(124, 255, 178, 0.22), rgba(141, 138, 255, 0.25));
   color: var(--text);
+  overflow: hidden;
 }
 
 .theme-toggle {
@@ -602,6 +590,18 @@ td {
 .avatar-chip {
   min-width: 34px;
   padding: 0;
+}
+
+.avatar-chip span {
+  display: grid;
+  place-items: center;
+}
+
+.avatar-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 .user-dropdown {
@@ -934,6 +934,70 @@ td {
 .panel h2,
 .checkout-box h3 {
   font-size: 20px;
+}
+
+.profile-editor {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-soft);
+  padding: 16px;
+}
+
+.profile-avatar-block {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.profile-avatar {
+  width: 92px;
+  height: 92px;
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background: var(--control-bg);
+  object-fit: cover;
+}
+
+.avatar-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--control-bg);
+  color: var(--text);
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.avatar-upload-button:hover {
+  border-color: var(--focus-border);
+}
+
+.avatar-upload-button input {
+  display: none;
+}
+
+.profile-avatar-block small,
+.profile-fields p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.profile-fields {
+  display: grid;
+  gap: 12px;
 }
 
 .table-wrap {
@@ -1616,11 +1680,6 @@ td {
     flex-wrap: wrap;
   }
 
-  .search-box {
-    min-width: 0;
-    flex: 1 1 190px;
-  }
-
   .content {
     width: auto;
     padding: 0 16px 48px;
@@ -1644,6 +1703,7 @@ td {
   .metric-grid,
   .plan-grid,
   .payment-methods,
+  .profile-editor,
   .two-column {
     grid-template-columns: 1fr;
   }

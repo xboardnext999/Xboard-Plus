@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id 用户ID
  * @property string $email 邮箱
+ * @property string|null $name 昵称
+ * @property string|null $avatar 头像
  * @property string $password 密码
  * @property string|null $password_algo 加密方式
  * @property string|null $password_salt 加密盐

@@ -28,6 +28,7 @@ services:
     volumes:
       - ./.docker/env:/config
       - ./.docker/.data/:/www/.docker/.data
+      - ./storage/app/public:/www/storage/app/public
       - ./storage/logs:/www/storage/logs
       - ./storage/theme:/www/storage/theme
       - ./plugins:/www/plugins

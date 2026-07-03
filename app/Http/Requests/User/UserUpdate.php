@@ -14,6 +14,8 @@ class UserUpdate extends FormRequest
     public function rules()
     {
         return [
+            'name' => 'nullable|string|max:64',
+            'avatar' => 'nullable|string|max:255',
             'remind_expire' => 'in:0,1',
             'remind_traffic' => 'in:0,1'
         ];
@@ -22,8 +24,10 @@ class UserUpdate extends FormRequest
     public function messages()
     {
         return [
-            'show.in' => __('Incorrect format of expiration reminder'),
-            'renew.in' => __('Incorrect traffic alert format')
+            'name.max' => __('Nickname may not be greater than 64 characters'),
+            'avatar.max' => __('Avatar address may not be greater than 255 characters'),
+            'remind_expire.in' => __('Incorrect format of expiration reminder'),
+            'remind_traffic.in' => __('Incorrect traffic alert format')
         ];
     }
 }
