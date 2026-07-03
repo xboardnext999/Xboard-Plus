@@ -5,36 +5,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
   <title>{{$title}}</title>
-  <script type="module" crossorigin src="/theme/{{$theme}}/assets/umi.js"></script>
+  <link rel="stylesheet" href="/theme-runtime/{{$theme}}/assets/app/styles.css?v={{$version}}">
 </head>
 
 <body>
 
   <script>
     window.routerBase = "/";
-    window.settings = {
-      title: '{{$title}}',
-      assets_path: '/theme/{{$theme}}/assets',
-      theme: {
-        color: '{{ $theme_config['theme_color'] ?? "default" }}',
-      },
-      version: '{{$version}}',
-      background_url: '{{$theme_config['background_url']}}',
-      description: '{{$description}}',
-      i18n: [
+    window.settings = @json([
+      'title' => $title,
+      'assets_path' => '/theme-runtime/' . $theme . '/assets',
+      'theme' => [
+        'color' => $theme_config['theme_color'] ?? 'default',
+      ],
+      'version' => $version,
+      'background_url' => $theme_config['background_url'] ?? '',
+      'description' => $description,
+      'i18n' => [
         'zh-CN',
         'en-US',
         'ja-JP',
         'vi-VN',
         'ko-KR',
         'zh-TW',
-        'fa-IR'
+        'fa-IR',
       ],
-      logo: '{{$logo}}'
-    }
+      'logo' => $logo,
+    ])
   </script>
   <div id="app"></div>
-  {!! $theme_config['custom_html'] !!}
+  <script type="module" src="/theme-runtime/{{$theme}}/assets/app/main.js?v={{$version}}"></script>
+  {!! $theme_config['custom_html'] ?? '' !!}
 </body>
 
 </html>

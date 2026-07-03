@@ -21,8 +21,22 @@ use Illuminate\Support\Facades\File;
 
 Route::get('/node-sync-diagnostic', [NodeSyncDiagnosticController::class, 'dashboard']);
 Route::get('/node-sync-diagnostic/dashboard', [NodeSyncDiagnosticController::class, 'dashboard']);
-Route::get('/recharge', function () {
-    return response()->file(base_path('theme/Xboard/recharge.html'));
+Route::get('/theme-runtime/{theme}/assets/app/{path}', function (string $theme, string $path) {
+    if (!preg_match('/^[A-Za-z0-9_-]+$/', $theme) || str_contains($path, '..')) {
+        abort(404);
+    }
+
+    $file = base_path("theme/{$theme}/assets/app/{$path}");
+    if (!File::exists($file) || !File::isFile($file)) {
+        abort(404);
+    }
+
+    return response()->file($file);
+})->where('path', '.*');
+
+Route::get('/recharge', function (Request $request) {
+    $query = $request->getQueryString();
+    return redirect('/#/recharge' . ($query ? '?' . $query : ''));
 });
 
 Route::get('/', function (Request $request) {
