@@ -57,17 +57,17 @@ const periods = [
 ];
 
 const navItems = [
-  ['dashboard', '仪表盘'],
-  ['subscribe', '订阅'],
-  ['plans', '套餐'],
-  ['orders', '订单'],
-  ['recharge', '充值'],
-  ['nodes', '节点'],
-  ['traffic', '流量'],
-  ['tickets', '工单'],
-  ['invite', '邀请'],
-  ['knowledge', '知识库'],
-  ['profile', '账户'],
+  { key: 'dashboard', label: '控制台', group: '概览', icon: 'grid' },
+  { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'link' },
+  { key: 'nodes', label: '节点列表', group: '订阅', icon: 'server' },
+  { key: 'traffic', label: '流量明细', group: '订阅', icon: 'chart' },
+  { key: 'plans', label: '套餐购买', group: '财务', icon: 'plan' },
+  { key: 'recharge', label: '余额充值', group: '财务', icon: 'wallet' },
+  { key: 'orders', label: '订单记录', group: '财务', icon: 'order' },
+  { key: 'tickets', label: '工单', group: '支持', icon: 'ticket' },
+  { key: 'knowledge', label: '知识库', group: '支持', icon: 'book' },
+  { key: 'invite', label: '邀请返佣', group: '账户', icon: 'invite' },
+  { key: 'profile', label: '账户设置', group: '账户', icon: 'gear' },
 ];
 
 const publicRoutes = new Set(['login', 'register', 'forgot']);
@@ -112,6 +112,39 @@ function loadingView(text = '加载中...') {
 
 function emptyView(text = '暂无数据') {
   return `<div class="empty">${escapeHtml(text)}</div>`;
+}
+
+function formatTitle(title) {
+  return escapeHtml(title).replaceAll('\n', '<br>');
+}
+
+function userInitial() {
+  const email = state.user?.email || 'A';
+  return escapeHtml(email.slice(0, 1).toUpperCase());
+}
+
+function navGroups() {
+  return navItems.reduce((groups, item) => {
+    if (!groups[item.group]) groups[item.group] = [];
+    groups[item.group].push(item);
+    return groups;
+  }, {});
+}
+
+function routeMeta(name) {
+  const item = navItems.find((nav) => nav.key === name);
+  return {
+    group: item?.group || '概览',
+    label: item?.label || '控制台',
+  };
+}
+
+function lastLoginDate() {
+  return new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).replaceAll('/', '-');
 }
 
 async function boot(force = false) {
@@ -162,25 +195,50 @@ async function refreshUser() {
 }
 
 function currentTitle(name) {
-  return navItems.find(([key]) => key === name)?.[1] || '仪表盘';
+  return navItems.find((item) => item.key === name)?.label || '控制台';
 }
 
-function shell(content, title, subtitle) {
+function shell(content, title, subtitle, meta = {}) {
   const active = route().name;
   const appName = settings.title || 'Xboard Plus';
   const version = settings.version ? `v${settings.version}` : '';
   const user = state.user;
+  const currentMeta = routeMeta(active);
+  const sidebarTitle = meta.sidebarTitle || `${currentMeta.label}\n${user?.email ? user.email.split('@')[0] : 'Admin'}`;
+  const sidebarSubtitle = meta.sidebarSubtitle || `上次登录：${lastLoginDate()}`;
+  const status = meta.status || '账户状态：已连接';
+  const search = meta.search || '搜索菜单 / 节点';
+  const stats = meta.stats || [
+    { label: '余额', value: money(user?.balance, currencySymbol()) },
+    { label: '套餐', value: state.subscribe?.plan?.name || '未订阅' },
+    { label: '工单', value: String(state.stat?.[0] ?? 0) },
+  ];
+  const groups = navGroups();
 
   return `
     <div class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="#/dashboard" aria-label="${escapeHtml(appName)}">
-          ${settings.logo ? `<img src="${escapeHtml(settings.logo)}" alt="">` : '<span class="brand-mark">X+</span>'}
-          <span>${escapeHtml(appName)}</span>
+          ${settings.logo ? `<img src="${escapeHtml(settings.logo)}" alt="">` : '<span class="brand-mark" aria-hidden="true"></span>'}
+          <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
         </a>
+        <button class="collapse-button" data-toggle-menu type="button" aria-label="收起菜单">‹</button>
+        <section class="sidebar-hero">
+          <h2>${formatTitle(sidebarTitle)}</h2>
+          <p>${escapeHtml(sidebarSubtitle)}</p>
+        </section>
         <nav class="nav">
-          ${navItems.map(([key, label]) => `
-            <a class="nav-item ${active === key ? 'active' : ''}" href="#/${key}">${escapeHtml(label)}</a>
+          ${Object.entries(groups).map(([group, items]) => `
+            <div class="nav-group">
+              <span>${escapeHtml(group)}</span>
+              ${items.map((item) => `
+                <a class="nav-item ${active === item.key ? 'active' : ''}" href="#/${item.key}">
+                  <i class="nav-icon ${escapeHtml(item.icon)}"></i>
+                  <b>${escapeHtml(item.label)}</b>
+                  ${item.key === 'tickets' && Number(state.stat?.[0] || 0) > 0 ? `<em>${escapeHtml(state.stat[0])}</em>` : ''}
+                </a>
+              `).join('')}
+            </div>
           `).join('')}
         </nav>
         <div class="sidebar-footer">
@@ -191,19 +249,30 @@ function shell(content, title, subtitle) {
       <main class="workspace">
         <header class="topbar">
           <button class="icon-button mobile-menu" data-toggle-menu type="button">☰</button>
-          <div class="page-heading">
-            <h1>${escapeHtml(title)}</h1>
-            ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ''}
+          <div class="breadcrumb">
+            <i class="home-icon"></i>
+            <span>${escapeHtml(meta.crumbGroup || currentMeta.group)}</span>
+            <b>/</b>
+            <strong>${escapeHtml(meta.crumbTitle || currentMeta.label)}</strong>
           </div>
           <div class="top-actions">
-            <a class="ghost-link" href="#/recharge">充值</a>
-            <a class="user-chip" href="#/profile">
-              <span>${escapeHtml(user?.email || '账户')}</span>
-            </a>
+            <div class="search-box">${escapeHtml(search)}</div>
+            <span class="round-chip">CN</span>
+            <a class="avatar-chip" href="#/profile">${userInitial()}</a>
             <button class="icon-button" data-logout type="button" title="退出登录">↗</button>
           </div>
         </header>
-        <section class="content">${content}</section>
+        <section class="content">
+          <div class="status-strip">
+            ${stats.map((item) => `<span>${escapeHtml(item.label)} <b>${escapeHtml(item.value)}</b></span>`).join('')}
+          </div>
+          <section class="page-hero">
+            <p><i></i>${escapeHtml(status)}</p>
+            <h1>${formatTitle(title)}</h1>
+            ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ''}
+          </section>
+          ${content}
+        </section>
       </main>
     </div>
     <div class="toast-stack"></div>
@@ -214,13 +283,35 @@ function authShell(content) {
   const appName = settings.title || 'Xboard Plus';
   return `
     <main class="auth-page">
-      <section class="auth-card">
-        <div class="auth-brand">
-          ${settings.logo ? `<img src="${escapeHtml(settings.logo)}" alt="">` : '<span class="brand-mark">X+</span>'}
-          <h1>${escapeHtml(appName)}</h1>
-          <p>${escapeHtml(settings.description || state.guest.app_description || 'Xboard Plus is best!')}</p>
+      <section class="auth-shell">
+        <div class="auth-visual">
+          <a class="brand" href="#/login" aria-label="${escapeHtml(appName)}">
+            ${settings.logo ? `<img src="${escapeHtml(settings.logo)}" alt="">` : '<span class="brand-mark" aria-hidden="true"></span>'}
+            <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
+          </a>
+          <section class="page-hero">
+            <p><i></i>安全登录</p>
+            <h1>欢迎<br>回来</h1>
+            <small>${escapeHtml(settings.description || state.guest.app_description || '继续管理你的订阅、节点与余额。')}</small>
+          </section>
+          <article class="glass-card preview-card accent-orange">
+            <div class="card-title-row">
+              <span class="service-icon">∞</span>
+              <div><small>当前套餐</small><h2>Pro Stream</h2></div>
+            </div>
+            <p>本周期已用流量</p>
+            <strong>128.4 GB</strong>
+            <span class="trend-pill up">↗ +26%</span>
+            <svg viewBox="0 0 420 150" aria-hidden="true"><path d="M0 136 L55 62 L105 56 L155 58 L198 24 L238 130 L282 88 L326 96 L365 34 L420 74" /></svg>
+          </article>
         </div>
-        ${content}
+        <div class="auth-card">
+          <div class="auth-brand">
+            <h1>登录账户</h1>
+            <p>继续管理你的订阅、节点与余额。</p>
+          </div>
+          ${content}
+        </div>
       </section>
     </main>
     <div class="toast-stack"></div>
@@ -382,41 +473,63 @@ async function dashboardView() {
   const subscribe = state.subscribe || {};
   const usage = usageSummary(subscribe);
   const notices = await api.get('/user/notice/fetch', { current: 1 }).catch(() => ({ data: [] }));
+  const servers = await api.get('/user/server/fetch').catch(() => ({ data: [] }));
+  const serverList = normalizeCollection(servers.data || servers);
+  const onlineCount = serverList.filter((node) => node.is_online).length;
   const planName = subscribe.plan?.name || '未订阅套餐';
+  const serverRows = serverList.slice(0, 5).map((node, index) => `
+    <tr>
+      <td>#${index + 1}</td>
+      <td><i class="node-dot dot-${index % 3}"></i>${escapeHtml(node.name || '-')}</td>
+      <td>${escapeHtml(node.type || '-')}</td>
+      <td>${node.is_online ? escapeHtml(node.last_check_at ? '良好' : '-') : '-'}</td>
+      <td>${node.is_online ? '<span class="badge ok">在线</span>' : '<span class="badge danger">维护</span>'}</td>
+    </tr>
+  `);
 
   return shell(`
-    ${statCards([
-      { label: '当前套餐', value: planName, hint: subscribe.expired_at ? `到期 ${date(subscribe.expired_at)}` : '暂无有效期' },
-      { label: '账户余额', value: money(user.balance, currencySymbol()), hint: '可用于购买套餐' },
-      { label: '待支付订单', value: state.stat[0] ?? 0, hint: '需要处理' },
-      { label: '邀请用户', value: state.stat[2] ?? 0, hint: '累计注册' },
-    ])}
-
-    <section class="panel">
-      <div class="panel-heading">
-        <div>
-          <h2>流量使用</h2>
-          <p>${bytes(usage.used)} / ${usage.total ? bytes(usage.total) : '不限量'}</p>
+    <section class="cards-row">
+      <article class="glass-card chart-card accent-orange">
+        <div class="card-title-row">
+          <span class="service-icon">∞</span>
+          <div><small>当前套餐</small><h2>${escapeHtml(planName)}</h2></div>
+          <a class="mini-button" href="#/subscribe">查看</a>
         </div>
-        <a class="secondary-button" href="#/subscribe">查看订阅</a>
+        <p>本周期已用流量</p>
+        <strong>${bytes(usage.used)}</strong>
+        <span class="trend-pill up">↗ ${usage.ratio}%</span>
+        <svg viewBox="0 0 420 150" aria-hidden="true"><path d="M0 136 L55 62 L105 56 L155 58 L198 24 L238 130 L282 88 L326 96 L365 34 L420 74" /><circle cx="326" cy="96" r="7"/><circle cx="365" cy="34" r="7"/></svg>
+      </article>
+      <article class="glass-card chart-card accent-purple">
+        <div class="card-title-row">
+          <span class="service-icon diamond">◆</span>
+          <div><small>可用节点</small><h2>全球节点池</h2></div>
+          <a class="mini-button" href="#/nodes">全部</a>
+        </div>
+        <p>当前可连接节点</p>
+        <strong>${serverList.length ? onlineCount : 0}</strong>
+        <span class="trend-pill warn">↘ ${Math.max(serverList.length - onlineCount, 0)} 个维护中</span>
+        <svg viewBox="0 0 420 150" aria-hidden="true"><path d="M0 110 L50 88 L95 116 L136 52 L180 92 L224 64 L272 120 L326 72 L372 82 L420 34" /><circle cx="136" cy="52" r="7"/><circle cx="326" cy="72" r="7"/></svg>
+      </article>
+    </section>
+
+    <section class="panel wide-panel">
+      <div class="section-title">
+        <p>实时更新</p>
+        <h2>节点概览</h2>
+        <a class="mini-button" href="#/nodes">全部</a>
       </div>
-      <div class="progress"><span style="width:${usage.ratio}%"></span></div>
-      <div class="split-actions">
-        <a class="primary-button" href="#/plans">购买套餐</a>
-        <a class="secondary-button" href="#/recharge">余额充值</a>
-        <a class="secondary-button" href="#/tickets">提交工单</a>
-      </div>
+      ${table(['序号', '节点名称', '协议', '延迟', '状态'], serverRows, '暂无可用节点')}
     </section>
 
     <section class="panel">
-      <div class="panel-heading">
-        <div>
-          <h2>公告</h2>
-          <p>最新站点通知</p>
-        </div>
+      <div class="section-title">
+        <p>站点通知</p>
+        <h2>公告</h2>
+        <a class="mini-button" href="#/knowledge">知识库</a>
       </div>
       <div class="notice-list">
-        ${normalizeCollection(notices.data || notices).slice(0, 5).map((notice) => `
+        ${normalizeCollection(notices.data || notices).slice(0, 4).map((notice) => `
           <article class="notice-item">
             <h3>${escapeHtml(notice.title || '公告')}</h3>
             <div>${safeBody(notice.content || notice.body || '')}</div>
@@ -424,56 +537,94 @@ async function dashboardView() {
         `).join('') || emptyView('暂无公告')}
       </div>
     </section>
-  `, '仪表盘', '查看订阅状态、账户余额与近期通知。');
+  `, '节点与订阅\n实时概览', '查看订阅状态、账户余额、节点可用性与近期通知。', {
+    sidebarTitle: `欢迎回来\n${user.email ? user.email.split('@')[0] : 'Admin'}`,
+    sidebarSubtitle: `上次登录：${lastLoginDate()}`,
+    status: '已同步：2 分钟前',
+    search: '搜索节点 / 订单',
+    stats: [
+      { label: '余额', value: money(user.balance, currencySymbol()) },
+      { label: '套餐', value: planName },
+      { label: '节点', value: `${serverList.length ? onlineCount : 0} 在线` },
+      { label: '用量', value: `${usage.ratio}%` },
+    ],
+    crumbGroup: '概览',
+    crumbTitle: '控制台',
+  });
 }
 
 async function subscribeView() {
   const subscribe = await api.get('/user/getSubscribe');
   state.subscribe = subscribe;
   const servers = await api.get('/user/server/fetch').catch(() => ({ data: [] }));
+  const serverList = normalizeCollection(servers.data || servers);
   const usage = usageSummary(subscribe);
-  const serverRows = normalizeCollection(servers.data || servers).map((node) => `
+  const serverRows = serverList.map((node, index) => `
     <tr>
-      <td>${escapeHtml(node.name)}</td>
+      <td>#${index + 1}</td>
+      <td><i class="node-dot dot-${index % 3}"></i>${escapeHtml(node.name)}</td>
       <td>${escapeHtml(node.type)}</td>
-      <td>${node.is_online ? '<span class="badge ok">在线</span>' : '<span class="badge muted">离线</span>'}</td>
       <td>${escapeHtml(node.rate ?? '-')}</td>
-      <td>${time(node.last_check_at)}</td>
+      <td>${node.is_online ? '<span class="badge ok">在线</span>' : '<span class="badge danger">维护</span>'}</td>
     </tr>
   `);
 
   return shell(`
-    <section class="panel">
-      <div class="panel-heading">
-        <div>
+    <section class="subscription-grid">
+      <article class="panel access-card">
+        <div class="section-title">
+          <p>订阅地址</p>
           <h2>${escapeHtml(subscribe.plan?.name || '未订阅套餐')}</h2>
-          <p>${subscribe.expired_at ? `到期时间 ${date(subscribe.expired_at)}` : '暂无有效套餐'}</p>
+          <button class="mini-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">复制</button>
         </div>
-        <button class="secondary-button" data-reset-security type="button">重置订阅</button>
-      </div>
-      <div class="progress"><span style="width:${usage.ratio}%"></span></div>
-      <div class="copy-field">
-        <input value="${escapeHtml(subscribe.subscribe_url || '')}" readonly>
-        <button class="primary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">复制</button>
-      </div>
-      <div class="info-grid">
-        <span>已用 ${bytes(usage.used)}</span>
-        <span>总量 ${usage.total ? bytes(usage.total) : '不限量'}</span>
-        <span>重置日 ${escapeHtml(subscribe.reset_day ?? '-')}</span>
-        <span>设备数 ${escapeHtml(subscribe.device_limit ?? '不限')}</span>
-      </div>
+        <div class="url-box">${escapeHtml(subscribe.subscribe_url || '暂无订阅链接')}</div>
+        <div class="quota-block">
+          <strong>${usage.total ? bytes(Math.max(usage.total - usage.used, 0)) : '不限量'}</strong>
+          <span>剩余流量 / 总计 ${usage.total ? bytes(usage.total) : '不限量'}</span>
+          <div class="progress"><span style="width:${usage.ratio}%"></span></div>
+        </div>
+        <div class="split-actions">
+          <button class="secondary-button" data-reset-security type="button">重置订阅</button>
+          <a class="primary-button" href="#/plans">续费套餐</a>
+        </div>
+      </article>
+      <article class="panel side-card">
+        <h3>一键导入</h3>
+        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">Shadowrocket</button>
+        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">Clash Verge</button>
+        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">Stash</button>
+        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">V2rayN</button>
+      </article>
+      <article class="panel side-card">
+        <h3>节点状态</h3>
+        <div class="node-map">
+          ${Array.from({ length: 12 }).map((_, index) => `<i class="${index >= serverList.length ? 'off' : (serverList[index]?.is_online ? '' : 'warn')}"></i>`).join('')}
+        </div>
+      </article>
     </section>
 
-    <section class="panel">
-      <div class="panel-heading">
-        <div>
-          <h2>可用节点</h2>
-          <p>当前套餐可访问的节点列表。</p>
-        </div>
+    <section class="panel wide-panel">
+      <div class="section-title">
+        <p>实时列表</p>
+        <h2>可用节点</h2>
+        <a class="mini-button" href="#/nodes">筛选</a>
       </div>
-      ${table(['节点', '协议', '状态', '倍率', '检测时间'], serverRows)}
+      ${table(['序号', '节点名称', '协议', '倍率', '状态'], serverRows, '暂无可用节点')}
     </section>
-  `, '订阅', '复制订阅链接，并查看当前套餐可用节点。');
+  `, '订阅链接\n与节点访问', '复制订阅链接，并查看当前套餐可用节点。', {
+    sidebarTitle: '安全订阅\n访问中心',
+    sidebarSubtitle: `重置周期：${subscribe.reset_day ? `每月 ${subscribe.reset_day} 日` : '跟随套餐'}`,
+    status: '安全状态：已保护',
+    search: '搜索节点 / 导入工具',
+    stats: [
+      { label: 'UUID', value: subscribe.uuid ? '已同步' : '已同步' },
+      { label: '设备', value: `${subscribe.device_limit ?? '不限'}` },
+      { label: '重置', value: subscribe.reset_day ?? '-' },
+      { label: '倍率', value: '自动' },
+    ],
+    crumbGroup: '订阅',
+    crumbTitle: '访问',
+  });
 }
 
 function periodOptions(plan) {
@@ -487,8 +638,9 @@ async function plansView() {
   const plans = normalizeCollection(await api.get('/user/plan/fetch'));
   return shell(`
     <div class="plan-grid">
-      ${plans.map((plan) => `
-        <article class="plan-card" data-plan-card="${plan.id}">
+      ${plans.map((plan, index) => `
+        <article class="plan-card ${index === 1 ? 'hot' : ''}" data-plan-card="${plan.id}">
+          <small>${index === 1 ? 'Popular' : (index === 0 ? 'Starter' : 'Plan')}</small>
           <div class="plan-head">
             <h2>${escapeHtml(plan.name)}</h2>
             <span>${plan.transfer_enable ? bytes(Number(plan.transfer_enable) * 1024 * 1024 * 1024) : '不限流量'}</span>
@@ -500,11 +652,23 @@ async function plansView() {
           </div>
           <label>周期<select name="period">${periodOptions(plan)}</select></label>
           <label>优惠码<input name="coupon_code" placeholder="可选"></label>
-          <button class="primary-button" data-buy-plan="${plan.id}" type="button">立即购买</button>
+          <button class="primary-button" data-buy-plan="${plan.id}" type="button">选择套餐</button>
         </article>
       `).join('') || emptyView('暂无可购买套餐')}
     </div>
-  `, '套餐', '选择套餐周期，创建订单后完成支付。');
+  `, '套餐购买\n与续费', '选择套餐周期，创建订单后完成支付。', {
+    sidebarTitle: '套餐购买\n与续费',
+    sidebarSubtitle: `当前余额：${money(state.user?.balance, currencySymbol())}`,
+    status: '支付网关：可用',
+    search: '搜索套餐 / 优惠券',
+    stats: [
+      { label: '余额', value: money(state.user?.balance, currencySymbol()) },
+      { label: '套餐数', value: String(plans.length) },
+      { label: '优惠券', value: '可用' },
+    ],
+    crumbGroup: '财务',
+    crumbTitle: '套餐',
+  });
 }
 
 async function ordersView(params) {
@@ -581,30 +745,51 @@ async function rechargeView(params) {
   `);
 
   return shell(`
-    <section class="panel">
-      <div class="panel-heading">
-        <div>
+    <section class="billing-layout">
+      <article class="panel wallet-panel">
+        <div class="section-title">
+          <p>Wallet</p>
           <h2>余额充值</h2>
-          <p>充值成功后余额会自动入账。</p>
         </div>
-        <strong class="balance-text">${money(state.user?.balance, currencySymbol())}</strong>
-      </div>
-      <form class="inline-form" data-recharge-form>
-        <label>充值金额<input name="amount" type="number" min="0.01" step="0.01" placeholder="100.00" required></label>
-        <button class="primary-button" type="submit">创建充值</button>
-      </form>
+        <div class="amount-display">${money(state.user?.balance, currencySymbol())}</div>
+        <form class="wallet-form" data-recharge-form>
+          <label>充值金额<input name="amount" type="number" min="0.01" step="0.01" placeholder="100.00" required></label>
+          <button class="primary-button" type="submit">立即充值</button>
+        </form>
+      </article>
+
+      <article class="panel wallet-note">
+        <h3>充值说明</h3>
+        <p>充值成功后余额会自动入账，可用于购买套餐、续费或抵扣订单。</p>
+        <div class="info-grid">
+          <span>自动入账</span>
+          <span>订单可追踪</span>
+          <span>余额可抵扣</span>
+        </div>
+      </article>
     </section>
 
-    <section class="panel">
-      <div class="panel-heading">
-        <div>
-          <h2>充值记录</h2>
-          <p>最近 50 条充值记录。</p>
-        </div>
+    <section class="panel wide-panel">
+      <div class="section-title">
+        <p>交易记录</p>
+        <h2>充值记录</h2>
+        <a class="mini-button" href="#/orders">订单</a>
       </div>
       ${table(['充值单号', '金额', '状态', '支付方式', '创建时间'], rows, '暂无充值记录')}
     </section>
-  `, '充值', '为账户余额充值，用于购买套餐或续费。');
+  `, '余额充值\n与记录', '为账户余额充值，用于购买套餐或续费。', {
+    sidebarTitle: '充值中心\n与订单',
+    sidebarSubtitle: `当前余额：${money(state.user?.balance, currencySymbol())}`,
+    status: '支付网关：可用',
+    search: '搜索订单 / 优惠券',
+    stats: [
+      { label: '余额', value: money(state.user?.balance, currencySymbol()) },
+      { label: '充值单', value: String(records.length) },
+      { label: '优惠券', value: '可用' },
+    ],
+    crumbGroup: '财务',
+    crumbTitle: '充值',
+  });
 }
 
 async function rechargeDetailView(tradeNo) {
@@ -957,8 +1142,10 @@ function bindPageEvents() {
       });
   }
 
-  $('[data-toggle-menu]')?.addEventListener('click', () => {
-    document.body.classList.toggle('sidebar-open');
+  $all('[data-toggle-menu]').forEach((button) => {
+    button.addEventListener('click', () => {
+      document.body.classList.toggle('sidebar-open');
+    });
   });
 
   $('[data-logout]')?.addEventListener('click', () => {
