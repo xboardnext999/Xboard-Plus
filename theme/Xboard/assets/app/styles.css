@@ -24,6 +24,7 @@
   --body-bg: linear-gradient(135deg, #262a3a 0%, #070a0f 38%, #020405 100%);
   --shell-bg: rgba(0, 0, 0, 0.26);
   --sidebar-bg: linear-gradient(142deg, rgba(255, 255, 255, 0.11), rgba(17, 20, 28, 0.76) 34%, rgba(5, 7, 11, 0.92));
+  --workspace-bg: transparent;
   --topbar-bg: linear-gradient(180deg, rgba(5, 8, 11, 0.92), rgba(5, 8, 11, 0.52));
   --nav-hover-bg: rgba(255, 255, 255, 0.06);
   --nav-active-bg: linear-gradient(90deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.04));
@@ -56,6 +57,7 @@
   --body-bg: #f6f8fb;
   --shell-bg: #f6f8fb;
   --sidebar-bg: #eff1f5;
+  --workspace-bg: #f6f8fb;
   --topbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.68));
   --nav-hover-bg: rgba(15, 23, 42, 0.055);
   --nav-active-bg: linear-gradient(90deg, rgba(15, 23, 42, 0.10), rgba(15, 23, 42, 0.035));
@@ -355,16 +357,6 @@ td {
   opacity: 1;
 }
 
-.nav-item.active::after {
-  content: "";
-  position: absolute;
-  right: 10px;
-  width: 3px;
-  height: 22px;
-  border-radius: 4px;
-  background: #fff;
-}
-
 @media (min-width: 861px) {
   body.sidebar-collapsed .app-shell {
     grid-template-columns: 82px minmax(0, 1fr);
@@ -411,10 +403,6 @@ td {
     padding: 0;
   }
 
-  body.sidebar-collapsed .nav-item.active::after {
-    right: 5px;
-    height: 20px;
-  }
 }
 
 .nav-item em {
@@ -428,22 +416,27 @@ td {
 }
 
 .nav-icon {
-  width: 21px;
-  height: 21px;
-  border: 2px solid currentColor;
-  border-radius: 7px;
+  width: 1em;
+  height: 1em;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
   opacity: 0.92;
   flex: 0 0 auto;
 }
 
 .nav-icon-image {
-  width: 21px;
-  height: 21px;
+  width: 1em;
+  height: 1em;
   background: currentColor;
   opacity: 0.92;
   flex: 0 0 auto;
   -webkit-mask: var(--icon-url) center / contain no-repeat;
   mask: var(--icon-url) center / contain no-repeat;
+}
+
+.nav-item:not(.active) .nav-icon,
+.nav-item:not(.active) .nav-icon-image {
+  color: #767b87;
 }
 
 .nav-item:hover .nav-icon-image,
@@ -501,6 +494,7 @@ td {
 
 .workspace {
   min-width: 0;
+  background: var(--workspace-bg);
 }
 
 .topbar {
