@@ -57,15 +57,16 @@ const periods = [
 ];
 
 const navItems = [
-  { key: 'dashboard', label: '仪表盘', group: '概览', icon: 'dashboard.webp' },
+  { key: 'dashboard', label: '仪表盘', group: '', icon: 'dashboard.webp' },
+  { key: 'plans', label: '购买套餐', group: '财务', icon: 'plan.webp' },
+  { key: 'recharge', label: '充值余额', group: '财务', icon: 'wallet.webp' },
+  { key: 'orders', label: '订单记录', group: '财务', icon: 'order.webp' },
   { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
-  { key: 'plans', label: '购买套餐', group: '订阅', icon: 'plan.webp' },
-  { key: 'recharge', label: '充值余额', group: '订阅', icon: 'wallet.webp' },
   { key: 'invite', label: '邀请好友', group: '订阅', icon: 'invite.webp' },
   { key: 'knowledge', label: '使用教程', group: '服务', icon: 'knowledge.webp' },
   { key: 'tickets', label: '工单中心', group: '服务', icon: 'ticket.webp' },
   { key: 'nodes', label: '节点状态', group: '记录', icon: 'node.webp' },
-  { key: 'orders', label: '订单记录', group: '记录', icon: 'order.webp' },
+  { key: 'order-records', label: '订单记录', group: '记录', icon: 'order.webp' },
   { key: 'traffic', label: '流量统计', group: '记录', icon: 'traffic.webp' },
   { key: 'profile', label: '帐号设置', group: '帐号', icon: 'profile.webp' },
 ];
@@ -134,7 +135,7 @@ function navGroups() {
 function routeMeta(name) {
   const item = navItems.find((nav) => nav.key === name);
   return {
-    group: item?.group || '概览',
+    group: item ? item.group : '仪表盘',
     label: item?.label || '仪表盘',
   };
 }
@@ -224,6 +225,7 @@ function shell(content, title, subtitle, meta = {}) {
   const sidebarSubtitle = meta.sidebarSubtitle || `上次登录：${lastLoginDate()}`;
   const status = meta.status || '账户状态：已连接';
   const search = meta.search || '搜索菜单 / 节点';
+  const crumbGroup = meta.crumbGroup ?? currentMeta.group;
   const stats = meta.stats || [
     { label: '余额', value: money(user?.balance, currencySymbol()) },
     { label: '套餐', value: state.subscribe?.plan?.name || '未订阅' },
@@ -238,7 +240,10 @@ function shell(content, title, subtitle, meta = {}) {
           ${logoMarkup()}
           <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
         </a>
-        <button class="collapse-button" data-toggle-menu type="button" aria-label="收起菜单">‹</button>
+        <button class="collapse-button" data-toggle-sidebar type="button" aria-label="展开或收起菜单">
+          <span class="collapse-icon collapse-icon-collapse" style="--icon-url: url('${escapeHtml(appAsset('icons/Collapse.webp'))}')" aria-hidden="true"></span>
+          <span class="collapse-icon collapse-icon-expand" style="--icon-url: url('${escapeHtml(appAsset('icons/Expand.webp'))}')" aria-hidden="true"></span>
+        </button>
         <section class="sidebar-hero">
           <h2>${formatTitle(sidebarTitle)}</h2>
           <p>${escapeHtml(sidebarSubtitle)}</p>
@@ -246,7 +251,7 @@ function shell(content, title, subtitle, meta = {}) {
         <nav class="nav">
           ${Object.entries(groups).map(([group, items]) => `
             <div class="nav-group">
-              <span>${escapeHtml(group)}</span>
+              ${group ? `<span>${escapeHtml(group)}</span>` : ''}
               ${items.map((item) => `
                 <a class="nav-item ${active === item.key ? 'active' : ''}" href="#/${item.key}">
                   ${navIconMarkup(item)}
@@ -267,8 +272,7 @@ function shell(content, title, subtitle, meta = {}) {
           <button class="icon-button mobile-menu" data-toggle-menu type="button">☰</button>
           <div class="breadcrumb">
             <i class="home-icon"></i>
-            <span>${escapeHtml(meta.crumbGroup || currentMeta.group)}</span>
-            <b>/</b>
+            ${crumbGroup ? `<span>${escapeHtml(crumbGroup)}</span><b>/</b>` : ''}
             <strong>${escapeHtml(meta.crumbTitle || currentMeta.label)}</strong>
           </div>
           <div class="top-actions">
@@ -564,8 +568,8 @@ async function dashboardView() {
       { label: '节点', value: `${serverList.length ? onlineCount : 0} 在线` },
       { label: '用量', value: `${usage.ratio}%` },
     ],
-    crumbGroup: '概览',
-    crumbTitle: '控制台',
+    crumbGroup: '',
+    crumbTitle: '仪表盘',
   });
 }
 
@@ -1098,6 +1102,7 @@ const views = {
   subscribe: subscribeView,
   plans: plansView,
   orders: ordersView,
+  'order-records': ordersView,
   recharge: rechargeView,
   profile: profileView,
   nodes: nodesView,
@@ -1161,6 +1166,13 @@ function bindPageEvents() {
   $all('[data-toggle-menu]').forEach((button) => {
     button.addEventListener('click', () => {
       document.body.classList.toggle('sidebar-open');
+    });
+  });
+
+  $all('[data-toggle-sidebar]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const collapsed = document.body.classList.toggle('sidebar-collapsed');
+      button.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
     });
   });
 
