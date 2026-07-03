@@ -59,15 +59,15 @@ const periods = [
 const navItems = [
   { key: 'dashboard', label: '仪表盘', group: '概览', icon: 'dashboard.webp' },
   { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
-  { key: 'nodes', label: '节点列表', group: '订阅', icon: 'node.webp' },
-  { key: 'traffic', label: '流量明细', group: '订阅', icon: 'traffic.webp' },
-  { key: 'plans', label: '套餐购买', group: '财务', icon: 'plan.webp' },
-  { key: 'recharge', label: '余额充值', group: '财务', icon: 'wallet' },
-  { key: 'orders', label: '订单记录', group: '财务', icon: 'order.webp' },
-  { key: 'tickets', label: '工单中心', group: '支持', icon: 'ticket.webp' },
-  { key: 'knowledge', label: '知识库', group: '支持', icon: 'knowledge.webp' },
-  { key: 'invite', label: '邀请好友', group: '账户', icon: 'invite.webp' },
-  { key: 'profile', label: '帐号设置', group: '账户', icon: 'profile.webp' },
+  { key: 'plans', label: '购买套餐', group: '订阅', icon: 'plan.webp' },
+  { key: 'recharge', label: '充值余额', group: '订阅', icon: 'wallet.webp' },
+  { key: 'invite', label: '邀请好友', group: '订阅', icon: 'invite.webp' },
+  { key: 'knowledge', label: '使用教程', group: '服务', icon: 'knowledge.webp' },
+  { key: 'tickets', label: '工单中心', group: '服务', icon: 'ticket.webp' },
+  { key: 'nodes', label: '节点状态', group: '记录', icon: 'node.webp' },
+  { key: 'orders', label: '订单记录', group: '记录', icon: 'order.webp' },
+  { key: 'traffic', label: '流量统计', group: '记录', icon: 'traffic.webp' },
+  { key: 'profile', label: '帐号设置', group: '帐号', icon: 'profile.webp' },
 ];
 
 const publicRoutes = new Set(['login', 'register', 'forgot']);
@@ -135,7 +135,7 @@ function routeMeta(name) {
   const item = navItems.find((nav) => nav.key === name);
   return {
     group: item?.group || '概览',
-    label: item?.label || '控制台',
+    label: item?.label || '仪表盘',
   };
 }
 
@@ -250,7 +250,7 @@ function shell(content, title, subtitle, meta = {}) {
               ${items.map((item) => `
                 <a class="nav-item ${active === item.key ? 'active' : ''}" href="#/${item.key}">
                   ${navIconMarkup(item)}
-                  <b>${escapeHtml(item.label)}</b>
+                  <span class="nav-label">${escapeHtml(item.label)}</span>
                   ${item.key === 'tickets' && Number(state.stat?.[0] || 0) > 0 ? `<em>${escapeHtml(state.stat[0])}</em>` : ''}
                 </a>
               `).join('')}

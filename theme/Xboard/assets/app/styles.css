@@ -253,7 +253,11 @@ td {
   color: var(--muted);
   padding: 0 12px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 400;
+}
+
+.nav-label {
+  font-weight: 400;
 }
 
 .nav-item:hover {
