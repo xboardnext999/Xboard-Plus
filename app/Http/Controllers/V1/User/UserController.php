@@ -113,7 +113,7 @@ class UserController extends Controller
         if (!$user) {
             return $this->fail([400, __('The user does not exist')]);
         }
-        $user['avatar_url'] = $user->avatar ?: 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon';
+        $user['avatar_url'] = $user->avatar ?: '/theme/Xboard/assets/app/icons/avatar.webp';
         return $this->success($user);
     }
 

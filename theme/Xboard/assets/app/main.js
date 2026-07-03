@@ -154,12 +154,18 @@ function userDisplayName(user = state.user) {
   return user?.email ? user.email.split('@')[0] : 'Admin';
 }
 
+function defaultAvatarUrl() {
+  return appAsset('icons/avatar.webp');
+}
+
+function userAvatarUrl(user = state.user) {
+  if (user?.avatar) return user.avatar;
+  if (user?.avatar_url && !String(user.avatar_url).includes('/gravatar/')) return user.avatar_url;
+  return defaultAvatarUrl();
+}
+
 function userAvatarMarkup(className = 'avatar-thumb') {
-  const avatar = state.user?.avatar_url || state.user?.avatar;
-  if (avatar) {
-    return `<img class="${escapeHtml(className)}" src="${escapeHtml(avatar)}" alt="">`;
-  }
-  return `<span>${userInitial()}</span>`;
+  return `<img class="${escapeHtml(className)}" src="${escapeHtml(userAvatarUrl())}" alt="">`;
 }
 
 function appDescription() {
@@ -923,7 +929,7 @@ async function profileView() {
       </div>
       <form class="profile-editor" data-identity-form>
         <div class="profile-avatar-block">
-          <img class="profile-avatar" data-avatar-preview src="${escapeHtml(user.avatar_url || user.avatar || '')}" alt="">
+          <img class="profile-avatar" data-avatar-preview src="${escapeHtml(userAvatarUrl(user))}" alt="">
           <label class="avatar-upload-button">
             上传头像
             <input data-avatar-input name="avatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
