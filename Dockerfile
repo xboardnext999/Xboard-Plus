@@ -42,7 +42,7 @@ ENV ENABLE_WEB=true \
     ENABLE_WS_SERVER=true \
     ENABLE_CADDY=true
 
-EXPOSE 8001
+EXPOSE 8002
 COPY .docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

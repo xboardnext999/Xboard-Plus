@@ -3,7 +3,7 @@
 # 1Panel runs MySQL/Redis as separate containers on a Docker network named
 # `1panel-network`. To let Xboard reach them by their container hostname
 # (e.g. `1Panel-mysql-xxxx`), this compose file joins that external network
-# in addition to publishing port 8001 for 1Panel's reverse proxy / website.
+# in addition to publishing port 8002 for 1Panel's reverse proxy / website.
 #
 # During `php artisan xboard:install`, set:
 #   - Database Host: the container name shown in 1Panel under
@@ -21,7 +21,7 @@ services:
         CACHEBUST: ${CACHEBUST:-1}
     restart: unless-stopped
     ports:
-      - "8001:8001"
+      - "8002:8002"
     networks:
       - default
       - 1panel-network

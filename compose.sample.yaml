@@ -1,7 +1,7 @@
-# Default deployment: bridge network with port 8001 published to the host.
+# Default deployment: bridge network with port 8002 published to the host.
 # Suitable for: bare docker-compose, aaPanel + Docker manager, custom reverse
 # proxies (nginx, Caddy on host, Cloudflare Tunnel, etc.) that talk to
-# 127.0.0.1:8001 on the host.
+# 127.0.0.1:8002 on the host.
 #
 # For 1Panel users: use compose.1panel.sample.yaml so the container can reach
 # the 1Panel-managed MySQL/Redis on the 1panel-network.
@@ -20,7 +20,7 @@ services:
         CACHEBUST: ${CACHEBUST:-1}
     restart: unless-stopped
     ports:
-      - "8001:8001"
+      - "8002:8002"
     volumes:
       - ./.docker/env:/config
       - ./.docker/.data/:/www/.docker/.data

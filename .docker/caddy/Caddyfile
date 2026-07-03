@@ -4,7 +4,7 @@
 # while transparently upgrading WebSocket requests to the ws-server worker.
 # This lets every external reverse proxy (nginx, Cloudflare, the user's own
 # Caddy, ...) treat the panel as a single upstream and avoids exposing the
-# 8076 WebSocket port directly.
+# 18076 WebSocket port directly.
 {
 	admin off
 	auto_https off
@@ -18,11 +18,11 @@
 	}
 }
 
-:{$CADDY_LISTEN_PORT:8001} {
+:{$CADDY_LISTEN_PORT:8002} {
 	@ws path /ws
-	reverse_proxy @ws 127.0.0.1:{$WS_PORT:8076}
+	reverse_proxy @ws 127.0.0.1:{$WS_PORT:18076}
 
-	reverse_proxy 127.0.0.1:{$OCTANE_INTERNAL_PORT:7002} {
+	reverse_proxy 127.0.0.1:{$OCTANE_INTERNAL_PORT:18002} {
 		header_up Host {host}
 		# X-Forwarded-For is auto-appended with our remote_addr by Caddy
 		# (enabled by the global trusted_proxies above), so Octane receives the

@@ -87,7 +87,7 @@ docker compose up -d
 Add the following content to your site configuration:
 ```nginx
 location ^~ / {
-    proxy_pass http://127.0.0.1:8001;
+    proxy_pass http://127.0.0.1:8002;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -99,7 +99,7 @@ location ^~ / {
     proxy_cache off;
 }
 ```
-> The all-in-one container's embedded Caddy fuses HTTP and the panel↔node WebSocket on port 8001. The single `Upgrade`/`Connection` pair above is enough; no separate `/ws/` location is needed. To opt out and expose Octane / `:8076` directly, set `ENABLE_CADDY=false` in `compose.yaml`.
+> The all-in-one container's embedded Caddy fuses HTTP and the panel↔node WebSocket on port 8002. The single `Upgrade`/`Connection` pair above is enough; no separate `/ws/` location is needed. To opt out and expose Octane directly on `:8002` and WebSocket on `:18076`, set `ENABLE_CADDY=false` in `compose.yaml`.
 
 ## Maintenance Guide
 

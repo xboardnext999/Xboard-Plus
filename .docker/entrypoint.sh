@@ -19,7 +19,7 @@ fi
 
 # Resolve the binding scheme based on whether the embedded Caddy is enabled.
 #
-# When ENABLE_CADDY=true (default), Caddy owns the public port (8001) and
+# When ENABLE_CADDY=true (default), Caddy owns the public port (8002) and
 # dispatches traffic internally; Octane and ws-server bind to localhost only
 # so they cannot be reached from outside the container.
 #
@@ -28,15 +28,15 @@ fi
 # pre-Caddy releases.
 if [ "${ENABLE_CADDY}" = "true" ]; then
     : "${OCTANE_HOST:=127.0.0.1}"
-    : "${OCTANE_PORT:=7002}"
+    : "${OCTANE_PORT:=18002}"
     : "${WS_HOST:=127.0.0.1}"
-    : "${WS_PORT:=8076}"
-    : "${CADDY_LISTEN_PORT:=8001}"
+    : "${WS_PORT:=18076}"
+    : "${CADDY_LISTEN_PORT:=8002}"
 else
     : "${OCTANE_HOST:=0.0.0.0}"
-    : "${OCTANE_PORT:=8001}"
+    : "${OCTANE_PORT:=8002}"
     : "${WS_HOST:=0.0.0.0}"
-    : "${WS_PORT:=8076}"
+    : "${WS_PORT:=18076}"
 fi
 export OCTANE_HOST OCTANE_PORT WS_HOST WS_PORT CADDY_LISTEN_PORT
 export OCTANE_INTERNAL_PORT="${OCTANE_PORT}"
