@@ -45,6 +45,12 @@ class ClientController extends Controller
 
         if (!$userService->isAvailable($user)) {
             HookManager::call('client.subscribe.unavailable');
+            if ((bool) admin_setting('subscribe_unavailable_tip_enable', false)) {
+                $tipServers = $this->buildUnavailableTipServers();
+                if (!empty($tipServers)) {
+                    return $this->doSubscribe($request, $user, $tipServers);
+                }
+            }
             return response('', 403, ['Content-Type' => 'text/plain']);
         }
 
@@ -85,6 +91,33 @@ class ClientController extends Controller
         ]);
 
         return $protocolInstance->handle();
+    }
+
+    private function buildUnavailableTipServers(): array
+    {
+        $linesRaw = (string) admin_setting(
+            'subscribe_unavailable_tip_lines',
+            "流量已用完或套餐已到期，请及时续费"
+        );
+        $lines = preg_split('/\r\n|\r|\n/', trim($linesRaw)) ?: [];
+
+        return collect($lines)
+            ->map(fn($line) => trim((string) $line))
+            ->filter()
+            ->map(fn($line) => [
+                'name' => $line,
+                'type' => 'shadowsocks',
+                'host' => '0.0.0.0',
+                'port' => 0,
+                'password' => Helper::guid(true),
+                'method' => '',
+                'protocol_settings' => [
+                    'cipher' => 'aes-256-gcm',
+                ],
+                'tags' => [],
+            ])
+            ->values()
+            ->all();
     }
 
     /**

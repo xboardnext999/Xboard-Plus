@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\ThemeService;
 use App\Services\UpdateService;
 use App\Support\Setting;
+use App\Models\Plugin;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use App\Services\Plugin\PluginManager;
@@ -48,6 +49,7 @@ class XboardUpdate extends Command
         $this->info('正在导入数据库请稍等...');
         Artisan::call("migrate", ['--force' => true]);
         $this->info(Artisan::output());
+        $this->migrateLineStatusTipPlus();
         $this->info('正在检查并安装默认插件...');
         PluginManager::installDefaultPlugins();
         $this->info('默认插件检查完成');
@@ -85,5 +87,27 @@ class XboardUpdate extends Command
             $setting->save($updates);
             $this->info('默认站点名称已更新为 Xboard Plus');
         }
+    }
+
+    private function migrateLineStatusTipPlus(): void
+    {
+        $plugin = Plugin::query()->where('code', 'line_status_tip_plus')->first();
+        if (!$plugin) {
+            return;
+        }
+
+        $config = json_decode((string) $plugin->config, true) ?: [];
+        $tipLines = trim((string) ($config['tip_lines'] ?? ''));
+        if ($tipLines === '') {
+            $tipLines = "流量已用完或套餐已到期，请及时续费";
+        }
+
+        app(Setting::class)->save([
+            'subscribe_unavailable_tip_enable' => (bool) $plugin->is_enabled,
+            'subscribe_unavailable_tip_lines' => $tipLines,
+        ]);
+
+        $plugin->delete();
+        $this->info('自定义线路提醒Plus插件配置已迁移到系统订阅设置');
     }
 }

@@ -83,6 +83,10 @@ class PluginManager
         if (!class_exists($pluginClass)) {
             $pluginFile = $this->getPluginPath($pluginCode) . '/Plugin.php';
             if (!File::exists($pluginFile)) {
+                if ($pluginCode === 'line_status_tip_plus') {
+                    Log::info("Plugin '{$pluginCode}' is pending built-in migration.");
+                    return null;
+                }
                 Log::warning("Plugin class file not found: {$pluginFile}");
                 Plugin::query()->where('code', $pluginCode)->delete();
                 return null;

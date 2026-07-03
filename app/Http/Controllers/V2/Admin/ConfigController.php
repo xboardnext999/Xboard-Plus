@@ -127,6 +127,8 @@ class ConfigController extends Controller
                 'change_order_event_id' => (int) admin_setting('change_order_event_id', 0),
                 'show_info_to_server_enable' => (bool) admin_setting('show_info_to_server_enable', 0),
                 'show_protocol_to_server_enable' => (bool) admin_setting('show_protocol_to_server_enable', 0),
+                'subscribe_unavailable_tip_enable' => (bool) admin_setting('subscribe_unavailable_tip_enable', 0),
+                'subscribe_unavailable_tip_lines' => admin_setting('subscribe_unavailable_tip_lines', "流量已用完或套餐已到期，请及时续费"),
                 'default_remind_expire' => (bool) admin_setting('default_remind_expire', 1),
                 'default_remind_traffic' => (bool) admin_setting('default_remind_traffic', 1),
                 'subscribe_path' => admin_setting('subscribe_path', 's'),
