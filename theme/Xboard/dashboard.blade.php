@@ -12,26 +12,7 @@
 
   <script>
     window.routerBase = "/";
-    window.settings = @json([
-      'title' => $title,
-      'assets_path' => '/theme-runtime/' . $theme . '/assets',
-      'theme' => [
-        'color' => $theme_config['theme_color'] ?? 'default',
-      ],
-      'version' => $version,
-      'background_url' => $theme_config['background_url'] ?? '',
-      'description' => $description,
-      'i18n' => [
-        'zh-CN',
-        'en-US',
-        'ja-JP',
-        'vi-VN',
-        'ko-KR',
-        'zh-TW',
-        'fa-IR',
-      ],
-      'logo' => $logo,
-    ])
+    window.settings = {!! $frontend_settings_json ?? '{}' !!};
   </script>
   <div id="app"></div>
   <script type="module" src="/theme-runtime/{{$theme}}/assets/app/main.js?v={{$version}}"></script>

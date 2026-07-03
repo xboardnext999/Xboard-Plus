@@ -75,13 +75,46 @@ Route::get('/', function (Request $request) {
             Log::info('Theme initialized in public directory', ['theme' => $theme]);
         }
 
+        $themeConfig = array_merge([
+            'theme_color' => 'default',
+            'background_url' => '',
+            'custom_html' => '',
+        ], $themeService->getConfig($theme) ?: []);
+
+        $frontendSettings = [
+            'title' => admin_setting('app_name', 'Xboard Plus'),
+            'assets_path' => '/theme-runtime/' . $theme . '/assets',
+            'theme' => [
+                'color' => $themeConfig['theme_color'],
+            ],
+            'version' => app(UpdateService::class)->getCurrentVersion(),
+            'background_url' => $themeConfig['background_url'],
+            'description' => admin_setting('app_description', 'Xboard Plus is best!'),
+            'i18n' => [
+                'zh-CN',
+                'en-US',
+                'ja-JP',
+                'vi-VN',
+                'ko-KR',
+                'zh-TW',
+                'fa-IR',
+            ],
+            'logo' => admin_setting('logo'),
+        ];
+
+        $frontendSettingsJson = json_encode(
+            $frontendSettings,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        ) ?: '{}';
+
         $renderParams = [
             'title' => admin_setting('app_name', 'Xboard Plus'),
             'theme' => $theme,
-            'version' => app(UpdateService::class)->getCurrentVersion(),
+            'version' => $frontendSettings['version'],
             'description' => admin_setting('app_description', 'Xboard Plus is best!'),
             'logo' => admin_setting('logo'),
-            'theme_config' => $themeService->getConfig($theme)
+            'theme_config' => $themeConfig,
+            'frontend_settings_json' => $frontendSettingsJson
         ];
         return view('theme::' . $theme . '.dashboard', $renderParams);
     } catch (Exception $e) {
