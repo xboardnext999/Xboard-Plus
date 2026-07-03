@@ -9,6 +9,7 @@ use App\Http\Controllers\V1\User\KnowledgeController;
 use App\Http\Controllers\V1\User\NoticeController;
 use App\Http\Controllers\V1\User\OrderController;
 use App\Http\Controllers\V1\User\PlanController;
+use App\Http\Controllers\V1\User\RechargeController;
 use App\Http\Controllers\V1\User\ServerController;
 use App\Http\Controllers\V1\User\StatController;
 use App\Http\Controllers\V1\User\TelegramController;
@@ -44,6 +45,14 @@ class UserRoute
             $router->get('/order/fetch', [OrderController::class, 'fetch']);
             $router->get('/order/getPaymentMethod', [OrderController::class, 'getPaymentMethod']);
             $router->post('/order/cancel', [OrderController::class, 'cancel']);
+            // Recharge
+            $router->post('/recharge/save', [RechargeController::class, 'save']);
+            $router->post('/recharge/checkout', [RechargeController::class, 'checkout']);
+            $router->get('/recharge/check', [RechargeController::class, 'check']);
+            $router->get('/recharge/detail', [RechargeController::class, 'detail']);
+            $router->get('/recharge/fetch', [RechargeController::class, 'fetch']);
+            $router->get('/recharge/getPaymentMethod', [RechargeController::class, 'getPaymentMethod']);
+            $router->post('/recharge/cancel', [RechargeController::class, 'cancel']);
             // Plan
             $router->get('/plan/fetch', [PlanController::class, 'fetch']);
             // Invite

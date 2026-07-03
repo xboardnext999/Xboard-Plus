@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>余额充值</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7fb;
+      --card: #fff;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #18a058;
+      --primary-dark: #12804a;
+      --danger: #d03050;
+      --warn: #f0a020;
+      --shadow: 0 12px 40px rgba(15, 23, 42, .08);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    .page { width: min(1080px, calc(100vw - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 28px; line-height: 1.25; }
+    .subtitle { margin-top: 6px; color: var(--muted); }
+    .back { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+    .card-head { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .card-title { margin: 0; font-size: 18px; line-height: 1.4; }
+    .card-body { padding: 20px; }
+    .balance { display: flex; align-items: baseline; gap: 8px; margin-bottom: 18px; }
+    .balance strong { font-size: 34px; line-height: 1; }
+    .form-row { margin-top: 16px; }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+    input { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; font-size: 15px; outline: none; }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24, 160, 88, .16); }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .preset, button { height: 38px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); padding: 0 14px; cursor: pointer; font-weight: 600; }
+    button.primary { width: 100%; height: 44px; margin-top: 18px; border-color: var(--primary); background: var(--primary); color: #fff; }
+    button.primary:hover { background: var(--primary-dark); }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    .methods { display: grid; gap: 10px; }
+    .method { display: flex; align-items: center; gap: 10px; width: 100%; height: auto; min-height: 48px; text-align: left; }
+    .method.active { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24, 160, 88, .14); }
+    .method img { width: 24px; height: 24px; object-fit: contain; }
+    .fee { margin-left: auto; color: var(--muted); font-weight: 500; }
+    .notice { margin-top: 14px; color: var(--muted); font-size: 13px; }
+    .payment-box { display: none; margin-top: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #f9fafb; overflow: auto; }
+    .payment-box.active { display: block; }
+    .payment-box img { max-width: 220px; height: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    th { color: var(--muted); font-size: 13px; font-weight: 600; }
+    tr:last-child td { border-bottom: 0; }
+    .status { display: inline-flex; align-items: center; justify-content: center; min-width: 58px; height: 24px; border-radius: 999px; padding: 0 10px; font-size: 12px; font-weight: 700; }
+    .pending { background: #fff7e6; color: var(--warn); }
+    .cancelled { background: #fff0f0; color: var(--danger); }
+    .completed { background: #edf7f2; color: var(--primary); }
+    .muted { color: var(--muted); }
+    .actions { display: flex; gap: 8px; }
+    .actions button { height: 30px; padding: 0 10px; font-size: 12px; }
+    .empty { padding: 26px 0; color: var(--muted); text-align: center; }
+    .toast { position: fixed; right: 18px; bottom: 18px; z-index: 10; display: none; max-width: 360px; padding: 12px 14px; border-radius: 8px; background: #111827; color: #fff; box-shadow: var(--shadow); }
+    .toast.active { display: block; }
+    @media (max-width: 760px) {
+      .page { width: min(100vw - 24px, 1080px); padding-top: 20px; }
+      .top { align-items: flex-start; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+      .table-wrap { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="top">
+      <div>
+        <h1>余额充值</h1>
+        <div class="subtitle">充值成功后金额会进入账户余额，可用于购买或续费订阅。</div>
+      </div>
+      <a class="back" href="/#/profile">返回个人中心</a>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head">
+          <h2 class="card-title">充值</h2>
+        </div>
+        <div class="card-body">
+          <div class="balance">
+            <strong id="balance">--</strong>
+            <span id="currency">CNY</span>
+          </div>
+          <div class="form-row">
+            <label for="amount">充值金额</label>
+            <input id="amount" type="number" min="0.01" step="0.01" placeholder="请输入充值金额">
+            <div class="presets">
+              <button class="preset" data-amount="10">10</button>
+              <button class="preset" data-amount="30">30</button>
+              <button class="preset" data-amount="50">50</button>
+              <button class="preset" data-amount="100">100</button>
+              <button class="preset" data-amount="200">200</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>支付方式</label>
+            <div id="methods" class="methods"><div class="muted">加载中...</div></div>
+          </div>
+          <button id="submit" class="primary" type="button">立即充值</button>
+          <div id="paymentBox" class="payment-box"></div>
+          <div class="notice">支付完成后页面会自动刷新余额。如果已经完成支付但状态未变化，请稍等几秒。</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2 class="card-title">充值记录</h2>
+        </div>
+        <div class="card-body table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>充值单号</th>
+                <th>金额</th>
+                <th>状态</th>
+                <th>时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="records">
+              <tr><td colspan="5" class="empty">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script>
+    const API_BASE = '/api/v1';
+    const statusText = { 0: '待支付', 1: '处理中', 2: '已取消', 3: '已完成' };
+    const statusClass = { 0: 'pending', 1: 'pending', 2: 'cancelled', 3: 'completed' };
+    let methods = [];
+    let selectedMethod = null;
+    let pollTimer = null;
+    let currentTradeNo = new URLSearchParams(location.search).get('trade_no') || '';
+
+    function token() {
+      try {
+        const raw = localStorage.getItem('Vue_Naive_access_token');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (!parsed.expire || parsed.expire > Date.now()) {
+            return parsed.value || '';
+          }
+        }
+      } catch (error) {}
+      const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function headers() {
+      const value = token();
+      return {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Language': 'zh-CN',
+        ...(value ? { Authorization: value } : {}),
+      };
+    }
+
+    function money(cents) {
+      return (Number(cents || 0) / 100).toFixed(2);
+    }
+
+    function time(ts) {
+      return ts ? new Date(Number(ts) * 1000).toLocaleString() : '-';
+    }
+
+    function toast(message) {
+      const el = document.getElementById('toast');
+      el.textContent = message;
+      el.classList.add('active');
+      setTimeout(() => el.classList.remove('active'), 2600);
+    }
+
+    async function request(path, options = {}) {
+      const response = await fetch(API_BASE + path, {
+        credentials: 'same-origin',
+        ...options,
+        headers: { ...headers(), ...(options.headers || {}) },
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || json.status === 'fail') {
+        throw new Error(json.message || '请求失败');
+      }
+      return json;
+    }
+
+    function post(path, data) {
+      const body = new URLSearchParams();
+      Object.entries(data).forEach(([key, value]) => body.append(key, value ?? ''));
+      return request(path, { method: 'POST', body });
+    }
+
+    async function loadUser() {
+      try {
+        const { data } = await request('/user/info');
+        document.getElementById('balance').textContent = money(data.balance);
+      } catch (error) {
+        toast(error.message || '请先登录');
+      }
+    }
+
+    async function loadMethods() {
+      const { data } = await request('/user/recharge/getPaymentMethod');
+      methods = data || [];
+      selectedMethod = methods[0]?.id || null;
+      renderMethods();
+    }
+
+    async function loadConfig() {
+      const { data } = await request('/user/comm/config');
+      if (data?.currency) {
+        document.getElementById('currency').textContent = data.currency;
+      }
+    }
+
+    function handlingFee(method, amount) {
+      if (!method || !amount) return 0;
+      return amount * Number(method.handling_fee_percent || 0) / 100 + Number(method.handling_fee_fixed || 0) / 100;
+    }
+
+    function renderMethods() {
+      const box = document.getElementById('methods');
+      if (!methods.length) {
+        box.innerHTML = '<div class="muted">暂无可用支付方式，请联系管理员配置支付。</div>';
+        return;
+      }
+      const amount = Number(document.getElementById('amount').value || 0);
+      box.innerHTML = methods.map(method => {
+        const active = Number(method.id) === Number(selectedMethod);
+        const fee = handlingFee(method, amount);
+        return `<button type="button" class="method ${active ? 'active' : ''}" data-id="${method.id}">
+          ${method.icon ? `<img src="${method.icon}" alt="">` : ''}
+          <span>${method.name || method.payment}</span>
+          ${fee > 0 ? `<span class="fee">手续费 ${fee.toFixed(2)}</span>` : ''}
+        </button>`;
+      }).join('');
+      box.querySelectorAll('.method').forEach(button => {
+        button.addEventListener('click', () => {
+          selectedMethod = Number(button.dataset.id);
+          renderMethods();
+        });
+      });
+    }
+
+    async function loadRecords() {
+      const { data } = await request('/user/recharge/fetch');
+      const rows = data || [];
+      document.getElementById('records').innerHTML = rows.length ? rows.map(record => `
+        <tr>
+          <td>${record.trade_no}</td>
+          <td>${money(record.amount)}</td>
+          <td><span class="status ${statusClass[record.status] || 'pending'}">${statusText[record.status] || record.status_text || '-'}</span></td>
+          <td>${time(record.created_at)}</td>
+          <td><div class="actions">
+            ${record.status === 0 ? `<button data-pay="${record.trade_no}">继续支付</button><button data-cancel="${record.trade_no}">取消</button>` : ''}
+          </div></td>
+        </tr>
+      `).join('') : '<tr><td colspan="5" class="empty">暂无充值记录</td></tr>';
+      document.querySelectorAll('[data-pay]').forEach(button => {
+        button.addEventListener('click', () => checkout(button.dataset.pay));
+      });
+      document.querySelectorAll('[data-cancel]').forEach(button => {
+        button.addEventListener('click', () => cancelRecharge(button.dataset.cancel));
+      });
+    }
+
+    async function createRecharge() {
+      const amount = Number(document.getElementById('amount').value);
+      if (!amount || amount <= 0) {
+        toast('请输入正确的充值金额');
+        return;
+      }
+      if (!selectedMethod) {
+        toast('请选择支付方式');
+        return;
+      }
+      const submit = document.getElementById('submit');
+      submit.disabled = true;
+      try {
+        const { data: tradeNo } = await post('/user/recharge/save', { amount });
+        await checkout(tradeNo);
+      } catch (error) {
+        toast(error.message);
+      } finally {
+        submit.disabled = false;
+      }
+    }
+
+    async function checkout(tradeNo) {
+      if (!selectedMethod) {
+        toast('请选择支付方式');
+        return;
+      }
+      currentTradeNo = tradeNo;
+      try {
+        const result = await post('/user/recharge/checkout', { trade_no: tradeNo, method: selectedMethod });
+        const box = document.getElementById('paymentBox');
+        if (result.type === 1) {
+          location.href = result.data;
+          return;
+        }
+        if (result.type === 0) {
+          box.innerHTML = result.data;
+          box.classList.add('active');
+        } else {
+          box.innerHTML = '<strong>支付请求已提交，请完成支付。</strong>';
+          box.classList.add('active');
+        }
+        startPolling(tradeNo);
+        await loadRecords();
+      } catch (error) {
+        toast(error.message);
+      }
+    }
+
+    async function cancelRecharge(tradeNo) {
+      try {
+        await post('/user/recharge/cancel', { trade_no: tradeNo });
+        toast('已取消');
+        await loadRecords();
+      } catch (error) {
+        toast(error.message);
+      }
+    }
+
+    function startPolling(tradeNo) {
+      clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        try {
+          const { data } = await request('/user/recharge/check?trade_no=' + encodeURIComponent(tradeNo));
+          if (Number(data) === 3) {
+            clearInterval(pollTimer);
+            toast('充值成功');
+            document.getElementById('paymentBox').classList.remove('active');
+            await loadUser();
+            await loadRecords();
+          }
+        } catch (error) {
+          clearInterval(pollTimer);
+        }
+      }, 2000);
+    }
+
+    document.querySelectorAll('.preset').forEach(button => {
+      button.addEventListener('click', () => {
+        document.getElementById('amount').value = button.dataset.amount;
+        renderMethods();
+      });
+    });
+    document.getElementById('amount').addEventListener('input', renderMethods);
+    document.getElementById('submit').addEventListener('click', createRecharge);
+
+    (async function init() {
+      if (!token()) {
+        toast('请先登录');
+      }
+      try {
+        await Promise.all([loadUser(), loadMethods(), loadRecords(), loadConfig()]);
+        if (currentTradeNo) {
+          startPolling(currentTradeNo);
+        }
+      } catch (error) {
+        toast(error.message);
+      }
+    })();
+  </script>
+</body>
+</html>

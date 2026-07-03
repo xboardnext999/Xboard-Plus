@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\File;
 
 Route::get('/node-sync-diagnostic', [NodeSyncDiagnosticController::class, 'dashboard']);
 Route::get('/node-sync-diagnostic/dashboard', [NodeSyncDiagnosticController::class, 'dashboard']);
+Route::get('/recharge', function () {
+    return response()->file(base_path('theme/Xboard/recharge.html'));
+});
 
 Route::get('/', function (Request $request) {
     if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {

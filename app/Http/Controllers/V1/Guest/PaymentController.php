@@ -4,8 +4,10 @@ namespace App\Http\Controllers\V1\Guest;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Recharge;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use App\Services\RechargeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Services\Plugin\HookManager;
@@ -33,20 +35,36 @@ class PaymentController extends Controller
         }
     }
 
-    private function handle($tradeNo, $callbackNo)
+    private function handle($tradeNo, $callbackNo): bool
     {
         $order = Order::where('trade_no', $tradeNo)->first();
-        if (!$order) {
-            return $this->fail([400202, 'order is not found']);
-        }
-        if ($order->status !== Order::STATUS_PENDING)
+        if ($order) {
+            if ($order->status !== Order::STATUS_PENDING) {
+                return true;
+            }
+            $orderService = new OrderService($order);
+            if (!$orderService->paid($callbackNo)) {
+                return false;
+            }
+
+            HookManager::call('payment.notify.success', $order);
             return true;
-        $orderService = new OrderService($order);
-        if (!$orderService->paid($callbackNo)) {
-            return false;
         }
 
-        HookManager::call('payment.notify.success', $order);
-        return true;
+        $recharge = Recharge::where('trade_no', $tradeNo)->first();
+        if ($recharge) {
+            if ($recharge->status === Recharge::STATUS_COMPLETED) {
+                return true;
+            }
+            $rechargeService = new RechargeService($recharge);
+            if (!$rechargeService->paid($callbackNo)) {
+                return false;
+            }
+
+            HookManager::call('recharge.notify.success', $recharge);
+            return true;
+        }
+
+        return false;
     }
 }
