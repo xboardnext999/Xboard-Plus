@@ -23,7 +23,14 @@ ARG REPO_URL=https://github.com/xboardnext999/Xboard-Plus.git
 ARG BRANCH_NAME=master
 
 RUN echo "Building local source with CACHEBUST: ${CACHEBUST}" && \
-    git config --global --add safe.directory /www
+    git config --global --add safe.directory /www && \
+    if [ ! -f public/assets/admin/manifest.json ]; then \
+        echo "Admin assets missing; fetching admin-dist branch..." && \
+        rm -rf public/assets/admin && \
+        git clone --depth 1 --branch admin-dist "${REPO_URL}" public/assets/admin && \
+        rm -rf public/assets/admin/.git; \
+    fi && \
+    test -f public/assets/admin/manifest.json
 
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY .docker/caddy/Caddyfile /etc/caddy/Caddyfile
