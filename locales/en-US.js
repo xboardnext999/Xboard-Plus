@@ -1249,6 +1249,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "title": "Show Protocol in Node Names",
         "description": "When enabled, subscription lines will include protocol names (e.g., [Hy2]Hong Kong)"
       },
+      "unavailable_tip_enable": {
+        "title": "Custom Line Reminder",
+        "description": "When enabled, unavailable users receive custom reminder lines in their subscription."
+      },
+      "unavailable_tip_lines": {
+        "title": "Reminder Line Content",
+        "placeholder": "Traffic is used up or the plan has expired. Please renew.",
+        "description": "Each line becomes one reminder node shown in the client."
+      },
       "saving": "Saving...",
       "plan": {
         "title": "Subscription Plans",

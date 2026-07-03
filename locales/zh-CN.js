@@ -1159,6 +1159,15 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "title": "在订阅中线路名称中显示协议名称",
         "description": "开启后订阅线路会附带协议名称（例如: [Hy2]香港）"
       },
+      "unavailable_tip_enable": {
+        "title": "自定义线路提醒",
+        "description": "开启后，当用户流量耗尽或套餐到期时，订阅将下发自定义提醒线路。"
+      },
+      "unavailable_tip_lines": {
+        "title": "提醒线路内容",
+        "placeholder": "流量已用完或套餐已到期，请及时续费",
+        "description": "每行生成一条提醒线路，适合在客户端醒目提示用户续费。"
+      },
       "saving": "保存中...",
       "plan": {
         "title": "订阅套餐",
