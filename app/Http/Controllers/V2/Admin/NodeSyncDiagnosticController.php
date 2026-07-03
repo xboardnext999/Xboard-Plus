@@ -952,23 +952,41 @@ class NodeSyncDiagnosticController extends Controller
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>节点数据分析</title>
   <style>
-    :root { --bg:#fff; --card:#fff; --text:#111827; --muted:#64748b; --line:#e5e7eb; --ok:#059669; --warn:#d97706; --bad:#dc2626; --brand:#2563eb; }
+    :root {
+      --background:0 0% 100%;
+      --foreground:222.2 84% 4.9%;
+      --card:0 0% 100%;
+      --card-foreground:222.2 84% 4.9%;
+      --primary:222.2 47.4% 11.2%;
+      --primary-foreground:210 40% 98%;
+      --muted:210 40% 96.1%;
+      --muted-foreground:215.4 16.3% 46.9%;
+      --border:214.3 31.8% 91.4%;
+      --input:214.3 31.8% 91.4%;
+      --ring:222.2 84% 4.9%;
+      --radius:.5rem;
+      --ok:#059669;
+      --warn:#d97706;
+      --bad:#dc2626;
+    }
     * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    .wrap { width:100%; margin:0; padding:0 0 40px; }
-    .top { display:block; margin-bottom:18px; }
-    h1 { margin:0; font-size:24px; line-height:1.3; font-weight:750; letter-spacing:0; }
-    h3 { margin:0 0 8px; font-size:18px; line-height:1.45; font-weight:700; }
-    .muted { color:var(--muted); }
-    .page-subtitle { margin-top:6px; font-size:14px; line-height:1.6; }
-    .btn { border:0; border-radius:8px; background:var(--brand); color:#fff; padding:10px 14px; cursor:pointer; font-weight:650; }
-    .btn.secondary { background:#111827; }
-    .btn.ghost { background:#fff; color:#111827; border:1px solid var(--line); }
-    .btn.small { min-width:68px; height:34px; padding:0 12px; font-size:13px; }
-    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
-    .metric { font-size:24px; font-weight:750; margin-top:4px; }
-    .rolling-metric { display:inline-flex; align-items:baseline; min-width:190px; font-size:16px; overflow:hidden; }
+    body { margin:0; background:hsl(var(--background)); color:hsl(var(--foreground)); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; -webkit-font-smoothing:antialiased; }
+    .wrap { width:100%; margin:0; padding:0 0 24px; }
+    .top { display:block; margin-bottom:16px; }
+    h1 { margin:0; font-size:1.5rem; line-height:2rem; font-weight:700; letter-spacing:-.025em; }
+    h3 { margin:0 0 8px; font-size:1rem; line-height:1.5rem; font-weight:600; letter-spacing:-.025em; }
+    .muted { color:hsl(var(--muted-foreground)); }
+    .page-subtitle { margin-top:.5rem; font-size:.875rem; line-height:1.25rem; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; height:36px; border:1px solid transparent; border-radius:calc(var(--radius) - 2px); background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); padding:0 16px; cursor:pointer; font-size:.875rem; line-height:1.25rem; font-weight:500; box-shadow:0 1px 2px rgba(0,0,0,.05); transition:background-color .15s ease,color .15s ease,border-color .15s ease; }
+    .btn:hover { background:hsl(var(--primary) / .9); }
+    .btn.secondary, .btn.ghost { background:hsl(var(--background)); color:hsl(var(--foreground)); border-color:hsl(var(--input)); }
+    .btn.secondary:hover, .btn.ghost:hover { background:hsl(var(--muted)); }
+    .btn.small { min-width:64px; height:32px; padding:0 12px; font-size:.75rem; line-height:1rem; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:16px; }
+    .card { background:hsl(var(--card)); color:hsl(var(--card-foreground)); border:1px solid hsl(var(--border)); border-radius:var(--radius); padding:16px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+    .card > .muted:first-child { font-size:.875rem; line-height:1.25rem; font-weight:500; }
+    .metric { font-size:1.25rem; line-height:1.75rem; font-weight:700; margin-top:4px; }
+    .rolling-metric { display:inline-flex; align-items:baseline; min-width:190px; font-size:1.25rem; overflow:hidden; }
     .roll-char { position:relative; display:inline-block; width:.64em; height:1.18em; overflow:hidden; vertical-align:bottom; }
     .roll-char.wide { width:auto; min-width:.34em; }
     .roll-old, .roll-new { display:block; height:1.18em; line-height:1.18; }
@@ -978,23 +996,26 @@ class NodeSyncDiagnosticController extends Controller
     .roll-char.changed .roll-new { animation:rollNew .42s cubic-bezier(.22,.61,.36,1) forwards; }
     @keyframes rollOld { to { transform:translateY(-100%); } }
     @keyframes rollNew { to { transform:translateY(-100%); } }
-    .tools-card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px; margin:16px 0; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+    .tools-card { background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:var(--radius); padding:12px; margin:16px 0; box-shadow:0 1px 2px rgba(0,0,0,.05); }
     .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0; }
     .toolbar + .toolbar { margin-top:10px; padding-top:10px; border-top:1px solid #eef2f7; }
     .toolbar .spacer { flex:1 1 auto; min-width:16px; }
-    .toolbar.compact input, .toolbar.compact select { height:36px; }
+    .toolbar.compact input, .toolbar.compact select { height:32px; }
+    .toolbar label { display:inline-flex; align-items:center; gap:6px; height:32px; font-size:.875rem; line-height:1.25rem; white-space:nowrap; }
+    .mini-toolbar input, .mini-toolbar select { height:32px; }
     .tool-search { min-width:260px; flex:1 1 260px; }
     .uuid-input { min-width:160px; }
-    input, select { height:40px; border:1px solid var(--line); border-radius:8px; padding:0 12px; min-width:180px; background:#fff; }
-    input:focus, select:focus { outline:none; border-color:#111827; box-shadow:0 0 0 2px rgba(17,24,39,.12); }
-    input[type="checkbox"] { accent-color:#111827; }
-    table { width:100%; border-collapse:separate; border-spacing:0; background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
-    th, td { padding:11px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; vertical-align:middle; }
-    th { background:#f8fafc; color:#475569; font-size:12px; }
+    input, select { height:36px; border:1px solid hsl(var(--input)); border-radius:calc(var(--radius) - 2px); padding:0 12px; min-width:180px; background:transparent; color:hsl(var(--foreground)); font-size:.875rem; line-height:1.25rem; box-shadow:0 1px 2px rgba(0,0,0,.05); transition:border-color .15s ease,box-shadow .15s ease; }
+    input::placeholder { color:hsl(var(--muted-foreground)); }
+    input:focus, select:focus { outline:none; box-shadow:0 0 0 1px hsl(var(--ring)); }
+    input[type="checkbox"] { width:16px; height:16px; min-width:auto; accent-color:hsl(var(--primary)); box-shadow:none; }
+    table { width:100%; border-collapse:separate; border-spacing:0; background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:var(--radius); overflow:hidden; font-size:.875rem; line-height:1.25rem; }
+    th, td { height:40px; padding:8px 12px; border-bottom:1px solid hsl(var(--border)); text-align:left; white-space:nowrap; vertical-align:middle; }
+    th { background:hsl(var(--background)); color:hsl(var(--muted-foreground)); font-size:.875rem; line-height:1.25rem; font-weight:500; }
     tr:last-child td { border-bottom:0; }
-    .name { white-space:normal; min-width:220px; font-weight:650; }
-    .tag { display:inline-flex; align-items:center; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:400; background:#eef2ff; color:#3730a3; }
-    .status-badge { display:inline-flex; align-items:center; justify-content:center; min-width:48px; height:26px; padding:0 10px; border-radius:7px; font-size:14px; font-weight:400; }
+    .name { white-space:normal; min-width:220px; font-weight:500; }
+    .tag { display:inline-flex; align-items:center; border-radius:999px; padding:2px 8px; font-size:.75rem; line-height:1rem; font-weight:500; background:#eef2ff; color:#3730a3; }
+    .status-badge { display:inline-flex; align-items:center; justify-content:center; min-width:48px; height:24px; padding:0 9px; border-radius:7px; font-size:.75rem; line-height:1rem; font-weight:500; }
     .status-badge.ok { background:#ecfdf5; color:#047857; }
     .status-badge.warn { background:#fff7ed; color:#c2410c; }
     .status-badge.bad { background:#fef2f2; color:#dc2626; }
@@ -1005,28 +1026,28 @@ class NodeSyncDiagnosticController extends Controller
     .mini-toolbar { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0 12px; }
     .panel { margin-top:16px; }
     .detail-card { padding:0; overflow:hidden; }
-    .tabs { display:inline-flex; align-items:center; gap:6px; padding:4px; border:1px solid var(--line); border-radius:8px; background:#f8fafc; }
+    .tabs { display:inline-flex; align-items:center; gap:6px; padding:4px; border:1px solid hsl(var(--border)); border-radius:var(--radius); background:hsl(var(--muted)); }
     .tab-btn { border:0; border-radius:6px; background:transparent; color:#475569; height:32px; padding:0 12px; cursor:pointer; font-weight:500; }
-    .tab-btn.active { background:#111827; color:#fff; }
+    .tab-btn.active { background:hsl(var(--background)); color:hsl(var(--foreground)); box-shadow:0 1px 2px rgba(0,0,0,.05); }
     .tab-panel { display:block; padding:16px; }
-    .table-wrap { width:100%; max-height:520px; overflow:auto; border:1px solid #dfe7f1; border-radius:8px; background:#fff; }
+    .table-wrap { width:100%; max-height:520px; overflow:auto; border:1px solid hsl(var(--border)); border-radius:var(--radius); background:hsl(var(--card)); }
     .table-wrap table { border:0; border-radius:0; min-width:980px; }
-    .data-table th { height:43px; color:#64748b; font-size:14px; font-weight:750; background:#fff; border-bottom:1px solid #dfe7f1; vertical-align:middle; }
-    .data-table td { height:43px; font-size:14px; font-weight:400; border-bottom:1px solid #dfe7f1; padding-top:6px; padding-bottom:6px; vertical-align:middle; }
+    .data-table th { height:40px; color:hsl(var(--muted-foreground)); font-size:.875rem; font-weight:500; background:hsl(var(--background)); border-bottom:1px solid hsl(var(--border)); vertical-align:middle; }
+    .data-table td { height:40px; font-size:.875rem; font-weight:400; border-bottom:1px solid hsl(var(--border)); padding-top:6px; padding-bottom:6px; vertical-align:middle; }
     .data-table tr:last-child td { border-bottom:0; }
-    .id-pill { display:inline-flex; align-items:center; justify-content:center; min-width:54px; height:24px; padding:0 9px; border:1px solid #dfe7f1; border-radius:7px; background:#fff; box-shadow:0 1px 2px rgba(15,23,42,.04); font-weight:400; color:#111827; }
+    .id-pill { display:inline-flex; align-items:center; justify-content:center; min-width:54px; height:24px; padding:0 9px; border:1px solid hsl(var(--border)); border-radius:7px; background:hsl(var(--background)); box-shadow:0 1px 2px rgba(0,0,0,.05); font-size:.75rem; line-height:1rem; font-weight:500; color:hsl(var(--foreground)); }
     .user-cell { display:inline-flex; align-items:center; gap:8px; min-width:190px; font-weight:400; vertical-align:middle; }
     .status-dot { width:13px; height:13px; border-radius:999px; background:#d1d5db; border:2px solid #f3f4f6; flex:0 0 auto; }
     .status-dot.online { background:#22c55e; border-color:#dcfce7; }
-    .count-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border:1px solid #9ca3af; border-radius:7px; background:#f8fafc; font-weight:400; }
-    .status-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:#fff; box-shadow:0 1px 4px rgba(15,23,42,.08); font-weight:400; }
-    .status-pill.ok { color:#111827; }
+    .count-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border:1px solid hsl(var(--border)); border-radius:7px; background:hsl(var(--muted)); font-size:.75rem; line-height:1rem; font-weight:500; }
+    .status-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:hsl(var(--background)); box-shadow:0 1px 2px rgba(0,0,0,.05); font-size:.75rem; line-height:1rem; font-weight:500; }
+    .status-pill.ok { color:hsl(var(--foreground)); }
     .status-pill.bad { color:#dc2626; }
-    .sync-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:#eef2ff; color:#3730a3; font-weight:400; }
+    .sync-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:#eef2ff; color:#3730a3; font-size:.75rem; line-height:1rem; font-weight:500; }
     .sync-pill.ok { background:#ecfdf5; color:#047857; }
     .sync-pill.wait { background:#fff7ed; color:#c2410c; }
     .sync-pill.muted-pill { background:#f1f5f9; color:#64748b; }
-    .table-message { text-align:center; color:var(--muted); padding:28px 12px; }
+    .table-message { text-align:center; color:hsl(var(--muted-foreground)); padding:24px 12px; }
     .access-table th, .access-table td { vertical-align:middle; }
     .access-table .target { white-space:normal; min-width:280px; word-break:break-all; }
     .access-table .email { min-width:210px; }
@@ -1060,8 +1081,8 @@ class NodeSyncDiagnosticController extends Controller
       <select id="typeFilter" onchange="renderTable()"><option value="">全部协议</option></select>
       <select id="nodeStatusFilter" onchange="renderTable()"><option value="">全部节点状态</option><option value="online">在线</option><option value="online_no_push">未上报</option><option value="offline">离线</option></select>
       <select id="syncStatusFilter" onchange="renderTable()"><option value="">全部同步状态</option><option value="normal">正常</option><option value="warning">异常</option><option value="blocked">已拦截</option></select>
-      <label class="muted"><input id="includeHidden" type="checkbox" style="min-width:auto;height:auto" onchange="loadSummary()"> 显示隐藏节点</label>
-      <label class="muted"><input id="autoRefresh" type="checkbox" checked style="min-width:auto;height:auto" onchange="resetAutoRefresh()"> 实时更新</label>
+      <label class="muted"><input id="includeHidden" type="checkbox" onchange="loadSummary()"> 显示隐藏节点</label>
+      <label class="muted"><input id="autoRefresh" type="checkbox" checked onchange="resetAutoRefresh()"> 实时更新</label>
       </div>
     </div>
     <table class="node-table">
