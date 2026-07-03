@@ -57,17 +57,17 @@ const periods = [
 ];
 
 const navItems = [
-  { key: 'dashboard', label: '控制台', group: '概览', icon: 'grid' },
-  { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'link' },
-  { key: 'nodes', label: '节点列表', group: '订阅', icon: 'server' },
-  { key: 'traffic', label: '流量明细', group: '订阅', icon: 'chart' },
-  { key: 'plans', label: '套餐购买', group: '财务', icon: 'plan' },
+  { key: 'dashboard', label: '仪表盘', group: '概览', icon: 'dashboard.webp' },
+  { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
+  { key: 'nodes', label: '节点列表', group: '订阅', icon: 'node.webp' },
+  { key: 'traffic', label: '流量明细', group: '订阅', icon: 'traffic.webp' },
+  { key: 'plans', label: '套餐购买', group: '财务', icon: 'plan.webp' },
   { key: 'recharge', label: '余额充值', group: '财务', icon: 'wallet' },
-  { key: 'orders', label: '订单记录', group: '财务', icon: 'order' },
-  { key: 'tickets', label: '工单', group: '支持', icon: 'ticket' },
-  { key: 'knowledge', label: '知识库', group: '支持', icon: 'book' },
-  { key: 'invite', label: '邀请返佣', group: '账户', icon: 'invite' },
-  { key: 'profile', label: '账户设置', group: '账户', icon: 'gear' },
+  { key: 'orders', label: '订单记录', group: '财务', icon: 'order.webp' },
+  { key: 'tickets', label: '工单中心', group: '支持', icon: 'ticket.webp' },
+  { key: 'knowledge', label: '知识库', group: '支持', icon: 'knowledge.webp' },
+  { key: 'invite', label: '邀请好友', group: '账户', icon: 'invite.webp' },
+  { key: 'profile', label: '帐号设置', group: '账户', icon: 'profile.webp' },
 ];
 
 const publicRoutes = new Set(['login', 'register', 'forgot']);
@@ -195,7 +195,23 @@ async function refreshUser() {
 }
 
 function currentTitle(name) {
-  return navItems.find((item) => item.key === name)?.label || '控制台';
+  return navItems.find((item) => item.key === name)?.label || '仪表盘';
+}
+
+function appAsset(file) {
+  const base = settings.assets_path || '/theme/Xboard/assets';
+  return `${base.replace(/\/$/, '')}/app/${file.replace(/^\//, '')}`;
+}
+
+function logoMarkup() {
+  return `<img class="brand-logo" src="${escapeHtml(appAsset('icons/XboardPlus_logo.png'))}" alt="">`;
+}
+
+function navIconMarkup(item) {
+  if (/\.(webp|png|jpe?g|svg)$/i.test(item.icon)) {
+    return `<img class="nav-icon-image" src="${escapeHtml(appAsset(`icons/${item.icon}`))}" alt="">`;
+  }
+  return `<i class="nav-icon ${escapeHtml(item.icon)}"></i>`;
 }
 
 function shell(content, title, subtitle, meta = {}) {
@@ -219,7 +235,7 @@ function shell(content, title, subtitle, meta = {}) {
     <div class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="#/dashboard" aria-label="${escapeHtml(appName)}">
-          ${settings.logo ? `<img src="${escapeHtml(settings.logo)}" alt="">` : '<span class="brand-mark" aria-hidden="true"></span>'}
+          ${logoMarkup()}
           <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
         </a>
         <button class="collapse-button" data-toggle-menu type="button" aria-label="收起菜单">‹</button>
@@ -233,7 +249,7 @@ function shell(content, title, subtitle, meta = {}) {
               <span>${escapeHtml(group)}</span>
               ${items.map((item) => `
                 <a class="nav-item ${active === item.key ? 'active' : ''}" href="#/${item.key}">
-                  <i class="nav-icon ${escapeHtml(item.icon)}"></i>
+                  ${navIconMarkup(item)}
                   <b>${escapeHtml(item.label)}</b>
                   ${item.key === 'tickets' && Number(state.stat?.[0] || 0) > 0 ? `<em>${escapeHtml(state.stat[0])}</em>` : ''}
                 </a>
@@ -286,7 +302,7 @@ function authShell(content) {
       <section class="auth-shell">
         <div class="auth-visual">
           <a class="brand" href="#/login" aria-label="${escapeHtml(appName)}">
-            ${settings.logo ? `<img src="${escapeHtml(settings.logo)}" alt="">` : '<span class="brand-mark" aria-hidden="true"></span>'}
+            ${logoMarkup()}
             <span><b>${escapeHtml(appName)}</b><small>Premium Network</small></span>
           </a>
           <section class="page-hero">

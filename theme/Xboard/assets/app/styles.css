@@ -157,11 +157,11 @@ td {
   padding: 0 20px;
 }
 
-.brand img,
-.auth-brand img {
-  width: 32px;
-  height: 32px;
+.brand-logo {
+  width: 34px;
+  height: 34px;
   object-fit: contain;
+  flex: 0 0 auto;
 }
 
 .brand b {
@@ -295,6 +295,19 @@ td {
   border-radius: 7px;
   opacity: 0.92;
   flex: 0 0 auto;
+}
+
+.nav-icon-image {
+  width: 21px;
+  height: 21px;
+  object-fit: contain;
+  opacity: 0.78;
+  flex: 0 0 auto;
+}
+
+.nav-item:hover .nav-icon-image,
+.nav-item.active .nav-icon-image {
+  opacity: 1;
 }
 
 .nav-icon.grid {
