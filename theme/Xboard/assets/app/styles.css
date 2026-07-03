@@ -300,9 +300,11 @@ td {
 .nav-icon-image {
   width: 21px;
   height: 21px;
-  object-fit: contain;
-  opacity: 0.78;
+  background: currentColor;
+  opacity: 0.92;
   flex: 0 0 auto;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+  mask: var(--icon-url) center / contain no-repeat;
 }
 
 .nav-item:hover .nav-icon-image,

@@ -209,7 +209,7 @@ function logoMarkup() {
 
 function navIconMarkup(item) {
   if (/\.(webp|png|jpe?g|svg)$/i.test(item.icon)) {
-    return `<img class="nav-icon-image" src="${escapeHtml(appAsset(`icons/${item.icon}`))}" alt="">`;
+    return `<span class="nav-icon-image" style="--icon-url: url('${escapeHtml(appAsset(`icons/${item.icon}`))}')" aria-hidden="true"></span>`;
   }
   return `<i class="nav-icon ${escapeHtml(item.icon)}"></i>`;
 }
