@@ -579,15 +579,15 @@ td {
 .theme-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   min-height: 34px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--control-bg);
   color: var(--soft);
-  padding: 0 11px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 0;
 }
 
 .theme-toggle:hover {
@@ -595,22 +595,12 @@ td {
   border-color: var(--line-strong);
 }
 
-.theme-icon {
-  position: relative;
-  width: 13px;
-  height: 13px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-}
-
-:root[data-theme="dark"] .theme-icon {
-  border-color: currentColor;
-  box-shadow: inset -4px -2px 0 0 var(--bg);
-}
-
-:root[data-theme="light"] .theme-icon {
-  background: currentColor;
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+.theme-toggle-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .user-menu {

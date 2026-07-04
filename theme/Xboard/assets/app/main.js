@@ -484,13 +484,15 @@ const AppShell = {
               h('button', {
                 class: 'theme-toggle',
                 type: 'button',
-                'aria-label': '切换白天和暗黑模式',
-                title: '切换白天和暗黑模式',
+                'aria-label': state.theme === 'light' ? '切换到暗黑模式' : '切换到白天模式',
+                title: state.theme === 'light' ? '切换到暗黑模式' : '切换到白天模式',
                 onClick: () => { state.theme = state.theme === 'light' ? 'dark' : 'light'; },
-              }, [
-                h('span', { class: 'theme-icon', 'aria-hidden': 'true' }),
-                h('span', { class: 'theme-label' }, state.theme === 'light' ? '暗黑' : '白天'),
-              ]),
+              }, h('img', {
+                class: 'theme-toggle-icon',
+                src: appAsset(state.theme === 'light' ? 'icons/theme-dark.webp' : 'icons/theme-white.webp'),
+                alt: '',
+                'aria-hidden': 'true',
+              })),
               h('span', { class: 'round-chip' }, 'CN'),
               h('div', { class: ['user-menu', state.userMenuOpen ? 'is-open' : ''] }, [
                 h('button', {
