@@ -54,8 +54,39 @@
     document.head.appendChild(style);
   }
 
+  function inputLooksLikeLogo(input) {
+    if (!input || input.type === 'file' || input.type === 'hidden') return false;
+    var text = [
+      input.name,
+      input.id,
+      input.getAttribute('aria-label'),
+      input.getAttribute('placeholder')
+    ].filter(Boolean).join(' ');
+    return /logo/i.test(text);
+  }
+
+  function findInputNearLogoLabel() {
+    var candidates = Array.prototype.slice.call(document.querySelectorAll('label, span, div, p'));
+    for (var i = 0; i < candidates.length; i += 1) {
+      var label = candidates[i];
+      if (String(label.textContent || '').trim().toLowerCase() !== 'logo') continue;
+      var node = label;
+      for (var depth = 0; node && depth < 8; depth += 1, node = node.parentElement) {
+        var input = node.querySelector && node.querySelector('input:not([type="file"]):not([type="hidden"])');
+        if (input) return input;
+      }
+    }
+    return null;
+  }
+
+  function findLogoInput() {
+    return document.querySelector('input[name="logo"]')
+      || Array.prototype.slice.call(document.querySelectorAll('input')).find(inputLooksLikeLogo)
+      || findInputNearLogoLabel();
+  }
+
   function enhanceLogoInput() {
-    var input = document.querySelector('input[name="logo"]');
+    var input = findLogoInput();
     if (!input || input.dataset.logoUploadReady === '1') return;
 
     input.dataset.logoUploadReady = '1';
@@ -156,6 +187,14 @@
 
   var observer = new MutationObserver(enhanceLogoInput);
   observer.observe(document.documentElement, { childList: true, subtree: true });
+  var retryCount = 0;
+  var retryTimer = setInterval(function () {
+    enhanceLogoInput();
+    retryCount += 1;
+    if (document.querySelector('.xboard-logo-upload') || retryCount > 40) {
+      clearInterval(retryTimer);
+    }
+  }, 500);
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', enhanceLogoInput);
   } else {
