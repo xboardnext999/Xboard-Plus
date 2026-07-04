@@ -625,15 +625,8 @@ td {
 
 .language-menu {
   position: relative;
-}
-
-.language-menu::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: 190px;
-  height: 10px;
+  margin-bottom: -10px;
+  padding-bottom: 10px;
 }
 
 .language-trigger {
@@ -678,7 +671,7 @@ td {
 
 .language-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% - 2px);
   right: 0;
   z-index: 32;
   display: grid;
@@ -755,15 +748,8 @@ td {
 
 .user-menu {
   position: relative;
-}
-
-.user-menu::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: 178px;
-  height: 12px;
+  margin-bottom: -12px;
+  padding-bottom: 12px;
 }
 
 .avatar-chip {
@@ -786,7 +772,7 @@ td {
 
 .user-dropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% - 2px);
   right: 0;
   z-index: 30;
   width: 178px;

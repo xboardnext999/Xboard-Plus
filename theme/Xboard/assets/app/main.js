@@ -227,7 +227,7 @@ function openLanguageMenu() {
   state.languageMenuOpen = true;
 }
 
-function closeLanguageMenu(delay = 260) {
+function closeLanguageMenu(delay = 520) {
   clearTimeout(languageCloseTimer);
   languageCloseTimer = setTimeout(() => {
     state.languageMenuOpen = false;
@@ -241,7 +241,7 @@ function openUserMenu() {
   state.userMenuOpen = true;
 }
 
-function closeUserMenu(delay = 260) {
+function closeUserMenu(delay = 520) {
   clearTimeout(userCloseTimer);
   userCloseTimer = setTimeout(() => {
     state.userMenuOpen = false;
