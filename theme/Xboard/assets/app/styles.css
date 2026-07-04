@@ -61,7 +61,7 @@
   --body-bg: #fff;
   --shell-bg: #fff;
   --sidebar-bg: #fff;
-  --workspace-bg: #fff;
+  --workspace-bg: #f6f8fb;
   --topbar-bg: #fff;
   --nav-hover-bg: rgba(15, 23, 42, 0.055);
   --nav-active-bg: linear-gradient(90deg, rgba(15, 23, 42, 0.10), rgba(15, 23, 42, 0.035));
@@ -255,6 +255,12 @@ td {
 
 .brand-text-only {
   gap: 0;
+}
+
+.sidebar .brand-text-only {
+  justify-content: center;
+  text-align: center;
+  padding: 0 12px;
 }
 
 .brand-logo {
