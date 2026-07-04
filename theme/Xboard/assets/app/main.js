@@ -584,7 +584,11 @@ const AppShell = {
                     state.languageMenuOpen = false;
                     state.userMenuOpen = !state.userMenuOpen;
                   },
-                }, [h('img', { class: 'avatar-thumb', src: userAvatarUrl(user), alt: '' })]),
+                }, [
+                  h('img', { class: 'avatar-thumb', src: userAvatarUrl(user), alt: '' }),
+                  h('span', { class: 'avatar-name' }, userDisplayName(user)),
+                  h('span', { class: 'avatar-caret', 'aria-hidden': 'true' }),
+                ]),
                 h('div', { class: 'user-dropdown', role: 'menu' }, [
                   h('div', { class: 'user-dropdown-head' }, [
                     h('strong', userDisplayName(user)),
