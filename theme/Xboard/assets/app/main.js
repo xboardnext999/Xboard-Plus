@@ -165,10 +165,6 @@ function emptyView(text = '暂无数据') {
   return `<div class="empty">${escapeHtml(text)}</div>`;
 }
 
-function formatTitle(title) {
-  return escapeHtml(title).replaceAll('\n', '<br>');
-}
-
 function userInitial() {
   return escapeHtml(userDisplayName().slice(0, 1).toUpperCase());
 }
@@ -289,18 +285,10 @@ function shell(content, title, subtitle, meta = {}) {
   const appName = settings.title || 'Xboard Plus';
   const user = state.user;
   const currentMeta = routeMeta(active);
-  const status = meta.status || '账户状态：已连接';
   const crumbGroup = meta.crumbGroup ?? currentMeta.group;
   const userEmail = user?.email || '当前账号';
   const userName = userDisplayName(user);
-  const stats = meta.stats || [
-    { label: '余额', value: money(user?.balance, currencySymbol()) },
-    { label: '套餐', value: state.subscribe?.plan?.name || '未订阅' },
-    { label: '工单', value: String(state.stat?.[0] ?? 0) },
-  ];
   const groups = navGroups();
-  const showSummary = !meta.hideSummary;
-  const showHero = !meta.hideHero;
 
   return `
     <div class="app-shell">
@@ -355,14 +343,6 @@ function shell(content, title, subtitle, meta = {}) {
           </div>
         </header>
         <section class="content">
-          ${showSummary ? `<div class="status-strip">
-            ${stats.map((item) => `<span>${escapeHtml(item.label)} <b>${escapeHtml(item.value)}</b></span>`).join('')}
-          </div>` : ''}
-          ${showHero ? `<section class="page-hero">
-            <p><i></i>${escapeHtml(status)}</p>
-            <h1>${formatTitle(title)}</h1>
-            ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ''}
-          </section>` : ''}
           ${content}
         </section>
       </main>
@@ -639,8 +619,6 @@ async function dashboardView() {
     ],
     crumbGroup: '',
     crumbTitle: '仪表盘',
-    hideSummary: true,
-    hideHero: true,
   });
 }
 
