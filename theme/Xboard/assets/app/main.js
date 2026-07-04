@@ -285,7 +285,6 @@ function shell(content, title, subtitle, meta = {}) {
   const appName = settings.title || 'Xboard Plus';
   const user = state.user;
   const currentMeta = routeMeta(active);
-  const crumbGroup = meta.crumbGroup ?? currentMeta.group;
   const userEmail = user?.email || '当前账号';
   const userName = userDisplayName(user);
   const groups = navGroups();
@@ -320,8 +319,7 @@ function shell(content, title, subtitle, meta = {}) {
               <span class="collapse-icon collapse-icon-collapse" style="--icon-url: url('${escapeHtml(appAsset('icons/Collapse.webp'))}')" aria-hidden="true"></span>
               <span class="collapse-icon collapse-icon-expand" style="--icon-url: url('${escapeHtml(appAsset('icons/Expand.webp'))}')" aria-hidden="true"></span>
             </button>
-            ${crumbGroup ? `<span>${escapeHtml(crumbGroup)}</span><b>/</b>` : ''}
-            <strong>${escapeHtml(meta.crumbTitle || currentMeta.label)}</strong>
+            <strong>${escapeHtml(currentMeta.label)}</strong>
           </div>
           <div class="top-actions">
             <button class="theme-toggle" data-toggle-theme type="button" aria-label="切换白天和暗黑模式" title="切换白天和暗黑模式">
@@ -617,8 +615,6 @@ async function dashboardView() {
       { label: '节点', value: `${serverList.length ? onlineCount : 0} 在线` },
       { label: '用量', value: `${usage.ratio}%` },
     ],
-    crumbGroup: '',
-    crumbTitle: '仪表盘',
   });
 }
 
@@ -688,8 +684,6 @@ async function subscribeView() {
       { label: '重置', value: subscribe.reset_day ?? '-' },
       { label: '倍率', value: '自动' },
     ],
-    crumbGroup: '订阅',
-    crumbTitle: '访问',
   });
 }
 
@@ -729,8 +723,6 @@ async function plansView() {
       { label: '套餐数', value: String(plans.length) },
       { label: '优惠券', value: '可用' },
     ],
-    crumbGroup: '财务',
-    crumbTitle: '套餐',
   });
 }
 
@@ -847,8 +839,6 @@ async function rechargeView(params) {
       { label: '充值单', value: String(records.length) },
       { label: '优惠券', value: '可用' },
     ],
-    crumbGroup: '财务',
-    crumbTitle: '充值',
   });
 }
 
