@@ -249,8 +249,8 @@ td {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 76px;
-  min-height: 76px;
+  height: 58px;
+  min-height: 58px;
   padding: 0 20px;
 }
 
@@ -525,8 +525,8 @@ td {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  height: 76px;
-  min-height: 76px;
+  height: 58px;
+  min-height: 58px;
   padding: 0 28px;
   background: var(--topbar-bg);
   backdrop-filter: blur(18px);
