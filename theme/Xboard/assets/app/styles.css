@@ -698,7 +698,6 @@ td {
 }
 
 .language-menu.is-open .language-dropdown,
-.language-menu:hover .language-dropdown,
 .language-menu:focus-within .language-dropdown {
   opacity: 1;
   pointer-events: auto;
@@ -803,7 +802,6 @@ td {
 }
 
 .user-menu.is-open .user-dropdown,
-.user-menu:hover .user-dropdown,
 .user-menu:focus-within .user-dropdown {
   opacity: 1;
   pointer-events: auto;

@@ -216,7 +216,37 @@ const state = reactive({
 
 let bootPromise = null;
 let progressTimer = null;
+let languageCloseTimer = null;
+let userCloseTimer = null;
 let toastId = 0;
+
+function openLanguageMenu() {
+  clearTimeout(languageCloseTimer);
+  clearTimeout(userCloseTimer);
+  state.userMenuOpen = false;
+  state.languageMenuOpen = true;
+}
+
+function closeLanguageMenu(delay = 260) {
+  clearTimeout(languageCloseTimer);
+  languageCloseTimer = setTimeout(() => {
+    state.languageMenuOpen = false;
+  }, delay);
+}
+
+function openUserMenu() {
+  clearTimeout(userCloseTimer);
+  clearTimeout(languageCloseTimer);
+  state.languageMenuOpen = false;
+  state.userMenuOpen = true;
+}
+
+function closeUserMenu(delay = 260) {
+  clearTimeout(userCloseTimer);
+  userCloseTimer = setTimeout(() => {
+    state.userMenuOpen = false;
+  }, delay);
+}
 
 function startProgress() {
   clearTimeout(progressTimer);
@@ -542,7 +572,11 @@ const AppShell = {
                 alt: '',
                 'aria-hidden': 'true',
               })),
-              h('div', { class: ['language-menu', state.languageMenuOpen ? 'is-open' : ''] }, [
+              h('div', {
+                class: ['language-menu', state.languageMenuOpen ? 'is-open' : ''],
+                onMouseenter: openLanguageMenu,
+                onMouseleave: () => closeLanguageMenu(),
+              }, [
                 h('button', {
                   class: 'language-trigger',
                   type: 'button',
@@ -551,8 +585,11 @@ const AppShell = {
                   title: '选择语言',
                   onClick: (event) => {
                     event.stopPropagation();
-                    state.userMenuOpen = false;
-                    state.languageMenuOpen = !state.languageMenuOpen;
+                    if (state.languageMenuOpen) {
+                      closeLanguageMenu(0);
+                    } else {
+                      openLanguageMenu();
+                    }
                   },
                 }, h('img', {
                   class: 'language-trigger-icon',
@@ -575,7 +612,11 @@ const AppShell = {
                   item.code === language.code ? h('b', '✓') : null,
                 ]))),
               ]),
-              h('div', { class: ['user-menu', state.userMenuOpen ? 'is-open' : ''] }, [
+              h('div', {
+                class: ['user-menu', state.userMenuOpen ? 'is-open' : ''],
+                onMouseenter: openUserMenu,
+                onMouseleave: () => closeUserMenu(),
+              }, [
                 h('button', {
                   class: 'avatar-chip',
                   type: 'button',
@@ -583,8 +624,11 @@ const AppShell = {
                   'aria-expanded': state.userMenuOpen ? 'true' : 'false',
                   onClick: (event) => {
                     event.stopPropagation();
-                    state.languageMenuOpen = false;
-                    state.userMenuOpen = !state.userMenuOpen;
+                    if (state.userMenuOpen) {
+                      closeUserMenu(0);
+                    } else {
+                      openUserMenu();
+                    }
                   },
                 }, [h('img', { class: 'avatar-thumb', src: userAvatarUrl(user), alt: '' })]),
                 h('div', { class: 'user-dropdown', role: 'menu' }, [
