@@ -621,7 +621,7 @@ td {
   gap: 7px;
   height: 34px;
   min-width: 64px;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 999px;
   background: var(--control-bg);
   color: var(--text);
@@ -631,7 +631,7 @@ td {
 }
 
 .language-trigger:hover {
-  border-color: var(--line-strong);
+  background: var(--panel-soft);
 }
 
 :root[data-theme="light"] .language-trigger {
@@ -742,27 +742,6 @@ td {
   flex: 0 0 34px;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.avatar-name {
-  max-width: 110px;
-  overflow: hidden;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.avatar-caret {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  color: var(--soft);
-  transform: rotate(45deg) translateY(-2px);
 }
 
 .user-dropdown {
