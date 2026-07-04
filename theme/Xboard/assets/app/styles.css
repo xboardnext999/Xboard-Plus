@@ -633,6 +633,10 @@ td {
   border-color: var(--line-strong);
 }
 
+:root[data-theme="light"] .language-trigger {
+  background: #fff;
+}
+
 .language-trigger img {
   display: block;
   width: 23px;
