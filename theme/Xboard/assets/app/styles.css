@@ -92,6 +92,46 @@ body {
   letter-spacing: 0;
 }
 
+.route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+.route-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--primary), var(--primary-strong));
+  transform: translateX(-100%) scaleX(0.34);
+  transform-origin: left center;
+}
+
+.route-progress.is-active {
+  opacity: 1;
+}
+
+.route-progress.is-active span {
+  animation: routeProgress 1s ease-in-out infinite;
+}
+
+.route-progress.is-finishing {
+  opacity: 0;
+}
+
+.route-progress.is-finishing span {
+  animation: none;
+  transform: translateX(0) scaleX(1);
+  transition: transform 0.18s ease;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -1139,23 +1179,6 @@ td {
   padding: 18px;
 }
 
-.loading-panel {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  gap: 12px;
-  color: var(--muted);
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.14);
-  border-top-color: var(--primary);
-  animation: spin 0.8s linear infinite;
-}
-
 .subscription-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.42fr) minmax(240px, 0.62fr);
@@ -1577,9 +1600,17 @@ td {
   color: var(--red);
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@keyframes routeProgress {
+  0% {
+    transform: translateX(-100%) scaleX(0.34);
+  }
+
+  55% {
+    transform: translateX(-12%) scaleX(0.72);
+  }
+
+  100% {
+    transform: translateX(100%) scaleX(0.38);
   }
 }
 

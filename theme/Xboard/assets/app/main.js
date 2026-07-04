@@ -25,7 +25,6 @@ const state = {
   stat: [0, 0, 0],
   booted: false,
   bootPromise: null,
-  hasRendered: false,
 };
 
 const orderStatus = {
@@ -59,11 +58,10 @@ const periods = [
 ];
 
 const navItems = [
-  { key: 'dashboard', label: '仪表盘', group: '概览', icon: 'dashboard.webp' },
-  { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
-  { key: 'plans', label: '购买套餐', group: '订阅', icon: 'plan.webp' },
-  { key: 'recharge', label: '充值余额', group: '订阅', icon: 'wallet.webp' },
-  { key: 'invite', label: '邀请好友', group: '订阅', icon: 'invite.webp' },
+  { key: 'dashboard', label: '仪表盘', group: '', icon: 'dashboard.webp' },
+  { key: 'plans', label: '购买套餐', group: '', icon: 'plan.webp' },
+  { key: 'recharge', label: '充值余额', group: '', icon: 'wallet.webp' },
+  { key: 'invite', label: '邀请好友', group: '', icon: 'invite.webp' },
   { key: 'knowledge', label: '使用教程', group: '服务', icon: 'knowledge.webp' },
   { key: 'tickets', label: '工单中心', group: '服务', icon: 'ticket.webp' },
   { key: 'nodes', label: '节点状态', group: '记录', icon: 'node.webp' },
@@ -133,8 +131,33 @@ function toast(message, type = 'success') {
   }, 2600);
 }
 
-function loadingView(text = '加载中...') {
-  return `<div class="loading-panel"><span class="spinner"></span>${escapeHtml(text)}</div>`;
+function routeProgressElement() {
+  let progress = document.querySelector('.route-progress');
+  if (progress) return progress;
+
+  progress = document.createElement('div');
+  progress.className = 'route-progress';
+  progress.setAttribute('aria-hidden', 'true');
+  progress.innerHTML = '<span></span>';
+  document.body.appendChild(progress);
+  return progress;
+}
+
+let routeProgressTimer = null;
+
+function startRouteProgress() {
+  const progress = routeProgressElement();
+  clearTimeout(routeProgressTimer);
+  progress.classList.remove('is-finishing');
+  requestAnimationFrame(() => progress.classList.add('is-active'));
+}
+
+function finishRouteProgress() {
+  const progress = routeProgressElement();
+  progress.classList.add('is-finishing');
+  routeProgressTimer = setTimeout(() => {
+    progress.classList.remove('is-active', 'is-finishing');
+  }, 220);
 }
 
 function emptyView(text = '暂无数据') {
@@ -188,7 +211,7 @@ function navGroups() {
 function routeMeta(name) {
   const item = navItems.find((nav) => nav.key === name);
   return {
-    group: item?.group || '概览',
+    group: item?.group ?? '',
     label: item?.label || '仪表盘',
   };
 }
@@ -1164,9 +1187,7 @@ async function render() {
   const current = route();
   const publicRoute = publicRoutes.has(current.name);
 
-  if (!state.hasRendered) {
-    app.innerHTML = loadingView();
-  }
+  startRouteProgress();
 
   try {
     await boot();
@@ -1183,14 +1204,14 @@ async function render() {
 
     const view = views[current.name] || views.dashboard;
     app.innerHTML = await view(current);
-    state.hasRendered = true;
     bindPageEvents();
   } catch (error) {
     app.innerHTML = publicRoute
       ? authShell(`<div class="error-box">${escapeHtml(error.message || '页面加载失败')}</div>`)
       : shell(`<div class="error-box">${escapeHtml(error.message || '页面加载失败')}</div>`, currentTitle(current.name), '请稍后重试或重新登录。');
-    state.hasRendered = true;
     bindPageEvents();
+  } finally {
+    finishRouteProgress();
   }
 }
 
