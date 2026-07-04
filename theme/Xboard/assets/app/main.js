@@ -25,6 +25,7 @@ const state = {
   stat: [0, 0, 0],
   booted: false,
   bootPromise: null,
+  hasRendered: false,
 };
 
 const orderStatus = {
@@ -1163,7 +1164,10 @@ async function render() {
   const current = route();
   const publicRoute = publicRoutes.has(current.name);
 
-  app.innerHTML = loadingView();
+  if (!state.hasRendered) {
+    app.innerHTML = loadingView();
+  }
+
   try {
     await boot();
 
@@ -1179,11 +1183,13 @@ async function render() {
 
     const view = views[current.name] || views.dashboard;
     app.innerHTML = await view(current);
+    state.hasRendered = true;
     bindPageEvents();
   } catch (error) {
     app.innerHTML = publicRoute
       ? authShell(`<div class="error-box">${escapeHtml(error.message || '页面加载失败')}</div>`)
       : shell(`<div class="error-box">${escapeHtml(error.message || '页面加载失败')}</div>`, currentTitle(current.name), '请稍后重试或重新登录。');
+    state.hasRendered = true;
     bindPageEvents();
   }
 }
