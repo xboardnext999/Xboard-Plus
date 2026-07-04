@@ -30,7 +30,8 @@
   --workspace-bg: transparent;
   --topbar-bg: transparent;
   --nav-hover-bg: rgba(255, 255, 255, 0.06);
-  --nav-active-bg: linear-gradient(90deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.04));
+  --nav-active-bg: rgba(255, 255, 255, 0.10);
+  --nav-active-text: #b9b7ff;
   --nav-text: var(--muted);
   --nav-group-text: var(--soft);
   --focus-border: rgba(185, 183, 255, 0.72);
@@ -68,7 +69,8 @@
   --workspace-bg: linear-gradient(135deg, #f6f8fb 0%, #f1f5ff 48%, #f8fbff 100%);
   --topbar-bg: transparent;
   --nav-hover-bg: rgba(15, 23, 42, 0.055);
-  --nav-active-bg: linear-gradient(90deg, rgba(15, 23, 42, 0.10), rgba(15, 23, 42, 0.035));
+  --nav-active-bg: #f3f4f7;
+  --nav-active-text: #635bff;
   --nav-text: #000;
   --nav-group-text: #8f98a8;
   --focus-border: rgba(99, 91, 255, 0.62);
@@ -385,15 +387,14 @@ td {
 }
 
 .nav-item.active {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #050505;
-  color: #fff;
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
   font-weight: 700;
 }
 
 .nav-item.active:hover {
-  background: #050505;
-  color: #fff;
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
 }
 
 .nav-item.active .nav-label {
@@ -402,7 +403,7 @@ td {
 
 .nav-item.active .nav-icon,
 .nav-item.active .nav-icon-image {
-  color: #fff;
+  color: var(--nav-active-text);
   opacity: 1;
 }
 
