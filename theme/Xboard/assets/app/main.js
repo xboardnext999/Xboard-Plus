@@ -14,6 +14,7 @@ import {
 
 const settings = window.settings || {};
 const themeStorageKey = 'xboard-plus-theme';
+const languageStorageKey = 'xboard-plus-language';
 const appName = () => settings.title || 'Xboard Plus';
 const currencySymbol = () => state.comm?.currency_symbol || '¥';
 
@@ -63,6 +64,19 @@ const navItems = [
 
 const publicRoutes = new Set(['login', 'register', 'forgot']);
 
+const languageOptions = [
+  { code: 'zh-CN', short: '简', label: '简体中文', flag: 'CN.png' },
+  { code: 'zh-TW', short: '繁', label: '繁體中文', flag: 'TW.png' },
+  { code: 'en-US', short: 'EN', label: 'English', flag: 'US.png' },
+  { code: 'ja-JP', short: '日', label: '日本語', flag: 'JP.png' },
+  { code: 'ko-KR', short: '한', label: '한국어', flag: 'KR.png' },
+  { code: 'ru-RU', short: 'RU', label: 'Русский', flag: 'RU.png' },
+  { code: 'vi-VN', short: 'VI', label: 'Tiếng Việt', flag: 'VN.png' },
+  { code: 'fil-PH', short: 'PH', label: 'Filipino', flag: 'PH.png' },
+  { code: 'ms-MY', short: 'MS', label: 'Bahasa Melayu', flag: 'MY.png' },
+  { code: 'fa-IR', short: 'فا', label: 'فارسی', flag: 'IR.png', rtl: true },
+];
+
 function parseRoute() {
   const raw = (location.hash || '#/dashboard').replace(/^#\/?/, '');
   const [name = 'dashboard', search = ''] = raw.split('?');
@@ -86,6 +100,15 @@ function storedTheme() {
   }
 }
 
+function storedLanguage() {
+  try {
+    const code = localStorage.getItem(languageStorageKey);
+    return languageOptions.some((item) => item.code === code) ? code : 'zh-CN';
+  } catch {
+    return 'zh-CN';
+  }
+}
+
 function applyTheme(theme) {
   const normalized = theme === 'dark' ? 'dark' : 'light';
   document.documentElement.dataset.theme = normalized;
@@ -104,6 +127,21 @@ function appAsset(file) {
 
 function currentTitle(name) {
   return navItems.find((item) => item.key === name)?.label || '仪表盘';
+}
+
+function activeLanguage() {
+  return languageOptions.find((item) => item.code === state.language) || languageOptions[0];
+}
+
+function selectLanguage(code) {
+  const language = languageOptions.find((item) => item.code === code) || languageOptions[0];
+  state.language = language.code;
+  state.languageMenuOpen = false;
+  try {
+    localStorage.setItem(languageStorageKey, language.code);
+  } catch {
+    // Storage can be unavailable in private browsing.
+  }
 }
 
 function navGroups() {
@@ -160,9 +198,11 @@ const state = reactive({
   ready: false,
   route: parseRoute(),
   theme: storedTheme(),
+  language: storedLanguage(),
   sidebarOpen: false,
   sidebarCollapsed: false,
   userMenuOpen: false,
+  languageMenuOpen: false,
   progress: 'idle',
   toasts: [],
 });
@@ -435,6 +475,7 @@ const AppShell = {
       const active = state.route.name;
       const user = state.user || {};
       const title = currentTitle(active);
+      const language = activeLanguage();
       return h('div', { class: 'app-shell' }, [
         h('aside', { class: 'sidebar' }, [
           h('a', { class: 'brand brand-text-only', href: '#/dashboard', 'aria-label': appName() }, [
@@ -493,7 +534,38 @@ const AppShell = {
                 alt: '',
                 'aria-hidden': 'true',
               })),
-              h('span', { class: 'round-chip' }, 'CN'),
+              h('div', { class: ['language-menu', state.languageMenuOpen ? 'is-open' : ''] }, [
+                h('button', {
+                  class: 'language-trigger',
+                  type: 'button',
+                  'aria-haspopup': 'menu',
+                  'aria-expanded': state.languageMenuOpen ? 'true' : 'false',
+                  title: '选择语言',
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    state.userMenuOpen = false;
+                    state.languageMenuOpen = !state.languageMenuOpen;
+                  },
+                }, [
+                  h('img', { src: appAsset(`flags/${language.flag}`), alt: '' }),
+                  h('span', language.short),
+                ]),
+                h('div', { class: 'language-dropdown', role: 'menu' }, languageOptions.map((item) => h('button', {
+                  key: item.code,
+                  class: item.code === language.code ? 'is-active' : '',
+                  type: 'button',
+                  role: 'menuitem',
+                  dir: item.rtl ? 'rtl' : null,
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    selectLanguage(item.code);
+                  },
+                }, [
+                  h('img', { src: appAsset(`flags/${item.flag}`), alt: '' }),
+                  h('span', item.label),
+                  item.code === language.code ? h('b', '✓') : null,
+                ]))),
+              ]),
               h('div', { class: ['user-menu', state.userMenuOpen ? 'is-open' : ''] }, [
                 h('button', {
                   class: 'avatar-chip',
@@ -502,6 +574,7 @@ const AppShell = {
                   'aria-expanded': state.userMenuOpen ? 'true' : 'false',
                   onClick: (event) => {
                     event.stopPropagation();
+                    state.languageMenuOpen = false;
                     state.userMenuOpen = !state.userMenuOpen;
                   },
                 }, [h('img', { class: 'avatar-thumb', src: userAvatarUrl(user), alt: '' })]),
@@ -1621,13 +1694,23 @@ const App = {
     onMounted(() => {
       window.addEventListener('hashchange', () => {
         state.userMenuOpen = false;
+        state.languageMenuOpen = false;
         state.sidebarOpen = false;
         state.route = parseRoute();
       });
       window.addEventListener('xboard:auth-expired', () => go('login'));
       document.addEventListener('click', (event) => {
-        if (event.target instanceof Element && event.target.closest('.user-menu')) return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest('.user-menu')) {
+          state.languageMenuOpen = false;
+          return;
+        }
+        if (target?.closest('.language-menu')) {
+          state.userMenuOpen = false;
+          return;
+        }
         state.userMenuOpen = false;
+        state.languageMenuOpen = false;
       });
     });
 
