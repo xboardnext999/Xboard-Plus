@@ -299,6 +299,8 @@ function shell(content, title, subtitle, meta = {}) {
     { label: '工单', value: String(state.stat?.[0] ?? 0) },
   ];
   const groups = navGroups();
+  const showSummary = !meta.hideSummary;
+  const showHero = !meta.hideHero;
 
   return `
     <div class="app-shell">
@@ -353,14 +355,14 @@ function shell(content, title, subtitle, meta = {}) {
           </div>
         </header>
         <section class="content">
-          <div class="status-strip">
+          ${showSummary ? `<div class="status-strip">
             ${stats.map((item) => `<span>${escapeHtml(item.label)} <b>${escapeHtml(item.value)}</b></span>`).join('')}
-          </div>
-          <section class="page-hero">
+          </div>` : ''}
+          ${showHero ? `<section class="page-hero">
             <p><i></i>${escapeHtml(status)}</p>
             <h1>${formatTitle(title)}</h1>
             ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ''}
-          </section>
+          </section>` : ''}
           ${content}
         </section>
       </main>
@@ -637,6 +639,8 @@ async function dashboardView() {
     ],
     crumbGroup: '',
     crumbTitle: '仪表盘',
+    hideSummary: true,
+    hideHero: true,
   });
 }
 
