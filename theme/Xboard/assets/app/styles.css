@@ -583,16 +583,16 @@ td {
   width: 34px;
   height: 34px;
   min-height: 34px;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 999px;
-  background: var(--control-bg);
+  background: transparent;
   color: var(--soft);
   padding: 0;
 }
 
 .theme-toggle:hover {
   color: var(--text);
-  border-color: var(--line-strong);
+  background: var(--control-bg);
 }
 
 .theme-toggle-icon {
@@ -637,19 +637,19 @@ td {
 
 .language-dropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   right: 0;
   z-index: 32;
   display: grid;
-  gap: 4px;
-  width: 228px;
-  max-height: min(520px, calc(100vh - 96px));
+  gap: 2px;
+  width: 190px;
+  max-height: min(430px, calc(100vh - 92px));
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--panel-strong);
   box-shadow: var(--shadow);
-  padding: 8px;
+  padding: 6px;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-6px);
@@ -664,18 +664,18 @@ td {
 
 .language-dropdown button {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 23px 1fr auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  min-height: 42px;
+  min-height: 34px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text);
-  padding: 0 10px;
+  padding: 0 8px;
   text-align: left;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -695,8 +695,8 @@ td {
 
 .language-dropdown img {
   display: block;
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border: 1px solid var(--line);
   border-radius: 50%;
   object-fit: cover;
@@ -704,7 +704,7 @@ td {
 
 .language-dropdown b {
   color: var(--text);
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
 }
 
