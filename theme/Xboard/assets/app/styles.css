@@ -320,7 +320,7 @@ td {
   z-index: 1;
   display: grid;
   gap: 4px;
-  padding: 0 16px 22px;
+  padding: 14px 16px 22px;
 }
 
 .nav-group {
