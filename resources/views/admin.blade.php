@@ -77,6 +77,7 @@
     <script src="/assets/admin/locales/zh-CN.js"></script>
     <script src="/assets/admin/locales/ko-KR.js"></script>
   @endif
+  <script src="/assets/admin/logo-upload.js?v={{ rawurlencode($version) }}" defer></script>
 </head>
 
 <body>
