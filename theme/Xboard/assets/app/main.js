@@ -1,9 +1,9 @@
+import { createApp, h, onMounted, reactive, watch } from './vendor/vue.esm-browser.prod.js';
 import { api, clearToken, getToken, isAuthenticated, setToken } from './api.js';
 import {
   bytes,
   copyText,
   date,
-  escapeHtml,
   money,
   normalizeCollection,
   percent,
@@ -13,19 +13,9 @@ import {
 } from './helpers.js';
 
 const settings = window.settings || {};
-const app = document.querySelector('#app');
-const currencySymbol = () => state.comm?.currency_symbol || '¥';
 const themeStorageKey = 'xboard-plus-theme';
-
-const state = {
-  guest: {},
-  comm: {},
-  user: null,
-  subscribe: null,
-  stat: [0, 0, 0],
-  booted: false,
-  bootPromise: null,
-};
+const appName = () => settings.title || 'Xboard Plus';
+const currencySymbol = () => state.comm?.currency_symbol || '¥';
 
 const orderStatus = {
   0: '待支付',
@@ -73,35 +63,11 @@ const navItems = [
 
 const publicRoutes = new Set(['login', 'register', 'forgot']);
 
-function storedTheme() {
-  try {
-    return localStorage.getItem(themeStorageKey) === 'light' ? 'light' : 'dark';
-  } catch {
-    return 'dark';
-  }
-}
-
-function currentTheme() {
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
-}
-
-function applyTheme(theme) {
-  const normalized = theme === 'light' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = normalized;
-  document.documentElement.style.colorScheme = normalized;
-  try {
-    localStorage.setItem(themeStorageKey, normalized);
-  } catch {
-    // Ignore storage errors in private browsing or locked-down webviews.
-  }
-}
-
-applyTheme(storedTheme());
-
-function route() {
+function parseRoute() {
   const raw = (location.hash || '#/dashboard').replace(/^#\/?/, '');
   const [name = 'dashboard', search = ''] = raw.split('?');
   return {
+    fullPath: raw || 'dashboard',
     name: name || 'dashboard',
     query: Object.fromEntries(new URLSearchParams(search)),
   };
@@ -112,61 +78,52 @@ function go(name, params = {}) {
   location.hash = `#/${name}${search ? `?${search}` : ''}`;
 }
 
-function $(selector, root = document) {
-  return root.querySelector(selector);
+function storedTheme() {
+  try {
+    return localStorage.getItem(themeStorageKey) === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
 
-function $all(selector, root = document) {
-  return [...root.querySelectorAll(selector)];
+function applyTheme(theme) {
+  const normalized = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = normalized;
+  document.documentElement.style.colorScheme = normalized;
+  try {
+    localStorage.setItem(themeStorageKey, normalized);
+  } catch {
+    // Storage can be unavailable in private browsing.
+  }
 }
 
-function toast(message, type = 'success') {
-  const item = document.createElement('div');
-  item.className = `toast toast-${type}`;
-  item.textContent = message;
-  $('.toast-stack')?.appendChild(item);
-  setTimeout(() => item.classList.add('is-visible'), 20);
-  setTimeout(() => {
-    item.classList.remove('is-visible');
-    setTimeout(() => item.remove(), 180);
-  }, 2600);
+function appAsset(file) {
+  const base = settings.assets_path || '/theme/Xboard/assets';
+  return `${base.replace(/\/$/, '')}/app/${file.replace(/^\//, '')}`;
 }
 
-function routeProgressElement() {
-  let progress = document.querySelector('.route-progress');
-  if (progress) return progress;
-
-  progress = document.createElement('div');
-  progress.className = 'route-progress';
-  progress.setAttribute('aria-hidden', 'true');
-  progress.innerHTML = '<span></span>';
-  document.body.appendChild(progress);
-  return progress;
+function currentTitle(name) {
+  return navItems.find((item) => item.key === name)?.label || '仪表盘';
 }
 
-let routeProgressTimer = null;
-
-function startRouteProgress() {
-  const progress = routeProgressElement();
-  clearTimeout(routeProgressTimer);
-  progress.classList.remove('is-finishing');
-  requestAnimationFrame(() => progress.classList.add('is-active'));
+function navGroups() {
+  const groups = [];
+  navItems.forEach((item) => {
+    let group = groups.find((entry) => entry.name === item.group);
+    if (!group) {
+      group = { name: item.group, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  });
+  return groups;
 }
 
-function finishRouteProgress() {
-  const progress = routeProgressElement();
-  progress.classList.add('is-finishing');
-  routeProgressTimer = setTimeout(() => {
-    progress.classList.remove('is-active', 'is-finishing');
-  }, 220);
-}
-
-function emptyView(text = '暂无数据') {
-  return `<div class="empty">${escapeHtml(text)}</div>`;
-}
-
-function userInitial() {
-  return escapeHtml(userDisplayName().slice(0, 1).toUpperCase());
+function usageSummary(subscribe = {}) {
+  const used = Number(subscribe.u || 0) + Number(subscribe.d || 0);
+  const total = Number(subscribe.transfer_enable || 0);
+  const ratio = percent(used, total);
+  return { used, total, ratio };
 }
 
 function userDisplayName(user = state.user) {
@@ -185,38 +142,74 @@ function userAvatarUrl(user = state.user) {
   return defaultAvatarUrl();
 }
 
-function userAvatarMarkup(className = 'avatar-thumb') {
-  return `<img class="${escapeHtml(className)}" src="${escapeHtml(userAvatarUrl())}" alt="">`;
+function safeBody(html) {
+  return String(html || '');
 }
 
-function appDescription() {
-  return settings.description || state.guest?.app_description || state.comm?.app_description || '继续管理你的订阅、节点与余额。';
+function formData(form) {
+  return Object.fromEntries(new FormData(form).entries());
 }
 
-function themeLabel() {
-  return currentTheme() === 'light' ? '暗黑' : '白天';
+const state = reactive({
+  guest: {},
+  comm: {},
+  user: null,
+  subscribe: null,
+  stat: [0, 0, 0],
+  booted: false,
+  ready: false,
+  route: parseRoute(),
+  theme: storedTheme(),
+  sidebarOpen: false,
+  sidebarCollapsed: false,
+  userMenuOpen: false,
+  progress: 'idle',
+  toasts: [],
+});
+
+let bootPromise = null;
+let progressTimer = null;
+let toastId = 0;
+
+function startProgress() {
+  clearTimeout(progressTimer);
+  state.progress = 'active';
 }
 
-function navGroups() {
-  return navItems.reduce((groups, item) => {
-    if (!groups[item.group]) groups[item.group] = [];
-    groups[item.group].push(item);
-    return groups;
-  }, {});
+function finishProgress() {
+  clearTimeout(progressTimer);
+  state.progress = 'finishing';
+  progressTimer = setTimeout(() => {
+    state.progress = 'idle';
+  }, 220);
 }
 
-function routeMeta(name) {
-  const item = navItems.find((nav) => nav.key === name);
-  return {
-    group: item?.group ?? '',
-    label: item?.label || '仪表盘',
-  };
+async function withProgress(task) {
+  startProgress();
+  try {
+    return await task();
+  } finally {
+    finishProgress();
+  }
+}
+
+function toast(message, type = 'success') {
+  const item = { id: ++toastId, message: message || '操作完成', type, visible: false };
+  state.toasts.push(item);
+  setTimeout(() => { item.visible = true; }, 20);
+  setTimeout(() => {
+    item.visible = false;
+    setTimeout(() => {
+      const index = state.toasts.findIndex((toastItem) => toastItem.id === item.id);
+      if (index >= 0) state.toasts.splice(index, 1);
+    }, 180);
+  }, 2600);
 }
 
 async function boot(force = false) {
-  if (state.bootPromise && !force) return state.bootPromise;
+  if (bootPromise && !force) return bootPromise;
 
-  state.bootPromise = (async () => {
+  bootPromise = (async () => {
     state.guest = await api.get('/guest/comm/config', {}, { auth: false }).catch(() => ({}));
 
     if (!isAuthenticated()) {
@@ -251,193 +244,93 @@ async function boot(force = false) {
     }
   })();
 
-  return state.bootPromise;
+  return bootPromise;
 }
 
 async function refreshUser() {
-  state.user = await api.get('/user/info');
-  state.subscribe = await api.get('/user/getSubscribe');
-  state.stat = await api.get('/user/getStat').catch(() => state.stat);
+  const [user, subscribe, stat] = await Promise.all([
+    api.get('/user/info'),
+    api.get('/user/getSubscribe'),
+    api.get('/user/getStat').catch(() => state.stat),
+  ]);
+  state.user = user;
+  state.subscribe = subscribe;
+  state.stat = Array.isArray(stat) ? stat : state.stat;
 }
 
-function currentTitle(name) {
-  return navItems.find((item) => item.key === name)?.label || '仪表盘';
+function resetBoot() {
+  bootPromise = null;
+  state.booted = false;
+  state.ready = false;
 }
 
-function appAsset(file) {
-  const base = settings.assets_path || '/theme/Xboard/assets';
-  return `${base.replace(/\/$/, '')}/app/${file.replace(/^\//, '')}`;
+function emptyBlock(text = '暂无数据') {
+  return h('div', { class: 'empty' }, text);
 }
 
-function logoMarkup() {
-  return `<img class="brand-logo" src="${escapeHtml(appAsset('icons/XboardPlus_logo.png'))}" alt="">`;
+function badge(text, type = 'ok') {
+  return h('span', { class: ['badge', type] }, text);
 }
 
-function navIconMarkup(item) {
-  if (/\.(webp|png|jpe?g|svg)$/i.test(item.icon)) {
-    return `<span class="nav-icon-image" style="--icon-url: url('${escapeHtml(appAsset(`icons/${item.icon}`))}')" aria-hidden="true"></span>`;
-  }
-  return `<i class="nav-icon ${escapeHtml(item.icon)}"></i>`;
-}
-
-function shell(content, title, subtitle, meta = {}) {
-  const active = route().name;
-  const appName = settings.title || 'Xboard Plus';
-  const user = state.user;
-  const currentMeta = routeMeta(active);
-  const userEmail = user?.email || '当前账号';
-  const userName = userDisplayName(user);
-  const groups = navGroups();
-
-  return `
-    <div class="app-shell">
-      <aside class="sidebar">
-        <a class="brand" href="#/dashboard" aria-label="${escapeHtml(appName)}">
-          ${logoMarkup()}
-          <span><b>${escapeHtml(appName)}</b></span>
-        </a>
-        <nav class="nav">
-          ${Object.entries(groups).map(([group, items]) => `
-            <div class="nav-group">
-              ${group ? `<span>${escapeHtml(group)}</span>` : ''}
-              ${items.map((item) => `
-                <a class="nav-item ${active === item.key ? 'active' : ''}" href="#/${item.key}">
-                  ${navIconMarkup(item)}
-                  <span class="nav-label">${escapeHtml(item.label)}</span>
-                  ${item.key === 'tickets' && Number(state.stat?.[0] || 0) > 0 ? `<em>${escapeHtml(state.stat[0])}</em>` : ''}
-                </a>
-              `).join('')}
-            </div>
-          `).join('')}
-        </nav>
-      </aside>
-      <main class="workspace">
-        <header class="topbar">
-          <button class="icon-button mobile-menu" data-toggle-menu type="button">☰</button>
-          <div class="breadcrumb">
-            <button class="sidebar-toggle-button" data-toggle-sidebar type="button" aria-label="展开或收起菜单">
-              <span class="collapse-icon collapse-icon-collapse" style="--icon-url: url('${escapeHtml(appAsset('icons/Collapse.webp'))}')" aria-hidden="true"></span>
-              <span class="collapse-icon collapse-icon-expand" style="--icon-url: url('${escapeHtml(appAsset('icons/Expand.webp'))}')" aria-hidden="true"></span>
-            </button>
-            <strong>${escapeHtml(currentMeta.label)}</strong>
-          </div>
-          <div class="top-actions">
-            <button class="theme-toggle" data-toggle-theme type="button" aria-label="切换白天和暗黑模式" title="切换白天和暗黑模式">
-              <span class="theme-icon" aria-hidden="true"></span>
-              <span class="theme-label">${escapeHtml(themeLabel())}</span>
-            </button>
-            <span class="round-chip">CN</span>
-            <div class="user-menu">
-              <button class="avatar-chip" data-toggle-user-menu type="button" aria-haspopup="menu" aria-expanded="false">${userAvatarMarkup()}</button>
-              <div class="user-dropdown" role="menu">
-                <div class="user-dropdown-head">
-                  <strong>${escapeHtml(userName)}</strong>
-                  <span>${escapeHtml(userEmail)}</span>
-                </div>
-                <a href="#/profile" role="menuitem">账号设置</a>
-                <button data-logout type="button" role="menuitem">退出登录</button>
-              </div>
-            </div>
-          </div>
-        </header>
-        <section class="content">
-          ${content}
-        </section>
-      </main>
-    </div>
-    <div class="toast-stack"></div>
-  `;
-}
-
-function authShell(content) {
-  const appName = settings.title || 'Xboard Plus';
-  return `
-    <main class="auth-page">
-      <section class="auth-shell">
-        <div class="auth-visual">
-          <a class="brand" href="#/login" aria-label="${escapeHtml(appName)}">
-            ${logoMarkup()}
-            <span><b>${escapeHtml(appName)}</b><small>${escapeHtml(appDescription())}</small></span>
-          </a>
-          <section class="page-hero">
-            <p><i></i>安全登录</p>
-            <h1>欢迎<br>回来</h1>
-            <small>${escapeHtml(appDescription())}</small>
-          </section>
-          <article class="glass-card preview-card accent-orange">
-            <div class="card-title-row">
-              <span class="service-icon">∞</span>
-              <div><small>当前套餐</small><h2>Pro Stream</h2></div>
-            </div>
-            <p>本周期已用流量</p>
-            <strong>128.4 GB</strong>
-            <span class="trend-pill up">↗ +26%</span>
-            <svg viewBox="0 0 420 150" aria-hidden="true"><path d="M0 136 L55 62 L105 56 L155 58 L198 24 L238 130 L282 88 L326 96 L365 34 L420 74" /></svg>
-          </article>
-        </div>
-        <div class="auth-card">
-          <div class="auth-brand">
-            <h1>登录账户</h1>
-            <p>继续管理你的订阅、节点与余额。</p>
-          </div>
-          ${content}
-        </div>
-      </section>
-    </main>
-    <div class="toast-stack"></div>
-  `;
-}
-
-function usageSummary(subscribe = {}) {
-  const used = Number(subscribe.u || 0) + Number(subscribe.d || 0);
-  const total = Number(subscribe.transfer_enable || 0);
-  const ratio = percent(used, total);
-  return { used, total, ratio };
+function miniButton(text, attrs = {}) {
+  return h(attrs.href ? 'a' : 'button', {
+    class: ['mini-button', attrs.class],
+    href: attrs.href,
+    type: attrs.href ? undefined : (attrs.type || 'button'),
+    onClick: attrs.onClick,
+  }, text);
 }
 
 function statCards(cards) {
-  return `<div class="metric-grid">${cards.map((card) => `
-    <article class="metric-card">
-      <span>${escapeHtml(card.label)}</span>
-      <strong>${escapeHtml(card.value)}</strong>
-      ${card.hint ? `<small>${escapeHtml(card.hint)}</small>` : ''}
-    </article>
-  `).join('')}</div>`;
+  return h('div', { class: 'metric-grid' }, cards.map((card) => h('article', { class: 'metric-card' }, [
+    h('span', card.label),
+    h('strong', String(card.value ?? '')),
+    card.hint ? h('small', card.hint) : null,
+  ])));
 }
 
-function table(headers, rows, empty = '暂无数据') {
-  return `
-    <div class="table-wrap">
-      <table>
-        <thead><tr>${headers.map((item) => `<th>${escapeHtml(item)}</th>`).join('')}</tr></thead>
-        <tbody>${rows.length ? rows.join('') : `<tr><td colspan="${headers.length}">${emptyView(empty)}</td></tr>`}</tbody>
-      </table>
-    </div>
-  `;
+const DataTable = {
+  name: 'DataTable',
+  props: {
+    headers: { type: Array, required: true },
+    rows: { type: Array, default: () => [] },
+    empty: { type: String, default: '暂无数据' },
+  },
+  setup(props) {
+    return () => h('div', { class: 'table-wrap' }, [
+      h('table', [
+        h('thead', [h('tr', props.headers.map((item) => h('th', item)))]),
+        h('tbody', props.rows.length
+          ? props.rows.map((row) => h('tr', row.map((cell) => h('td', Array.isArray(cell) ? cell : [cell]))))
+          : [h('tr', [h('td', { colspan: props.headers.length }, [emptyBlock(props.empty)])])]),
+      ]),
+    ]);
+  },
+};
+
+function pageError(error) {
+  return error ? h('div', { class: 'error-box' }, error) : null;
 }
 
-function safeBody(html) {
-  return String(html || '');
+function useAsyncPage(loader) {
+  const local = reactive({ ready: false, error: '' });
+  onMounted(async () => {
+    await withProgress(async () => {
+      try {
+        await loader(local);
+      } catch (error) {
+        local.error = error.message || '页面加载失败';
+      } finally {
+        local.ready = true;
+      }
+    });
+  });
+  return local;
 }
 
-function paymentMethods(methods = [], selected = '') {
-  if (!methods.length) return emptyView('暂无可用支付方式');
-  return `
-    <div class="payment-methods">
-      ${methods.map((method, index) => `
-        <label class="payment-method">
-          <input type="radio" name="method" value="${method.id}" ${String(selected || methods[0]?.id) === String(method.id) || (!selected && index === 0) ? 'checked' : ''}>
-          ${method.icon ? `<img src="${escapeHtml(method.icon)}" alt="">` : '<span class="pay-icon">¥</span>'}
-          <span>${escapeHtml(method.name || method.payment || `支付方式 ${method.id}`)}</span>
-        </label>
-      `).join('')}
-    </div>
-  `;
-}
-
-function handlePaymentResult(result, kind, tradeNo) {
-  const box = $('#payment-result');
-  if (!box) return;
+function handlePaymentResult(result, kind, tradeNo, local) {
+  local.paymentHtml = '';
+  local.paymentMessage = '';
 
   if (result?.type === 1 && typeof result.data === 'string') {
     window.location.href = result.data;
@@ -445,18 +338,18 @@ function handlePaymentResult(result, kind, tradeNo) {
   }
 
   if (result?.type === -1 || result?.data === true) {
-    box.innerHTML = `<div class="success-box">支付已完成，正在刷新状态...</div>`;
+    local.paymentMessage = '支付已完成，正在刷新状态...';
     startPaymentPoll(kind, tradeNo);
     return;
   }
 
   if (typeof result?.data === 'string') {
-    box.innerHTML = `<div class="payment-frame">${result.data}</div>`;
+    local.paymentHtml = result.data;
     startPaymentPoll(kind, tradeNo);
     return;
   }
 
-  box.innerHTML = `<pre>${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+  local.paymentMessage = JSON.stringify(result, null, 2);
   startPaymentPoll(kind, tradeNo);
 }
 
@@ -471,7 +364,7 @@ function startPaymentPoll(kind, tradeNo) {
         clearInterval(timer);
         toast('支付成功');
         await refreshUser().catch(() => null);
-        render();
+        state.route = parseRoute();
       }
       if (times >= 60) clearInterval(timer);
     } catch (_) {
@@ -480,1156 +373,1287 @@ function startPaymentPoll(kind, tradeNo) {
   }, 3000);
 }
 
-async function loginView(params) {
-  return authShell(`
-    <form class="stack auth-form" data-login-form>
-      <label>邮箱<input name="email" type="email" autocomplete="email" required></label>
-      <label>密码<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
-      <button class="primary-button" type="submit">登录</button>
-      <div class="auth-links">
-        <a href="#/register">注册账号</a>
-        <a href="#/forgot">忘记密码</a>
-      </div>
-    </form>
-  `);
-}
-
-async function registerView() {
-  const inviteCode = route().query.invite_code || '';
-  const showCode = Number(state.guest.is_email_verify) === 1;
-  const forceInvite = Number(state.guest.is_invite_force) === 1 || inviteCode;
-  return authShell(`
-    <form class="stack auth-form" data-register-form>
-      <label>邮箱<input name="email" type="email" autocomplete="email" required></label>
-      <label>密码<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
-      ${showCode ? `
-        <label>邮箱验证码
-          <span class="inline-field">
-            <input name="email_code" inputmode="numeric" maxlength="6" required>
-            <button class="secondary-button" data-send-code type="button">发送</button>
-          </span>
-        </label>
-      ` : ''}
-      ${forceInvite ? `<label>邀请码<input name="invite_code" value="${escapeHtml(inviteCode)}" ${Number(state.guest.is_invite_force) === 1 ? 'required' : ''}></label>` : ''}
-      <button class="primary-button" type="submit">创建账号</button>
-      <div class="auth-links">
-        <a href="#/login">已有账号登录</a>
-      </div>
-    </form>
-  `);
-}
-
-async function forgotView() {
-  return authShell(`
-    <form class="stack auth-form" data-forgot-form>
-      <label>邮箱
-        <span class="inline-field">
-          <input name="email" type="email" autocomplete="email" required>
-          <button class="secondary-button" data-send-code type="button">发送</button>
-        </span>
-      </label>
-      <label>邮箱验证码<input name="email_code" inputmode="numeric" maxlength="6" required></label>
-      <label>新密码<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
-      <button class="primary-button" type="submit">重置密码</button>
-      <div class="auth-links">
-        <a href="#/login">返回登录</a>
-      </div>
-    </form>
-  `);
-}
-
-async function dashboardView() {
-  const user = state.user || {};
-  const subscribe = state.subscribe || {};
-  const usage = usageSummary(subscribe);
-  const notices = await api.get('/user/notice/fetch', { current: 1 }).catch(() => ({ data: [] }));
-  const servers = await api.get('/user/server/fetch').catch(() => ({ data: [] }));
-  const serverList = normalizeCollection(servers.data || servers);
-  const onlineCount = serverList.filter((node) => node.is_online).length;
-  const maintenanceCount = Math.max(serverList.length - onlineCount, 0);
-  const planName = subscribe.plan?.name || '未订阅套餐';
-  const planMetric = subscribe.plan?.name || '未订阅';
-  const noticeItems = normalizeCollection(notices.data || notices).slice(0, 2);
-  const nodeCells = Array.from({ length: 12 }).map((_, index) => {
-    const node = serverList[index];
-    const status = !node ? 'off' : (node.is_online ? 'online' : 'warn');
-    return `<i class="${status}"></i>`;
-  }).join('');
-  const serverRows = serverList.slice(0, 5).map((node, index) => `
-    <tr>
-      <td>#${index + 1}</td>
-      <td><i class="node-dot dot-${index % 3}"></i>${escapeHtml(node.name || '-')}</td>
-      <td>${escapeHtml(node.type || '-')}</td>
-      <td>${node.is_online ? escapeHtml(node.last_check_at ? '良好' : '-') : '-'}</td>
-      <td>${node.is_online ? '<span class="badge ok">在线</span>' : '<span class="badge danger">维护</span>'}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="dashboard-metrics">
-      <article class="dashboard-metric">
-        <div><small>账户余额</small><strong>${money(user.balance, currencySymbol())}</strong></div>
-        <span>¥</span>
-      </article>
-      <article class="dashboard-metric">
-        <div><small>当前套餐</small><strong>${escapeHtml(planMetric)}</strong></div>
-        <span>∞</span>
-      </article>
-      <article class="dashboard-metric">
-        <div><small>可用节点</small><strong>${serverList.length ? onlineCount : 0} 在线</strong></div>
-        <span>◆</span>
-      </article>
-      <article class="dashboard-metric">
-        <div><small>本月用量</small><strong>${usage.ratio}%</strong></div>
-        <span>↗</span>
-      </article>
-    </section>
-
-    <section class="dashboard-overview-grid">
-      <article class="dashboard-card dashboard-subscription-card">
-        <div class="dashboard-card-head">
-          <div><small>订阅概览</small><h2>${escapeHtml(planName)}</h2></div>
-          <div class="dashboard-actions">
-            <a class="mini-button primary-mini" href="#/plans">购买套餐</a>
-            <a class="mini-button" href="#/subscribe">查看订阅</a>
-          </div>
-        </div>
-        <div class="dashboard-usage-layout">
-          <div class="dashboard-usage-number">
-            <small>本周期已用流量</small>
-            <strong>${bytes(usage.used)}</strong>
-            <span class="trend-pill up">${usage.ratio}% 已使用</span>
-          </div>
-          <div class="dashboard-usage-chart">
-            <div class="progress-label"><span>流量进度</span><strong>${bytes(usage.used)} / ${usage.total ? bytes(usage.total) : '不限量'}</strong></div>
-            <div class="dashboard-progress"><i style="width:${usage.ratio}%"></i></div>
-            <svg viewBox="0 0 520 120" aria-hidden="true">
-              <path d="M8 104 L74 58 L132 52 L190 54 L240 24 L286 104 L336 76 L390 84 L442 42 L512 70" />
-              <circle cx="390" cy="84" r="6" />
-              <circle cx="442" cy="42" r="6" />
-            </svg>
-          </div>
-        </div>
-      </article>
-
-      <article class="dashboard-card dashboard-node-card">
-        <div class="dashboard-card-head">
-          <div><small>节点状态</small><h2>全球节点池</h2></div>
-          <a class="mini-button" href="#/nodes">全部</a>
-        </div>
-        <div class="dashboard-node-grid">${nodeCells}</div>
-        <div class="dashboard-node-stat"><span>可连接节点</span><strong>${serverList.length ? onlineCount : 0}</strong></div>
-        <div class="dashboard-node-stat"><span>维护中</span><strong class="danger-text">${maintenanceCount}</strong></div>
-      </article>
-    </section>
-
-    <section class="dashboard-quick-row">
-      <a class="dashboard-action-card" href="#/subscribe">我的订阅<span>+</span></a>
-      <a class="dashboard-action-card" href="#/recharge">充值余额<span>¥</span></a>
-      <a class="dashboard-action-card" href="#/tickets">工单中心<span>?</span></a>
-      <a class="dashboard-action-card" href="#/knowledge">使用教程<span>i</span></a>
-    </section>
-
-    <section class="dashboard-lower-grid">
-      <article class="dashboard-card">
-        <div class="dashboard-card-head">
-          <div><small>实时更新</small><h2>节点概览</h2></div>
-          <a class="mini-button" href="#/nodes">全部</a>
-        </div>
-        ${table(['序号', '节点名称', '协议', '延迟', '状态'], serverRows, '暂无可用节点')}
-      </article>
-
-      <article class="dashboard-card dashboard-notice-card">
-        <div class="dashboard-card-head">
-          <div><small>站点通知</small><h2>公告</h2></div>
-          <a class="mini-button" href="#/knowledge">知识库</a>
-        </div>
-        <div class="dashboard-notices">
-          ${noticeItems.length ? noticeItems.map((notice) => `
-            <article class="dashboard-notice-item">
-              <h3>${escapeHtml(notice.title || '公告')}</h3>
-              <div>${safeBody(notice.content || notice.body || '')}</div>
-            </article>
-          `).join('') : `
-            <article class="dashboard-notice-item">
-              <h3>暂无公告</h3>
-              <p>后续公告会以卡片形式展示，减少大面积空白。</p>
-            </article>
-            <article class="dashboard-notice-item">
-              <h3>快速提示</h3>
-              <p>优先引导用户购买套餐、复制订阅、查看节点。</p>
-            </article>
-          `}
-        </div>
-      </article>
-    </section>
-  `, '仪表盘', '');
-}
-
-async function subscribeView() {
-  const subscribe = await api.get('/user/getSubscribe');
-  state.subscribe = subscribe;
-  const servers = await api.get('/user/server/fetch').catch(() => ({ data: [] }));
-  const serverList = normalizeCollection(servers.data || servers);
-  const usage = usageSummary(subscribe);
-  const serverRows = serverList.map((node, index) => `
-    <tr>
-      <td>#${index + 1}</td>
-      <td><i class="node-dot dot-${index % 3}"></i>${escapeHtml(node.name)}</td>
-      <td>${escapeHtml(node.type)}</td>
-      <td>${escapeHtml(node.rate ?? '-')}</td>
-      <td>${node.is_online ? '<span class="badge ok">在线</span>' : '<span class="badge danger">维护</span>'}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="subscription-grid">
-      <article class="panel access-card">
-        <div class="section-title">
-          <p>订阅地址</p>
-          <h2>${escapeHtml(subscribe.plan?.name || '未订阅套餐')}</h2>
-          <button class="mini-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">复制</button>
-        </div>
-        <div class="url-box">${escapeHtml(subscribe.subscribe_url || '暂无订阅链接')}</div>
-        <div class="quota-block">
-          <strong>${usage.total ? bytes(Math.max(usage.total - usage.used, 0)) : '不限量'}</strong>
-          <span>剩余流量 / 总计 ${usage.total ? bytes(usage.total) : '不限量'}</span>
-          <div class="progress"><span style="width:${usage.ratio}%"></span></div>
-        </div>
-        <div class="split-actions">
-          <button class="secondary-button" data-reset-security type="button">重置订阅</button>
-          <a class="primary-button" href="#/plans">续费套餐</a>
-        </div>
-      </article>
-      <article class="panel side-card">
-        <h3>一键导入</h3>
-        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">Shadowrocket</button>
-        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">Clash Verge</button>
-        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">Stash</button>
-        <button class="secondary-button" data-copy="${escapeHtml(subscribe.subscribe_url || '')}" type="button">V2rayN</button>
-      </article>
-      <article class="panel side-card">
-        <h3>节点状态</h3>
-        <div class="node-map">
-          ${Array.from({ length: 12 }).map((_, index) => `<i class="${index >= serverList.length ? 'off' : (serverList[index]?.is_online ? '' : 'warn')}"></i>`).join('')}
-        </div>
-      </article>
-    </section>
-
-    <section class="panel wide-panel">
-      <div class="section-title">
-        <p>实时列表</p>
-        <h2>可用节点</h2>
-        <a class="mini-button" href="#/nodes">筛选</a>
-      </div>
-      ${table(['序号', '节点名称', '协议', '倍率', '状态'], serverRows, '暂无可用节点')}
-    </section>
-  `, '订阅链接\n与节点访问', '复制订阅链接，并查看当前套餐可用节点。', {
-    status: '安全状态：已保护',
-    stats: [
-      { label: 'UUID', value: subscribe.uuid ? '已同步' : '已同步' },
-      { label: '设备', value: `${subscribe.device_limit ?? '不限'}` },
-      { label: '重置', value: subscribe.reset_day ?? '-' },
-      { label: '倍率', value: '自动' },
-    ],
-  });
-}
-
 function periodOptions(plan) {
   return periods
     .filter(([key]) => plan[key] !== null && plan[key] !== undefined)
-    .map(([key, label]) => `<option value="${key}">${label} ${money(plan[key], currencySymbol())}</option>`)
-    .join('');
+    .map(([key, label]) => ({ key, label: `${label} ${money(plan[key], currencySymbol())}` }));
 }
 
-async function plansView() {
-  const plans = normalizeCollection(await api.get('/user/plan/fetch'));
-  return shell(`
-    <div class="plan-grid">
-      ${plans.map((plan, index) => `
-        <article class="plan-card ${index === 1 ? 'hot' : ''}" data-plan-card="${plan.id}">
-          <small>${index === 1 ? 'Popular' : (index === 0 ? 'Starter' : 'Plan')}</small>
-          <div class="plan-head">
-            <h2>${escapeHtml(plan.name)}</h2>
-            <span>${plan.transfer_enable ? bytes(Number(plan.transfer_enable) * 1024 * 1024 * 1024) : '不限流量'}</span>
-          </div>
-          <div class="plan-content">${safeBody(plan.content)}</div>
-          <div class="plan-meta">
-            <span>速度 ${plan.speed_limit || '不限'}</span>
-            <span>设备 ${plan.device_limit || '不限'}</span>
-          </div>
-          <label>周期<select name="period">${periodOptions(plan)}</select></label>
-          <label>优惠码<input name="coupon_code" placeholder="可选"></label>
-          <button class="primary-button" data-buy-plan="${plan.id}" type="button">选择套餐</button>
-        </article>
-      `).join('') || emptyView('暂无可购买套餐')}
-    </div>
-  `, '套餐购买\n与续费', '选择套餐周期，创建订单后完成支付。', {
-    status: '支付网关：可用',
-    stats: [
-      { label: '余额', value: money(state.user?.balance, currencySymbol()) },
-      { label: '套餐数', value: String(plans.length) },
-      { label: '优惠券', value: '可用' },
-    ],
-  });
+function paymentMethods(methods = [], selected = '') {
+  if (!methods.length) return emptyBlock('暂无可用支付方式');
+  const defaultValue = selected || methods[0]?.id;
+  return h('div', { class: 'payment-methods' }, methods.map((method, index) => h('label', { class: 'payment-method' }, [
+    h('input', {
+      type: 'radio',
+      name: 'method',
+      value: method.id,
+      checked: String(defaultValue) === String(method.id) || (!selected && index === 0),
+    }),
+    method.icon
+      ? h('img', { src: method.icon, alt: '' })
+      : h('span', { class: 'pay-icon' }, '¥'),
+    h('span', method.name || method.payment || `支付方式 ${method.id}`),
+  ])));
 }
 
-async function ordersView(params) {
-  const tradeNo = params.query.trade_no;
-  if (tradeNo) return orderDetailView(tradeNo);
-
-  const orders = normalizeCollection(await api.get('/user/order/fetch'));
-  const rows = orders.map((order) => `
-    <tr>
-      <td><a href="#/orders?trade_no=${encodeURIComponent(order.trade_no)}">${escapeHtml(order.trade_no)}</a></td>
-      <td>${escapeHtml(order.plan?.name || '-')}</td>
-      <td>${escapeHtml(statusText(order.status, orderStatus))}</td>
-      <td>${money(order.total_amount, currencySymbol())}</td>
-      <td>${time(order.created_at)}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="panel">
-      ${table(['订单号', '套餐', '状态', '金额', '创建时间'], rows, '暂无订单')}
-    </section>
-  `, '订单', '查看套餐订单、继续支付或取消待支付订单。');
-}
-
-async function orderDetailView(tradeNo) {
-  const order = await api.get('/user/order/detail', { trade_no: tradeNo });
-  const methods = Number(order.status) === 0 && Number(order.total_amount) > 0
-    ? await api.get('/user/order/getPaymentMethod').catch(() => [])
-    : [];
-
-  return shell(`
-    <section class="panel detail-panel">
-      <div class="panel-heading">
-        <div>
-          <h2>订单 ${escapeHtml(order.trade_no)}</h2>
-          <p>${escapeHtml(order.plan?.name || '-')} · ${escapeHtml(statusText(order.status, orderStatus))}</p>
-        </div>
-        <a class="secondary-button" href="#/orders">返回列表</a>
-      </div>
-      ${statCards([
-        { label: '订单金额', value: money(order.total_amount, currencySymbol()) },
-        { label: '手续费', value: money(order.handling_amount, currencySymbol()) },
-        { label: '余额抵扣', value: money(order.balance_amount, currencySymbol()) },
-        { label: '创建时间', value: time(order.created_at) },
-      ])}
-      ${Number(order.status) === 0 ? `
-        <div class="checkout-box" data-order-checkout="${escapeHtml(order.trade_no)}">
-          <h3>支付订单</h3>
-          ${paymentMethods(methods, order.payment_id)}
-          <div class="split-actions">
-            <button class="primary-button" data-checkout-order type="button">立即支付</button>
-            <button class="secondary-button" data-cancel-order="${escapeHtml(order.trade_no)}" type="button">取消订单</button>
-          </div>
-          <div id="payment-result"></div>
-        </div>
-      ` : ''}
-    </section>
-  `, '订单详情', '查看订单明细并完成支付。');
-}
-
-async function rechargeView(params) {
-  const tradeNo = params.query.trade_no;
-  if (tradeNo) return rechargeDetailView(tradeNo);
-
-  const records = normalizeCollection(await api.get('/user/recharge/fetch').catch(() => []));
-  const rows = records.map((item) => `
-    <tr>
-      <td><a href="#/recharge?trade_no=${encodeURIComponent(item.trade_no)}">${escapeHtml(item.trade_no)}</a></td>
-      <td>${money(item.amount, currencySymbol())}</td>
-      <td>${escapeHtml(item.status_text || statusText(item.status, orderStatus))}</td>
-      <td>${escapeHtml(item.payment?.name || '-')}</td>
-      <td>${time(item.created_at)}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="billing-layout">
-      <article class="panel wallet-panel">
-        <div class="section-title">
-          <p>Wallet</p>
-          <h2>余额充值</h2>
-        </div>
-        <div class="amount-display">${money(state.user?.balance, currencySymbol())}</div>
-        <form class="wallet-form" data-recharge-form>
-          <label>充值金额<input name="amount" type="number" min="0.01" step="0.01" placeholder="100.00" required></label>
-          <button class="primary-button" type="submit">立即充值</button>
-        </form>
-      </article>
-
-      <article class="panel wallet-note">
-        <h3>充值说明</h3>
-        <p>充值成功后余额会自动入账，可用于购买套餐、续费或抵扣订单。</p>
-        <div class="info-grid">
-          <span>自动入账</span>
-          <span>订单可追踪</span>
-          <span>余额可抵扣</span>
-        </div>
-      </article>
-    </section>
-
-    <section class="panel wide-panel">
-      <div class="section-title">
-        <p>交易记录</p>
-        <h2>充值记录</h2>
-        <a class="mini-button" href="#/orders">订单</a>
-      </div>
-      ${table(['充值单号', '金额', '状态', '支付方式', '创建时间'], rows, '暂无充值记录')}
-    </section>
-  `, '余额充值\n与记录', '为账户余额充值，用于购买套餐或续费。', {
-    status: '支付网关：可用',
-    stats: [
-      { label: '余额', value: money(state.user?.balance, currencySymbol()) },
-      { label: '充值单', value: String(records.length) },
-      { label: '优惠券', value: '可用' },
-    ],
-  });
-}
-
-async function rechargeDetailView(tradeNo) {
-  const recharge = await api.get('/user/recharge/detail', { trade_no: tradeNo });
-  const methods = Number(recharge.status) === 0
-    ? await api.get('/user/recharge/getPaymentMethod').catch(() => [])
-    : [];
-
-  return shell(`
-    <section class="panel detail-panel">
-      <div class="panel-heading">
-        <div>
-          <h2>充值单 ${escapeHtml(recharge.trade_no)}</h2>
-          <p>${escapeHtml(recharge.status_text || statusText(recharge.status, orderStatus))}</p>
-        </div>
-        <a class="secondary-button" href="#/recharge">返回列表</a>
-      </div>
-      ${statCards([
-        { label: '充值金额', value: money(recharge.amount, currencySymbol()) },
-        { label: '手续费', value: money(recharge.handling_amount, currencySymbol()) },
-        { label: '支付方式', value: recharge.payment?.name || '-' },
-        { label: '创建时间', value: time(recharge.created_at) },
-      ])}
-      ${Number(recharge.status) === 0 ? `
-        <div class="checkout-box" data-recharge-checkout="${escapeHtml(recharge.trade_no)}">
-          <h3>支付充值单</h3>
-          ${paymentMethods(methods, recharge.payment_id)}
-          <div class="split-actions">
-            <button class="primary-button" data-checkout-recharge type="button">立即支付</button>
-            <button class="secondary-button" data-cancel-recharge="${escapeHtml(recharge.trade_no)}" type="button">取消充值</button>
-          </div>
-          <div id="payment-result"></div>
-        </div>
-      ` : ''}
-    </section>
-  `, '充值详情', '查看充值记录并完成支付。');
-}
-
-async function profileView() {
-  const user = state.user || {};
-  const giftHistory = await api.get('/user/gift-card/history', { per_page: 8 }).catch(() => ({ data: [] }));
-  const rows = normalizeCollection(giftHistory.data || giftHistory).map((item) => `
-    <tr>
-      <td>${escapeHtml(item.code || '-')}</td>
-      <td>${escapeHtml(item.template_name || '-')}</td>
-      <td>${time(item.created_at)}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="panel">
-      <div class="panel-heading">
-        <div>
-          <h2>账户信息</h2>
-          <p>${escapeHtml(user.email)}</p>
-        </div>
-      </div>
-      <form class="profile-editor" data-identity-form>
-        <div class="profile-avatar-block">
-          <img class="profile-avatar" data-avatar-preview src="${escapeHtml(userAvatarUrl(user))}" alt="">
-          <label class="avatar-upload-button">
-            上传头像
-            <input data-avatar-input name="avatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-          </label>
-          <small>支持 JPG、PNG、WebP、GIF，最大 2MB。</small>
-        </div>
-        <div class="profile-fields">
-          <label>昵称<input name="name" maxlength="64" value="${escapeHtml(user.name || '')}" placeholder="${escapeHtml(userDisplayName(user))}"></label>
-          <p>昵称会显示在侧边栏欢迎语和右上角账户菜单中。</p>
-          <button class="primary-button" type="submit">保存资料</button>
-        </div>
-      </form>
-      ${statCards([
-        { label: '余额', value: money(user.balance, currencySymbol()) },
-        { label: '佣金余额', value: money(user.commission_balance, currencySymbol()) },
-        { label: '注册时间', value: date(user.created_at) },
-        { label: 'UUID', value: user.uuid || '-' },
-      ])}
-    </section>
-
-    <section class="two-column">
-      <form class="panel stack" data-profile-form>
-        <h2>提醒设置</h2>
-        <label class="check-line"><input name="remind_expire" type="checkbox" ${Number(user.remind_expire) ? 'checked' : ''}> 套餐到期提醒</label>
-        <label class="check-line"><input name="remind_traffic" type="checkbox" ${Number(user.remind_traffic) ? 'checked' : ''}> 流量耗尽提醒</label>
-        <button class="primary-button" type="submit">保存设置</button>
-      </form>
-
-      <form class="panel stack" data-transfer-form>
-        <h2>佣金划转</h2>
-        <label>划转金额<input name="amount" type="number" min="0.01" step="0.01" placeholder="10.00"></label>
-        <button class="primary-button" type="submit">转入余额</button>
-      </form>
-    </section>
-
-    <section class="two-column">
-      <form class="panel stack" data-password-form>
-        <h2>修改密码</h2>
-        <label>旧密码<input name="old_password" type="password" autocomplete="current-password" required></label>
-        <label>新密码<input name="new_password" type="password" autocomplete="new-password" minlength="8" required></label>
-        <button class="primary-button" type="submit">更新密码</button>
-      </form>
-
-      <form class="panel stack" data-gift-card-form>
-        <h2>礼品卡兑换</h2>
-        <label>兑换码<input name="code" placeholder="输入兑换码"></label>
-        <button class="primary-button" type="submit">立即兑换</button>
-      </form>
-    </section>
-
-    <section class="panel">
-      <div class="panel-heading"><div><h2>兑换记录</h2><p>最近兑换的礼品卡。</p></div></div>
-      ${table(['兑换码', '名称', '兑换时间'], rows, '暂无兑换记录')}
-    </section>
-  `, '账户', '管理个人资料、安全设置与余额。');
-}
-
-async function nodesView() {
-  const servers = await api.get('/user/server/fetch').catch(() => ({ data: [] }));
-  const rows = normalizeCollection(servers.data || servers).map((node) => `
-    <tr>
-      <td>${escapeHtml(node.name)}</td>
-      <td>${escapeHtml(node.type)}</td>
-      <td>${node.is_online ? '<span class="badge ok">在线</span>' : '<span class="badge muted">离线</span>'}</td>
-      <td>${escapeHtml(node.rate ?? '-')}</td>
-      <td>${escapeHtml(Array.isArray(node.tags) ? node.tags.join(', ') : (node.tags || '-'))}</td>
-      <td>${time(node.last_check_at)}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="panel">
-      ${table(['节点', '协议', '状态', '倍率', '标签', '检测时间'], rows, '暂无可用节点')}
-    </section>
-  `, '节点', '查看当前套餐可访问节点及在线状态。');
-}
-
-async function trafficView() {
-  const logs = normalizeCollection(await api.get('/user/stat/getTrafficLog'));
-  const rows = logs.map((item) => `
-    <tr>
-      <td>${date(item.record_at)}</td>
-      <td>${bytes(item.u)}</td>
-      <td>${bytes(item.d)}</td>
-      <td>${bytes(Number(item.u || 0) + Number(item.d || 0))}</td>
-      <td>${escapeHtml(item.server_rate ?? '-')}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="panel">
-      ${table(['日期', '上传', '下载', '总计', '倍率'], rows, '暂无流量记录')}
-    </section>
-  `, '流量', '查看本月订阅流量使用记录。');
-}
-
-async function ticketsView(params) {
-  const id = params.query.id;
-  if (id) return ticketDetailView(id);
-
-  const tickets = normalizeCollection(await api.get('/user/ticket/fetch'));
-  const rows = tickets.map((ticket) => `
-    <tr>
-      <td><a href="#/tickets?id=${ticket.id}">${escapeHtml(ticket.subject)}</a></td>
-      <td>${escapeHtml(ticketLevel[ticket.level] || '-')}</td>
-      <td>${escapeHtml(statusText(ticket.status, ticketStatus))}</td>
-      <td>${time(ticket.updated_at || ticket.created_at)}</td>
-    </tr>
-  `);
-
-  return shell(`
-    <section class="panel">
-      <form class="stack" data-ticket-form>
-        <h2>新建工单</h2>
-        <label>标题<input name="subject" required></label>
-        <label>等级<select name="level"><option value="0">低</option><option value="1">中</option><option value="2">高</option></select></label>
-        <label>内容<textarea name="message" rows="5" required></textarea></label>
-        <button class="primary-button" type="submit">提交工单</button>
-      </form>
-    </section>
-    <section class="panel">
-      ${table(['标题', '等级', '状态', '更新时间'], rows, '暂无工单')}
-    </section>
-  `, '工单', '提交问题并查看处理进度。');
-}
-
-async function ticketDetailView(id) {
-  const ticket = await api.get('/user/ticket/fetch', { id });
-  const messages = normalizeCollection(ticket.message || []);
-  return shell(`
-    <section class="panel detail-panel">
-      <div class="panel-heading">
-        <div>
-          <h2>${escapeHtml(ticket.subject)}</h2>
-          <p>${escapeHtml(statusText(ticket.status, ticketStatus))}</p>
-        </div>
-        <a class="secondary-button" href="#/tickets">返回列表</a>
-      </div>
-      <div class="message-list">
-        ${messages.map((message) => `
-          <article class="message-item ${message.is_me ? 'is-me' : ''}">
-            <div>${safeBody(message.message || '')}</div>
-            <time>${time(message.created_at)}</time>
-          </article>
-        `).join('') || emptyView('暂无回复')}
-      </div>
-      ${Number(ticket.status) === 0 ? `
-        <form class="stack" data-ticket-reply="${ticket.id}">
-          <label>回复内容<textarea name="message" rows="4" required></textarea></label>
-          <div class="split-actions">
-            <button class="primary-button" type="submit">发送回复</button>
-            <button class="secondary-button" data-close-ticket="${ticket.id}" type="button">关闭工单</button>
-          </div>
-        </form>
-      ` : ''}
-    </section>
-  `, '工单详情', '查看沟通记录并继续回复。');
-}
-
-async function inviteView() {
-  const invite = await api.get('/user/invite/fetch');
-  const details = await api.get('/user/invite/details', { current: 1, page_size: 10 }).catch(() => ({ data: [] }));
-  const codes = normalizeCollection(invite.codes || []);
-  const codeRows = codes.map((item) => {
-    const url = `${location.origin}/#/register?invite_code=${encodeURIComponent(item.code)}`;
-    return `
-      <tr>
-        <td>${escapeHtml(item.code)}</td>
-        <td>${escapeHtml(item.pv ?? 0)}</td>
-        <td>${time(item.created_at)}</td>
-        <td><button class="link-button" data-copy="${escapeHtml(url)}" type="button">复制链接</button></td>
-      </tr>
-    `;
-  });
-  const detailRows = normalizeCollection(details.data || details).map((item) => `
-    <tr>
-      <td>${escapeHtml(item.trade_no)}</td>
-      <td>${money(item.order_amount, currencySymbol())}</td>
-      <td>${money(item.get_amount, currencySymbol())}</td>
-      <td>${time(item.created_at)}</td>
-    </tr>
-  `);
-
-  return shell(`
-    ${statCards([
-      { label: '注册用户', value: invite.stat?.[0] ?? 0 },
-      { label: '累计佣金', value: money(invite.stat?.[1], currencySymbol()) },
-      { label: '确认中', value: money(invite.stat?.[2], currencySymbol()) },
-      { label: '佣金比例', value: `${invite.stat?.[3] ?? 0}%` },
-    ])}
-    <section class="panel">
-      <div class="panel-heading">
-        <div><h2>邀请码</h2><p>生成并分享邀请码。</p></div>
-        <button class="primary-button" data-create-invite type="button">生成邀请码</button>
-      </div>
-      ${table(['邀请码', '访问量', '创建时间', '操作'], codeRows, '暂无邀请码')}
-    </section>
-    <section class="panel">
-      <div class="panel-heading"><div><h2>佣金明细</h2><p>邀请订单产生的佣金。</p></div></div>
-      ${table(['订单号', '订单金额', '获得佣金', '时间'], detailRows, '暂无佣金明细')}
-    </section>
-  `, '邀请', '管理邀请码和返佣记录。');
-}
-
-async function knowledgeView(params) {
-  if (params.query.id) {
-    const article = await api.get('/user/knowledge/fetch', { id: params.query.id, language: 'zh-CN' });
-    return shell(`
-      <section class="panel article-panel">
-        <div class="panel-heading">
-          <div>
-            <h2>${escapeHtml(article.title)}</h2>
-            <p>${time(article.updated_at)}</p>
-          </div>
-          <a class="secondary-button" href="#/knowledge">返回列表</a>
-        </div>
-        <article class="article-body">${safeBody(article.body || '')}</article>
-      </section>
-    `, '知识库', '阅读使用教程与常见问题。');
-  }
-
-  const grouped = await api.get('/user/knowledge/fetch', { language: 'zh-CN' }).catch(() => ({}));
-  const sections = Object.entries(grouped || {}).map(([category, articles]) => `
-    <section class="panel">
-      <div class="panel-heading"><div><h2>${escapeHtml(category || '默认分类')}</h2></div></div>
-      <div class="article-list">
-        ${normalizeCollection(articles).map((article) => `
-          <a class="article-link" href="#/knowledge?id=${article.id}">
-            <strong>${escapeHtml(article.title)}</strong>
-            <span>${time(article.updated_at)}</span>
-          </a>
-        `).join('') || emptyView('暂无文章')}
-      </div>
-    </section>
-  `);
-
-  return shell(sections.join('') || emptyView('暂无知识库文章'), '知识库', '查看订阅使用教程和常见问题。');
-}
-
-const views = {
-  login: loginView,
-  register: registerView,
-  forgot: forgotView,
-  dashboard: dashboardView,
-  subscribe: subscribeView,
-  plans: plansView,
-  orders: ordersView,
-  recharge: rechargeView,
-  profile: profileView,
-  nodes: nodesView,
-  traffic: trafficView,
-  tickets: ticketsView,
-  invite: inviteView,
-  knowledge: knowledgeView,
+const ToastStack = {
+  setup() {
+    return () => h('div', { class: 'toast-stack' }, state.toasts.map((item) => h('div', {
+      key: item.id,
+      class: ['toast', `toast-${item.type}`, item.visible ? 'is-visible' : ''],
+    }, item.message)));
+  },
 };
 
-async function render() {
-  const current = route();
-  const publicRoute = publicRoutes.has(current.name);
+const RouteProgress = {
+  setup() {
+    return () => h('div', {
+      class: ['route-progress', state.progress === 'active' ? 'is-active' : '', state.progress === 'finishing' ? 'is-finishing' : ''],
+      'aria-hidden': 'true',
+    }, [h('span')]);
+  },
+};
 
-  startRouteProgress();
-
-  try {
-    await boot();
-
-    if (!publicRoute && !getToken()) {
-      go('login', { redirect: current.name });
-      return;
+const AppShell = {
+  setup(_, { slots }) {
+    function toggleSidebar() {
+      state.sidebarCollapsed = !state.sidebarCollapsed;
     }
 
-    if (publicRoute && getToken() && current.name === 'login') {
-      go('dashboard');
-      return;
+    function toggleMobileMenu() {
+      state.sidebarOpen = !state.sidebarOpen;
     }
 
-    const view = views[current.name] || views.dashboard;
-    app.innerHTML = await view(current);
-    bindPageEvents();
-  } catch (error) {
-    app.innerHTML = publicRoute
-      ? authShell(`<div class="error-box">${escapeHtml(error.message || '页面加载失败')}</div>`)
-      : shell(`<div class="error-box">${escapeHtml(error.message || '页面加载失败')}</div>`, currentTitle(current.name), '请稍后重试或重新登录。');
-    bindPageEvents();
-  } finally {
-    finishRouteProgress();
-  }
-}
+    function logout() {
+      clearToken();
+      resetBoot();
+      state.userMenuOpen = false;
+      go('login');
+    }
 
-function formData(form) {
-  return Object.fromEntries(new FormData(form).entries());
-}
+    return () => {
+      const active = state.route.name;
+      const user = state.user || {};
+      const title = currentTitle(active);
+      return h('div', { class: 'app-shell' }, [
+        h('aside', { class: 'sidebar' }, [
+          h('a', { class: 'brand brand-text-only', href: '#/dashboard', 'aria-label': appName() }, [
+            h('span', [h('b', appName())]),
+          ]),
+          h('nav', { class: 'nav' }, navGroups().map((group) => h('div', { class: 'nav-group', key: group.name || 'main' }, [
+            group.name ? h('span', group.name) : null,
+            ...group.items.map((item) => h('a', {
+              class: ['nav-item', active === item.key ? 'active' : ''],
+              href: `#/${item.key}`,
+              key: item.key,
+            }, [
+              h('span', {
+                class: 'nav-icon-image',
+                style: { '--icon-url': `url("${appAsset(`icons/${item.icon}`)}")` },
+                'aria-hidden': 'true',
+              }),
+              h('span', { class: 'nav-label' }, item.label),
+              item.key === 'tickets' && Number(state.stat?.[0] || 0) > 0 ? h('em', String(state.stat[0])) : null,
+            ])),
+          ]))),
+        ]),
+        h('main', { class: 'workspace' }, [
+          h('header', { class: 'topbar' }, [
+            h('button', { class: 'icon-button mobile-menu', type: 'button', onClick: toggleMobileMenu }, '☰'),
+            h('div', { class: 'breadcrumb' }, [
+              h('button', {
+                class: 'sidebar-toggle-button',
+                type: 'button',
+                'aria-label': '展开或收起菜单',
+                onClick: toggleSidebar,
+              }, [
+                h('span', {
+                  class: 'collapse-icon collapse-icon-collapse',
+                  style: { '--icon-url': `url("${appAsset('icons/Collapse.webp')}")` },
+                  'aria-hidden': 'true',
+                }),
+                h('span', {
+                  class: 'collapse-icon collapse-icon-expand',
+                  style: { '--icon-url': `url("${appAsset('icons/Expand.webp')}")` },
+                  'aria-hidden': 'true',
+                }),
+              ]),
+              h('strong', title),
+            ]),
+            h('div', { class: 'top-actions' }, [
+              h('button', {
+                class: 'theme-toggle',
+                type: 'button',
+                'aria-label': '切换白天和暗黑模式',
+                title: '切换白天和暗黑模式',
+                onClick: () => { state.theme = state.theme === 'light' ? 'dark' : 'light'; },
+              }, [
+                h('span', { class: 'theme-icon', 'aria-hidden': 'true' }),
+                h('span', { class: 'theme-label' }, state.theme === 'light' ? '暗黑' : '白天'),
+              ]),
+              h('span', { class: 'round-chip' }, 'CN'),
+              h('div', { class: ['user-menu', state.userMenuOpen ? 'is-open' : ''] }, [
+                h('button', {
+                  class: 'avatar-chip',
+                  type: 'button',
+                  'aria-haspopup': 'menu',
+                  'aria-expanded': state.userMenuOpen ? 'true' : 'false',
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    state.userMenuOpen = !state.userMenuOpen;
+                  },
+                }, [h('img', { class: 'avatar-thumb', src: userAvatarUrl(user), alt: '' })]),
+                h('div', { class: 'user-dropdown', role: 'menu' }, [
+                  h('div', { class: 'user-dropdown-head' }, [
+                    h('strong', userDisplayName(user)),
+                    h('span', user.email || '当前账号'),
+                  ]),
+                  h('a', { href: '#/profile', role: 'menuitem' }, '账号设置'),
+                  h('button', { type: 'button', role: 'menuitem', onClick: logout }, '退出登录'),
+                ]),
+              ]),
+            ]),
+          ]),
+          h('section', { class: 'content' }, slots.default?.()),
+        ]),
+      ]);
+    };
+  },
+};
 
-function bindPageEvents() {
-  const current = route();
-  if (current.name === 'login' && current.query.verify && !window.__xboardVerifyHandled) {
-    window.__xboardVerifyHandled = true;
-    api.get('/passport/auth/token2Login', { verify: current.query.verify }, { auth: false })
-      .then((payload) => {
+const AuthLayout = {
+  setup(_, { slots }) {
+    return () => h('main', { class: 'auth-page' }, [
+      h('section', { class: 'auth-shell' }, [
+        h('div', { class: 'auth-visual' }, [
+          h('a', { class: 'brand brand-text-only', href: '#/login', 'aria-label': appName() }, [
+            h('span', [h('b', appName())]),
+          ]),
+          h('section', { class: 'page-hero' }, [
+            h('p', [h('i'), '安全登录']),
+            h('h1', ['欢迎', h('br'), '回来']),
+            h('small', settings.description || state.guest?.app_description || '继续管理你的订阅、节点与余额。'),
+          ]),
+          h('article', { class: 'glass-card preview-card accent-orange' }, [
+            h('div', { class: 'card-title-row' }, [
+              h('span', { class: 'service-icon' }, '∞'),
+              h('div', [h('small', '当前套餐'), h('h2', 'Pro Stream')]),
+            ]),
+            h('p', '本周期已用流量'),
+            h('strong', '128.4 GB'),
+            h('span', { class: 'trend-pill up' }, '↗ +26%'),
+            h('svg', { viewBox: '0 0 420 150', 'aria-hidden': 'true' }, [
+              h('path', { d: 'M0 136 L55 62 L105 56 L155 58 L198 24 L238 130 L282 88 L326 96 L365 34 L420 74' }),
+            ]),
+          ]),
+        ]),
+        h('div', { class: 'auth-card' }, [
+          h('div', { class: 'auth-brand' }, [
+            h('h1', '登录账户'),
+            h('p', '继续管理你的订阅、节点与余额。'),
+          ]),
+          slots.default?.(),
+        ]),
+      ]),
+    ]);
+  },
+};
+
+const LoginPage = {
+  setup() {
+    onMounted(async () => {
+      const current = state.route;
+      if (!current.query.verify || window.__xboardVerifyHandled) return;
+      window.__xboardVerifyHandled = true;
+      try {
+        const payload = await api.get('/passport/auth/token2Login', { verify: current.query.verify }, { auth: false });
         const data = payload?.data || payload;
         if (!data?.auth_data) throw new Error('登录凭证无效');
         setToken(data.auth_data);
-        state.bootPromise = null;
+        resetBoot();
         toast('登录成功');
         go(current.query.redirect || 'dashboard');
-      })
-      .catch((error) => {
+      } catch (error) {
         toast(error.message || '登录链接已失效', 'error');
-      });
-  }
-
-  $all('[data-toggle-menu]').forEach((button) => {
-    button.addEventListener('click', () => {
-      document.body.classList.toggle('sidebar-open');
+      }
     });
-  });
 
-  $all('[data-toggle-sidebar]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const collapsed = document.body.classList.toggle('sidebar-collapsed');
-      button.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
-    });
-  });
-
-  $all('[data-toggle-theme]').forEach((button) => {
-    button.addEventListener('click', () => {
-      applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
-      $all('.theme-label').forEach((label) => {
-        label.textContent = themeLabel();
-      });
-    });
-  });
-
-  $all('[data-toggle-user-menu]').forEach((button) => {
-    button.addEventListener('click', (event) => {
-      event.stopPropagation();
-      const menu = button.closest('.user-menu');
-      const isOpen = menu?.classList.toggle('is-open');
-      button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    });
-  });
-
-  if (!window.__xboardUserMenuBound) {
-    window.__xboardUserMenuBound = true;
-    document.addEventListener('click', (event) => {
-      if (event.target instanceof Element && event.target.closest('.user-menu')) return;
-      $all('.user-menu.is-open').forEach((menu) => {
-        menu.classList.remove('is-open');
-        menu.querySelector('[data-toggle-user-menu]')?.setAttribute('aria-expanded', 'false');
-      });
-    });
-  }
-
-  $all('[data-logout]').forEach((button) => {
-    button.addEventListener('click', () => {
-      clearToken();
-      state.bootPromise = null;
-      state.booted = false;
-      go('login');
-    });
-  });
-
-  $all('[data-copy]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      await copyText(button.dataset.copy || '');
-      toast('已复制');
-    });
-  });
-
-  $('[data-login-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const button = event.submitter;
-    button.disabled = true;
-    try {
-      const data = await api.post('/passport/auth/login', formData(event.currentTarget), { auth: false });
-      setToken(data.auth_data);
-      state.bootPromise = null;
-      toast('登录成功');
-      go(route().query.redirect || 'dashboard');
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      button.disabled = false;
+    async function submit(event) {
+      event.preventDefault();
+      const button = event.submitter;
+      if (button) button.disabled = true;
+      try {
+        const data = await api.post('/passport/auth/login', formData(event.currentTarget), { auth: false });
+        setToken(data.auth_data);
+        resetBoot();
+        toast('登录成功');
+        go(state.route.query.redirect || 'dashboard');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        if (button) button.disabled = false;
+      }
     }
-  });
 
-  $('[data-register-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const button = event.submitter;
-    button.disabled = true;
-    try {
-      const data = await api.post('/passport/auth/register', formData(event.currentTarget), { auth: false });
-      setToken(data.auth_data);
-      state.bootPromise = null;
-      toast('注册成功');
-      go('dashboard');
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      button.disabled = false;
+    return () => h('form', { class: 'stack auth-form', onSubmit: submit }, [
+      h('label', ['邮箱', h('input', { name: 'email', type: 'email', autocomplete: 'email', required: true })]),
+      h('label', ['密码', h('input', { name: 'password', type: 'password', autocomplete: 'current-password', minlength: '8', required: true })]),
+      h('button', { class: 'primary-button', type: 'submit' }, '登录'),
+      h('div', { class: 'auth-links' }, [
+        h('a', { href: '#/register' }, '注册账号'),
+        h('a', { href: '#/forgot' }, '忘记密码'),
+      ]),
+    ]);
+  },
+};
+
+const RegisterPage = {
+  setup() {
+    const inviteCode = state.route.query.invite_code || '';
+    const showCode = Number(state.guest.is_email_verify) === 1;
+    const forceInvite = Number(state.guest.is_invite_force) === 1 || inviteCode;
+
+    async function submit(event) {
+      event.preventDefault();
+      const button = event.submitter;
+      if (button) button.disabled = true;
+      try {
+        const data = await api.post('/passport/auth/register', formData(event.currentTarget), { auth: false });
+        setToken(data.auth_data);
+        resetBoot();
+        toast('注册成功');
+        go('dashboard');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        if (button) button.disabled = false;
+      }
     }
-  });
 
-  $('[data-forgot-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const button = event.submitter;
-    button.disabled = true;
-    try {
-      await api.post('/passport/auth/forget', formData(event.currentTarget), { auth: false });
-      toast('密码已重置，请登录');
-      go('login');
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      button.disabled = false;
-    }
-  });
-
-  $all('[data-send-code]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      const form = button.closest('form');
+    async function sendCode(event) {
+      const form = event.currentTarget.closest('form');
       const email = form?.querySelector('[name=email]')?.value;
       if (!email) {
         toast('请先输入邮箱', 'error');
         return;
       }
-      button.disabled = true;
+      event.currentTarget.disabled = true;
       try {
         await api.post('/passport/comm/sendEmailVerify', { email }, { auth: false });
         toast('验证码已发送');
       } catch (error) {
         toast(error.message, 'error');
       } finally {
-        setTimeout(() => { button.disabled = false; }, 3000);
+        setTimeout(() => { event.currentTarget.disabled = false; }, 3000);
       }
-    });
-  });
-
-  $('[data-reset-security]')?.addEventListener('click', async () => {
-    if (!confirm('重置后旧订阅链接会失效，确定继续吗？')) return;
-    try {
-      const url = await api.get('/user/resetSecurity');
-      state.subscribe.subscribe_url = url;
-      toast('订阅已重置');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
     }
-  });
 
-  $all('[data-buy-plan]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      const card = button.closest('[data-plan-card]');
-      const payload = {
-        plan_id: button.dataset.buyPlan,
-        period: card.querySelector('[name=period]')?.value,
-        coupon_code: card.querySelector('[name=coupon_code]')?.value || '',
-      };
-      button.disabled = true;
+    return () => h('form', { class: 'stack auth-form', onSubmit: submit }, [
+      h('label', ['邮箱', h('input', { name: 'email', type: 'email', autocomplete: 'email', required: true })]),
+      h('label', ['密码', h('input', { name: 'password', type: 'password', autocomplete: 'new-password', minlength: '8', required: true })]),
+      showCode ? h('label', ['邮箱验证码', h('span', { class: 'inline-field' }, [
+        h('input', { name: 'email_code', inputmode: 'numeric', maxlength: '6', required: true }),
+        h('button', { class: 'secondary-button', type: 'button', onClick: sendCode }, '发送'),
+      ])]) : null,
+      forceInvite ? h('label', ['邀请码', h('input', {
+        name: 'invite_code',
+        value: inviteCode,
+        required: Number(state.guest.is_invite_force) === 1,
+      })]) : null,
+      h('button', { class: 'primary-button', type: 'submit' }, '创建账号'),
+      h('div', { class: 'auth-links' }, [h('a', { href: '#/login' }, '已有账号登录')]),
+    ]);
+  },
+};
+
+const ForgotPage = {
+  setup() {
+    async function submit(event) {
+      event.preventDefault();
+      const button = event.submitter;
+      if (button) button.disabled = true;
       try {
+        await api.post('/passport/auth/forget', formData(event.currentTarget), { auth: false });
+        toast('密码已重置，请登录');
+        go('login');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    async function sendCode(event) {
+      const form = event.currentTarget.closest('form');
+      const email = form?.querySelector('[name=email]')?.value;
+      if (!email) {
+        toast('请先输入邮箱', 'error');
+        return;
+      }
+      event.currentTarget.disabled = true;
+      try {
+        await api.post('/passport/comm/sendEmailVerify', { email }, { auth: false });
+        toast('验证码已发送');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        setTimeout(() => { event.currentTarget.disabled = false; }, 3000);
+      }
+    }
+
+    return () => h('form', { class: 'stack auth-form', onSubmit: submit }, [
+      h('label', ['邮箱', h('span', { class: 'inline-field' }, [
+        h('input', { name: 'email', type: 'email', autocomplete: 'email', required: true }),
+        h('button', { class: 'secondary-button', type: 'button', onClick: sendCode }, '发送'),
+      ])]),
+      h('label', ['邮箱验证码', h('input', { name: 'email_code', inputmode: 'numeric', maxlength: '6', required: true })]),
+      h('label', ['新密码', h('input', { name: 'password', type: 'password', autocomplete: 'new-password', minlength: '8', required: true })]),
+      h('button', { class: 'primary-button', type: 'submit' }, '重置密码'),
+      h('div', { class: 'auth-links' }, [h('a', { href: '#/login' }, '返回登录')]),
+    ]);
+  },
+};
+
+const DashboardPage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      const [notices, servers] = await Promise.all([
+        api.get('/user/notice/fetch', { current: 1 }).catch(() => ({ data: [] })),
+        api.get('/user/server/fetch').catch(() => ({ data: [] })),
+      ]);
+      page.notices = normalizeCollection(notices.data || notices).slice(0, 2);
+      page.servers = normalizeCollection(servers.data || servers);
+    });
+
+    return () => {
+      const user = state.user || {};
+      const subscribe = state.subscribe || {};
+      const usage = usageSummary(subscribe);
+      const servers = local.servers || [];
+      const onlineCount = servers.filter((node) => node.is_online).length;
+      const maintenanceCount = Math.max(servers.length - onlineCount, 0);
+      const planName = subscribe.plan?.name || '未订阅套餐';
+      const serverRows = servers.slice(0, 5).map((node, index) => [
+        `#${index + 1}`,
+        [h('i', { class: `node-dot dot-${index % 3}` }), node.name || '-'],
+        node.type || '-',
+        node.is_online ? (node.last_check_at ? '良好' : '-') : '-',
+        node.is_online ? badge('在线', 'ok') : badge('维护', 'danger'),
+      ]);
+      const notices = local.notices || [];
+
+      return h('div', [
+        pageError(local.error),
+        h('section', { class: 'dashboard-metrics' }, [
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '账户余额'), h('strong', money(user.balance, currencySymbol()))]), h('span', '¥')]),
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '当前套餐'), h('strong', subscribe.plan?.name || '未订阅')]), h('span', '∞')]),
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '可用节点'), h('strong', `${servers.length ? onlineCount : 0} 在线`)]), h('span', '◆')]),
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '本月用量'), h('strong', `${usage.ratio}%`)]), h('span', '↗')]),
+        ]),
+        h('section', { class: 'dashboard-overview-grid' }, [
+          h('article', { class: 'dashboard-card dashboard-subscription-card' }, [
+            h('div', { class: 'dashboard-card-head' }, [
+              h('div', [h('small', '订阅概览'), h('h2', planName)]),
+              h('div', { class: 'dashboard-actions' }, [
+                miniButton('购买套餐', { href: '#/plans', class: 'primary-mini' }),
+                miniButton('查看订阅', { href: '#/subscribe' }),
+              ]),
+            ]),
+            h('div', { class: 'dashboard-usage-layout' }, [
+              h('div', { class: 'dashboard-usage-number' }, [
+                h('small', '本周期已用流量'),
+                h('strong', bytes(usage.used)),
+                h('span', { class: 'trend-pill up' }, `${usage.ratio}% 已使用`),
+              ]),
+              h('div', { class: 'dashboard-usage-chart' }, [
+                h('div', { class: 'progress-label' }, [
+                  h('span', '流量进度'),
+                  h('strong', `${bytes(usage.used)} / ${usage.total ? bytes(usage.total) : '不限量'}`),
+                ]),
+                h('div', { class: 'dashboard-progress' }, [h('i', { style: { width: `${usage.ratio}%` } })]),
+                h('svg', { viewBox: '0 0 520 120', 'aria-hidden': 'true' }, [
+                  h('path', { d: 'M8 104 L74 58 L132 52 L190 54 L240 24 L286 104 L336 76 L390 84 L442 42 L512 70' }),
+                  h('circle', { cx: '390', cy: '84', r: '6' }),
+                  h('circle', { cx: '442', cy: '42', r: '6' }),
+                ]),
+              ]),
+            ]),
+          ]),
+          h('article', { class: 'dashboard-card dashboard-node-card' }, [
+            h('div', { class: 'dashboard-card-head' }, [
+              h('div', [h('small', '节点状态'), h('h2', '全球节点池')]),
+              miniButton('全部', { href: '#/nodes' }),
+            ]),
+            h('div', { class: 'dashboard-node-grid' }, Array.from({ length: 12 }).map((_, index) => {
+              const node = servers[index];
+              return h('i', { class: !node ? 'off' : (node.is_online ? 'online' : 'warn') });
+            })),
+            h('div', { class: 'dashboard-node-stat' }, [h('span', '可连接节点'), h('strong', String(servers.length ? onlineCount : 0))]),
+            h('div', { class: 'dashboard-node-stat' }, [h('span', '维护中'), h('strong', { class: 'danger-text' }, String(maintenanceCount))]),
+          ]),
+        ]),
+        h('section', { class: 'dashboard-quick-row' }, [
+          h('a', { class: 'dashboard-action-card', href: '#/subscribe' }, ['我的订阅', h('span', '+')]),
+          h('a', { class: 'dashboard-action-card', href: '#/recharge' }, ['充值余额', h('span', '¥')]),
+          h('a', { class: 'dashboard-action-card', href: '#/tickets' }, ['工单中心', h('span', '?')]),
+          h('a', { class: 'dashboard-action-card', href: '#/knowledge' }, ['使用教程', h('span', 'i')]),
+        ]),
+        h('section', { class: 'dashboard-lower-grid' }, [
+          h('article', { class: 'dashboard-card' }, [
+            h('div', { class: 'dashboard-card-head' }, [
+              h('div', [h('small', '实时更新'), h('h2', '节点概览')]),
+              miniButton('全部', { href: '#/nodes' }),
+            ]),
+            h(DataTable, { headers: ['序号', '节点名称', '协议', '延迟', '状态'], rows: serverRows, empty: '暂无可用节点' }),
+          ]),
+          h('article', { class: 'dashboard-card dashboard-notice-card' }, [
+            h('div', { class: 'dashboard-card-head' }, [
+              h('div', [h('small', '站点通知'), h('h2', '公告')]),
+              miniButton('知识库', { href: '#/knowledge' }),
+            ]),
+            h('div', { class: 'dashboard-notices' }, notices.length ? notices.map((notice) => h('article', { class: 'dashboard-notice-item' }, [
+              h('h3', notice.title || '公告'),
+              h('div', { innerHTML: safeBody(notice.content || notice.body || '') }),
+            ])) : [
+              h('article', { class: 'dashboard-notice-item' }, [h('h3', '暂无公告'), h('p', '后续公告会以卡片形式展示，减少大面积空白。')]),
+              h('article', { class: 'dashboard-notice-item' }, [h('h3', '快速提示'), h('p', '优先引导用户购买套餐、复制订阅、查看节点。')]),
+            ]),
+          ]),
+        ]),
+      ]);
+    };
+  },
+};
+
+const SubscribePage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      const [subscribe, servers] = await Promise.all([
+        api.get('/user/getSubscribe'),
+        api.get('/user/server/fetch').catch(() => ({ data: [] })),
+      ]);
+      state.subscribe = subscribe;
+      page.subscribe = subscribe;
+      page.servers = normalizeCollection(servers.data || servers);
+    });
+
+    async function resetSecurity() {
+      if (!confirm('重置后旧订阅链接会失效，确定继续吗？')) return;
+      try {
+        const url = await api.get('/user/resetSecurity');
+        state.subscribe.subscribe_url = url;
+        local.subscribe.subscribe_url = url;
+        toast('订阅已重置');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function copySubscribe() {
+      await copyText(local.subscribe?.subscribe_url || '');
+      toast('已复制');
+    }
+
+    return () => {
+      const subscribe = local.subscribe || state.subscribe || {};
+      const servers = local.servers || [];
+      const usage = usageSummary(subscribe);
+      const rows = servers.map((node, index) => [
+        `#${index + 1}`,
+        [h('i', { class: `node-dot dot-${index % 3}` }), node.name || '-'],
+        node.type || '-',
+        node.rate ?? '-',
+        node.is_online ? badge('在线', 'ok') : badge('维护', 'danger'),
+      ]);
+
+      return h('div', [
+        pageError(local.error),
+        h('section', { class: 'subscription-grid' }, [
+          h('article', { class: 'panel access-card' }, [
+            h('div', { class: 'section-title' }, [
+              h('p', '订阅地址'),
+              h('h2', subscribe.plan?.name || '未订阅套餐'),
+              miniButton('复制', { onClick: copySubscribe }),
+            ]),
+            h('div', { class: 'url-box' }, subscribe.subscribe_url || '暂无订阅链接'),
+            h('div', { class: 'quota-block' }, [
+              h('strong', usage.total ? bytes(Math.max(usage.total - usage.used, 0)) : '不限量'),
+              h('span', `剩余流量 / 总计 ${usage.total ? bytes(usage.total) : '不限量'}`),
+              h('div', { class: 'progress' }, [h('span', { style: { width: `${usage.ratio}%` } })]),
+            ]),
+            h('div', { class: 'split-actions' }, [
+              h('button', { class: 'secondary-button', type: 'button', onClick: resetSecurity }, '重置订阅'),
+              h('a', { class: 'primary-button', href: '#/plans' }, '续费套餐'),
+            ]),
+          ]),
+          h('article', { class: 'panel side-card' }, [
+            h('h3', '一键导入'),
+            ...['Shadowrocket', 'Clash Verge', 'Stash', 'V2rayN'].map((name) => h('button', { class: 'secondary-button', type: 'button', onClick: copySubscribe }, name)),
+          ]),
+          h('article', { class: 'panel side-card' }, [
+            h('h3', '节点状态'),
+            h('div', { class: 'node-map' }, Array.from({ length: 12 }).map((_, index) => h('i', { class: index >= servers.length ? 'off' : (servers[index]?.is_online ? '' : 'warn') }))),
+          ]),
+        ]),
+        h('section', { class: 'panel wide-panel' }, [
+          h('div', { class: 'section-title' }, [h('p', '实时列表'), h('h2', '可用节点'), miniButton('筛选', { href: '#/nodes' })]),
+          h(DataTable, { headers: ['序号', '节点名称', '协议', '倍率', '状态'], rows, empty: '暂无可用节点' }),
+        ]),
+      ]);
+    };
+  },
+};
+
+const PlansPage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      page.plans = normalizeCollection(await api.get('/user/plan/fetch'));
+    });
+
+    async function buyPlan(event, planId) {
+      event.preventDefault();
+      const button = event.submitter;
+      if (button) button.disabled = true;
+      try {
+        const payload = { ...formData(event.currentTarget), plan_id: planId };
         const tradeNo = await api.post('/user/order/save', payload);
         toast('订单已创建');
         go('orders', { trade_no: tradeNo });
       } catch (error) {
         toast(error.message, 'error');
       } finally {
-        button.disabled = false;
+        if (button) button.disabled = false;
       }
+    }
+
+    return () => h('div', [
+      pageError(local.error),
+      h('div', { class: 'plan-grid' }, (local.plans || []).map((plan, index) => h('form', {
+        class: ['plan-card', index === 1 ? 'hot' : ''],
+        onSubmit: (event) => buyPlan(event, plan.id),
+      }, [
+        h('small', index === 1 ? 'Popular' : (index === 0 ? 'Starter' : 'Plan')),
+        h('div', { class: 'plan-head' }, [
+          h('h2', plan.name),
+          h('span', plan.transfer_enable ? bytes(Number(plan.transfer_enable) * 1024 * 1024 * 1024) : '不限流量'),
+        ]),
+        h('div', { class: 'plan-content', innerHTML: safeBody(plan.content) }),
+        h('div', { class: 'plan-meta' }, [
+          h('span', `速度 ${plan.speed_limit || '不限'}`),
+          h('span', `设备 ${plan.device_limit || '不限'}`),
+        ]),
+        h('label', ['周期', h('select', { name: 'period' }, periodOptions(plan).map((item) => h('option', { value: item.key }, item.label)))]),
+        h('label', ['优惠码', h('input', { name: 'coupon_code', placeholder: '可选' })]),
+        h('button', { class: 'primary-button', type: 'submit' }, '选择套餐'),
+      ]))),
+      local.ready && !(local.plans || []).length ? emptyBlock('暂无可购买套餐') : null,
+    ]);
+  },
+};
+
+const OrdersPage = {
+  setup() {
+    if (state.route.query.trade_no) return () => h(OrderDetailPage, { tradeNo: state.route.query.trade_no });
+    const local = useAsyncPage(async (page) => {
+      page.orders = normalizeCollection(await api.get('/user/order/fetch'));
     });
-  });
 
-  $('[data-checkout-order]')?.addEventListener('click', async (event) => {
-    const box = event.currentTarget.closest('[data-order-checkout]');
-    const tradeNo = box.dataset.orderCheckout;
-    const method = box.querySelector('[name=method]:checked')?.value;
-    event.currentTarget.disabled = true;
-    try {
-      const result = await api.post('/user/order/checkout', { trade_no: tradeNo, method });
-      handlePaymentResult(result, 'order', tradeNo);
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      event.currentTarget.disabled = false;
+    return () => {
+      const rows = (local.orders || []).map((order) => [
+        h('a', { href: `#/orders?trade_no=${encodeURIComponent(order.trade_no)}` }, order.trade_no),
+        order.plan?.name || '-',
+        statusText(order.status, orderStatus),
+        money(order.total_amount, currencySymbol()),
+        time(order.created_at),
+      ]);
+      return h('section', { class: 'panel' }, [
+        pageError(local.error),
+        h(DataTable, { headers: ['订单号', '套餐', '状态', '金额', '创建时间'], rows, empty: '暂无订单' }),
+      ]);
+    };
+  },
+};
+
+const OrderDetailPage = {
+  props: { tradeNo: { type: String, required: true } },
+  setup(props) {
+    const local = useAsyncPage(async (page) => {
+      page.order = await api.get('/user/order/detail', { trade_no: props.tradeNo });
+      page.methods = Number(page.order.status) === 0 && Number(page.order.total_amount) > 0
+        ? await api.get('/user/order/getPaymentMethod').catch(() => [])
+        : [];
+      page.paymentHtml = '';
+      page.paymentMessage = '';
+    });
+
+    async function checkout(event) {
+      const box = event.currentTarget.closest('[data-checkout]');
+      const method = box.querySelector('[name=method]:checked')?.value;
+      event.currentTarget.disabled = true;
+      try {
+        const result = await api.post('/user/order/checkout', { trade_no: props.tradeNo, method });
+        handlePaymentResult(result, 'order', props.tradeNo, local);
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        event.currentTarget.disabled = false;
+      }
     }
-  });
 
-  $('[data-cancel-order]')?.addEventListener('click', async (event) => {
-    if (!confirm('确定取消该订单吗？')) return;
-    try {
-      await api.post('/user/order/cancel', { trade_no: event.currentTarget.dataset.cancelOrder });
-      toast('订单已取消');
-      go('orders');
-    } catch (error) {
-      toast(error.message, 'error');
+    async function cancelOrder() {
+      if (!confirm('确定取消该订单吗？')) return;
+      try {
+        await api.post('/user/order/cancel', { trade_no: props.tradeNo });
+        toast('订单已取消');
+        go('orders');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
     }
-  });
 
-  $('[data-recharge-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const button = event.submitter;
-    button.disabled = true;
-    try {
-      const tradeNo = await api.post('/user/recharge/save', formData(event.currentTarget));
-      toast('充值单已创建');
-      go('recharge', { trade_no: tradeNo });
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      button.disabled = false;
+    return () => {
+      const order = local.order || {};
+      return h('section', { class: 'panel detail-panel' }, [
+        pageError(local.error),
+        h('div', { class: 'panel-heading' }, [
+          h('div', [h('h2', `订单 ${order.trade_no || props.tradeNo}`), h('p', `${order.plan?.name || '-'} · ${statusText(order.status, orderStatus)}`)]),
+          h('a', { class: 'secondary-button', href: '#/orders' }, '返回列表'),
+        ]),
+        statCards([
+          { label: '订单金额', value: money(order.total_amount, currencySymbol()) },
+          { label: '手续费', value: money(order.handling_amount, currencySymbol()) },
+          { label: '余额抵扣', value: money(order.balance_amount, currencySymbol()) },
+          { label: '创建时间', value: time(order.created_at) },
+        ]),
+        Number(order.status) === 0 ? h('div', { class: 'checkout-box', 'data-checkout': props.tradeNo }, [
+          h('h3', '支付订单'),
+          paymentMethods(local.methods || [], order.payment_id),
+          h('div', { class: 'split-actions' }, [
+            h('button', { class: 'primary-button', type: 'button', onClick: checkout }, '立即支付'),
+            h('button', { class: 'secondary-button', type: 'button', onClick: cancelOrder }, '取消订单'),
+          ]),
+          local.paymentMessage ? h('div', { class: 'success-box' }, local.paymentMessage) : null,
+          local.paymentHtml ? h('div', { class: 'payment-frame', innerHTML: local.paymentHtml }) : null,
+        ]) : null,
+      ]);
+    };
+  },
+};
+
+const RechargePage = {
+  setup() {
+    if (state.route.query.trade_no) return () => h(RechargeDetailPage, { tradeNo: state.route.query.trade_no });
+    const local = useAsyncPage(async (page) => {
+      page.records = normalizeCollection(await api.get('/user/recharge/fetch').catch(() => []));
+    });
+
+    async function submit(event) {
+      event.preventDefault();
+      const button = event.submitter;
+      if (button) button.disabled = true;
+      try {
+        const tradeNo = await api.post('/user/recharge/save', formData(event.currentTarget));
+        toast('充值单已创建');
+        go('recharge', { trade_no: tradeNo });
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        if (button) button.disabled = false;
+      }
     }
-  });
 
-  $('[data-checkout-recharge]')?.addEventListener('click', async (event) => {
-    const box = event.currentTarget.closest('[data-recharge-checkout]');
-    const tradeNo = box.dataset.rechargeCheckout;
-    const method = box.querySelector('[name=method]:checked')?.value;
-    event.currentTarget.disabled = true;
-    try {
-      const result = await api.post('/user/recharge/checkout', { trade_no: tradeNo, method });
-      handlePaymentResult(result, 'recharge', tradeNo);
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      event.currentTarget.disabled = false;
+    return () => {
+      const rows = (local.records || []).map((item) => [
+        h('a', { href: `#/recharge?trade_no=${encodeURIComponent(item.trade_no)}` }, item.trade_no),
+        money(item.amount, currencySymbol()),
+        item.status_text || statusText(item.status, orderStatus),
+        item.payment?.name || '-',
+        time(item.created_at),
+      ]);
+      return h('div', [
+        pageError(local.error),
+        h('section', { class: 'billing-layout' }, [
+          h('article', { class: 'panel wallet-panel' }, [
+            h('div', { class: 'section-title' }, [h('p', 'Wallet'), h('h2', '余额充值')]),
+            h('div', { class: 'amount-display' }, money(state.user?.balance, currencySymbol())),
+            h('form', { class: 'wallet-form', onSubmit: submit }, [
+              h('label', ['充值金额', h('input', { name: 'amount', type: 'number', min: '0.01', step: '0.01', placeholder: '100.00', required: true })]),
+              h('button', { class: 'primary-button', type: 'submit' }, '立即充值'),
+            ]),
+          ]),
+          h('article', { class: 'panel wallet-note' }, [
+            h('h3', '充值说明'),
+            h('p', '充值成功后余额会自动入账，可用于购买套餐、续费或抵扣订单。'),
+            h('div', { class: 'info-grid' }, [h('span', '自动入账'), h('span', '订单可追踪'), h('span', '余额可抵扣')]),
+          ]),
+        ]),
+        h('section', { class: 'panel wide-panel' }, [
+          h('div', { class: 'section-title' }, [h('p', '交易记录'), h('h2', '充值记录'), miniButton('订单', { href: '#/orders' })]),
+          h(DataTable, { headers: ['充值单号', '金额', '状态', '支付方式', '创建时间'], rows, empty: '暂无充值记录' }),
+        ]),
+      ]);
+    };
+  },
+};
+
+const RechargeDetailPage = {
+  props: { tradeNo: { type: String, required: true } },
+  setup(props) {
+    const local = useAsyncPage(async (page) => {
+      page.recharge = await api.get('/user/recharge/detail', { trade_no: props.tradeNo });
+      page.methods = Number(page.recharge.status) === 0
+        ? await api.get('/user/recharge/getPaymentMethod').catch(() => [])
+        : [];
+      page.paymentHtml = '';
+      page.paymentMessage = '';
+    });
+
+    async function checkout(event) {
+      const box = event.currentTarget.closest('[data-checkout]');
+      const method = box.querySelector('[name=method]:checked')?.value;
+      event.currentTarget.disabled = true;
+      try {
+        const result = await api.post('/user/recharge/checkout', { trade_no: props.tradeNo, method });
+        handlePaymentResult(result, 'recharge', props.tradeNo, local);
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        event.currentTarget.disabled = false;
+      }
     }
-  });
 
-  $('[data-cancel-recharge]')?.addEventListener('click', async (event) => {
-    if (!confirm('确定取消该充值单吗？')) return;
-    try {
-      await api.post('/user/recharge/cancel', { trade_no: event.currentTarget.dataset.cancelRecharge });
-      toast('充值单已取消');
-      go('recharge');
-    } catch (error) {
-      toast(error.message, 'error');
+    async function cancelRecharge() {
+      if (!confirm('确定取消该充值单吗？')) return;
+      try {
+        await api.post('/user/recharge/cancel', { trade_no: props.tradeNo });
+        toast('充值单已取消');
+        go('recharge');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
     }
-  });
 
-  $('[data-identity-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const button = event.submitter;
-    if (button) button.disabled = true;
-    try {
-      await api.post('/user/update', {
-        name: form.querySelector('[name="name"]')?.value.trim() || '',
+    return () => {
+      const recharge = local.recharge || {};
+      return h('section', { class: 'panel detail-panel' }, [
+        pageError(local.error),
+        h('div', { class: 'panel-heading' }, [
+          h('div', [h('h2', `充值单 ${recharge.trade_no || props.tradeNo}`), h('p', recharge.status_text || statusText(recharge.status, orderStatus))]),
+          h('a', { class: 'secondary-button', href: '#/recharge' }, '返回列表'),
+        ]),
+        statCards([
+          { label: '充值金额', value: money(recharge.amount, currencySymbol()) },
+          { label: '手续费', value: money(recharge.handling_amount, currencySymbol()) },
+          { label: '支付方式', value: recharge.payment?.name || '-' },
+          { label: '创建时间', value: time(recharge.created_at) },
+        ]),
+        Number(recharge.status) === 0 ? h('div', { class: 'checkout-box', 'data-checkout': props.tradeNo }, [
+          h('h3', '支付充值单'),
+          paymentMethods(local.methods || [], recharge.payment_id),
+          h('div', { class: 'split-actions' }, [
+            h('button', { class: 'primary-button', type: 'button', onClick: checkout }, '立即支付'),
+            h('button', { class: 'secondary-button', type: 'button', onClick: cancelRecharge }, '取消充值'),
+          ]),
+          local.paymentMessage ? h('div', { class: 'success-box' }, local.paymentMessage) : null,
+          local.paymentHtml ? h('div', { class: 'payment-frame', innerHTML: local.paymentHtml }) : null,
+        ]) : null,
+      ]);
+    };
+  },
+};
+
+const ProfilePage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      const giftHistory = await api.get('/user/gift-card/history', { per_page: 8 }).catch(() => ({ data: [] }));
+      page.gifts = normalizeCollection(giftHistory.data || giftHistory);
+      page.avatarPreview = userAvatarUrl();
+    });
+
+    async function saveIdentity(event) {
+      event.preventDefault();
+      const button = event.submitter;
+      if (button) button.disabled = true;
+      try {
+        await api.post('/user/update', { name: event.currentTarget.querySelector('[name="name"]')?.value.trim() || '' });
+        await refreshUser();
+        toast('资料已保存');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    async function uploadAvatar(event) {
+      const file = event.currentTarget.files?.[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        event.currentTarget.value = '';
+        toast('头像不能超过 2MB', 'error');
+        return;
+      }
+      const data = new FormData();
+      data.append('avatar', file);
+      try {
+        local.avatarPreview = URL.createObjectURL(file);
+        await api.post('/user/avatar', data);
+        await refreshUser();
+        local.avatarPreview = userAvatarUrl();
+        toast('头像已更新');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        event.currentTarget.value = '';
+      }
+    }
+
+    async function saveProfile(event) {
+      event.preventDefault();
+      try {
+        await api.post('/user/update', {
+          remind_expire: event.currentTarget.remind_expire.checked ? 1 : 0,
+          remind_traffic: event.currentTarget.remind_traffic.checked ? 1 : 0,
+        });
+        await refreshUser();
+        toast('设置已保存');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function transfer(event) {
+      event.preventDefault();
+      const amount = Number(formData(event.currentTarget).amount || 0);
+      try {
+        await api.post('/user/transfer', { transfer_amount: Math.round(amount * 100) });
+        await refreshUser();
+        toast('划转成功');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function changePassword(event) {
+      event.preventDefault();
+      try {
+        await api.post('/user/changePassword', formData(event.currentTarget));
+        toast('密码已更新');
+        event.currentTarget.reset();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function redeemGift(event) {
+      event.preventDefault();
+      try {
+        await api.post('/user/gift-card/redeem', formData(event.currentTarget));
+        await refreshUser();
+        toast('兑换成功');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    return () => {
+      const user = state.user || {};
+      const rows = (local.gifts || []).map((item) => [item.code || '-', item.template_name || '-', time(item.created_at)]);
+      return h('div', [
+        pageError(local.error),
+        h('section', { class: 'panel' }, [
+          h('div', { class: 'panel-heading' }, [h('div', [h('h2', '账户信息'), h('p', user.email || '')])]),
+          h('form', { class: 'profile-editor', onSubmit: saveIdentity }, [
+            h('div', { class: 'profile-avatar-block' }, [
+              h('img', { class: 'profile-avatar', src: local.avatarPreview || userAvatarUrl(user), alt: '' }),
+              h('label', { class: 'avatar-upload-button' }, [
+                '上传头像',
+                h('input', { name: 'avatar', type: 'file', accept: 'image/png,image/jpeg,image/webp,image/gif', onChange: uploadAvatar }),
+              ]),
+              h('small', '支持 JPG、PNG、WebP、GIF，最大 2MB。'),
+            ]),
+            h('div', { class: 'profile-fields' }, [
+              h('label', ['昵称', h('input', { name: 'name', maxlength: '64', value: user.name || '', placeholder: userDisplayName(user) })]),
+              h('p', '昵称会显示在侧边栏欢迎语和右上角账户菜单中。'),
+              h('button', { class: 'primary-button', type: 'submit' }, '保存资料'),
+            ]),
+          ]),
+          statCards([
+            { label: '余额', value: money(user.balance, currencySymbol()) },
+            { label: '佣金余额', value: money(user.commission_balance, currencySymbol()) },
+            { label: '注册时间', value: date(user.created_at) },
+            { label: 'UUID', value: user.uuid || '-' },
+          ]),
+        ]),
+        h('section', { class: 'two-column' }, [
+          h('form', { class: 'panel stack', onSubmit: saveProfile }, [
+            h('h2', '提醒设置'),
+            h('label', { class: 'check-line' }, [h('input', { name: 'remind_expire', type: 'checkbox', checked: Number(user.remind_expire) === 1 }), ' 套餐到期提醒']),
+            h('label', { class: 'check-line' }, [h('input', { name: 'remind_traffic', type: 'checkbox', checked: Number(user.remind_traffic) === 1 }), ' 流量耗尽提醒']),
+            h('button', { class: 'primary-button', type: 'submit' }, '保存设置'),
+          ]),
+          h('form', { class: 'panel stack', onSubmit: transfer }, [
+            h('h2', '佣金划转'),
+            h('label', ['划转金额', h('input', { name: 'amount', type: 'number', min: '0.01', step: '0.01', placeholder: '10.00' })]),
+            h('button', { class: 'primary-button', type: 'submit' }, '转入余额'),
+          ]),
+        ]),
+        h('section', { class: 'two-column' }, [
+          h('form', { class: 'panel stack', onSubmit: changePassword }, [
+            h('h2', '修改密码'),
+            h('label', ['旧密码', h('input', { name: 'old_password', type: 'password', autocomplete: 'current-password', required: true })]),
+            h('label', ['新密码', h('input', { name: 'new_password', type: 'password', autocomplete: 'new-password', minlength: '8', required: true })]),
+            h('button', { class: 'primary-button', type: 'submit' }, '更新密码'),
+          ]),
+          h('form', { class: 'panel stack', onSubmit: redeemGift }, [
+            h('h2', '礼品卡兑换'),
+            h('label', ['兑换码', h('input', { name: 'code', placeholder: '输入兑换码' })]),
+            h('button', { class: 'primary-button', type: 'submit' }, '立即兑换'),
+          ]),
+        ]),
+        h('section', { class: 'panel' }, [
+          h('div', { class: 'panel-heading' }, [h('div', [h('h2', '兑换记录'), h('p', '最近兑换的礼品卡。')])]),
+          h(DataTable, { headers: ['兑换码', '名称', '兑换时间'], rows, empty: '暂无兑换记录' }),
+        ]),
+      ]);
+    };
+  },
+};
+
+const NodesPage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      const servers = await api.get('/user/server/fetch').catch(() => ({ data: [] }));
+      page.servers = normalizeCollection(servers.data || servers);
+    });
+
+    return () => {
+      const rows = (local.servers || []).map((node) => [
+        node.name || '-',
+        node.type || '-',
+        node.is_online ? badge('在线', 'ok') : badge('离线', 'muted'),
+        node.rate ?? '-',
+        Array.isArray(node.tags) ? node.tags.join(', ') : (node.tags || '-'),
+        time(node.last_check_at),
+      ]);
+      return h('section', { class: 'panel' }, [
+        pageError(local.error),
+        h(DataTable, { headers: ['节点', '协议', '状态', '倍率', '标签', '检测时间'], rows, empty: '暂无可用节点' }),
+      ]);
+    };
+  },
+};
+
+const TrafficPage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      page.logs = normalizeCollection(await api.get('/user/stat/getTrafficLog'));
+    });
+
+    return () => {
+      const rows = (local.logs || []).map((item) => [
+        date(item.record_at),
+        bytes(item.u),
+        bytes(item.d),
+        bytes(Number(item.u || 0) + Number(item.d || 0)),
+        item.server_rate ?? '-',
+      ]);
+      return h('section', { class: 'panel' }, [
+        pageError(local.error),
+        h(DataTable, { headers: ['日期', '上传', '下载', '总计', '倍率'], rows, empty: '暂无流量记录' }),
+      ]);
+    };
+  },
+};
+
+const TicketsPage = {
+  setup() {
+    if (state.route.query.id) return () => h(TicketDetailPage, { id: state.route.query.id });
+    const local = useAsyncPage(async (page) => {
+      page.tickets = normalizeCollection(await api.get('/user/ticket/fetch'));
+    });
+
+    async function submit(event) {
+      event.preventDefault();
+      try {
+        await api.post('/user/ticket/save', formData(event.currentTarget));
+        toast('工单已提交');
+        event.currentTarget.reset();
+        local.tickets = normalizeCollection(await api.get('/user/ticket/fetch'));
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    return () => {
+      const rows = (local.tickets || []).map((ticket) => [
+        h('a', { href: `#/tickets?id=${ticket.id}` }, ticket.subject),
+        ticketLevel[ticket.level] || '-',
+        statusText(ticket.status, ticketStatus),
+        time(ticket.updated_at || ticket.created_at),
+      ]);
+      return h('div', [
+        pageError(local.error),
+        h('section', { class: 'panel' }, [
+          h('form', { class: 'stack', onSubmit: submit }, [
+            h('h2', '新建工单'),
+            h('label', ['标题', h('input', { name: 'subject', required: true })]),
+            h('label', ['等级', h('select', { name: 'level' }, [h('option', { value: '0' }, '低'), h('option', { value: '1' }, '中'), h('option', { value: '2' }, '高')])]),
+            h('label', ['内容', h('textarea', { name: 'message', rows: '5', required: true })]),
+            h('button', { class: 'primary-button', type: 'submit' }, '提交工单'),
+          ]),
+        ]),
+        h('section', { class: 'panel' }, [
+          h(DataTable, { headers: ['标题', '等级', '状态', '更新时间'], rows, empty: '暂无工单' }),
+        ]),
+      ]);
+    };
+  },
+};
+
+const TicketDetailPage = {
+  props: { id: { type: [String, Number], required: true } },
+  setup(props) {
+    const local = useAsyncPage(async (page) => {
+      page.ticket = await api.get('/user/ticket/fetch', { id: props.id });
+      page.messages = normalizeCollection(page.ticket.message || []);
+    });
+
+    async function reply(event) {
+      event.preventDefault();
+      try {
+        await api.post('/user/ticket/reply', { id: props.id, ...formData(event.currentTarget) });
+        toast('回复已发送');
+        local.ticket = await api.get('/user/ticket/fetch', { id: props.id });
+        local.messages = normalizeCollection(local.ticket.message || []);
+        event.currentTarget.reset();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function closeTicket() {
+      if (!confirm('确定关闭该工单吗？')) return;
+      try {
+        await api.post('/user/ticket/close', { id: props.id });
+        toast('工单已关闭');
+        go('tickets');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    return () => {
+      const ticket = local.ticket || {};
+      const messages = local.messages || [];
+      return h('section', { class: 'panel detail-panel' }, [
+        pageError(local.error),
+        h('div', { class: 'panel-heading' }, [
+          h('div', [h('h2', ticket.subject || '工单详情'), h('p', statusText(ticket.status, ticketStatus))]),
+          h('a', { class: 'secondary-button', href: '#/tickets' }, '返回列表'),
+        ]),
+        h('div', { class: 'message-list' }, messages.length ? messages.map((message) => h('article', { class: ['message-item', message.is_me ? 'is-me' : ''] }, [
+          h('div', { innerHTML: safeBody(message.message || '') }),
+          h('time', time(message.created_at)),
+        ])) : [emptyBlock('暂无回复')]),
+        Number(ticket.status) === 0 ? h('form', { class: 'stack', onSubmit: reply }, [
+          h('label', ['回复内容', h('textarea', { name: 'message', rows: '4', required: true })]),
+          h('div', { class: 'split-actions' }, [
+            h('button', { class: 'primary-button', type: 'submit' }, '发送回复'),
+            h('button', { class: 'secondary-button', type: 'button', onClick: closeTicket }, '关闭工单'),
+          ]),
+        ]) : null,
+      ]);
+    };
+  },
+};
+
+const InvitePage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      page.invite = await api.get('/user/invite/fetch');
+      const details = await api.get('/user/invite/details', { current: 1, page_size: 10 }).catch(() => ({ data: [] }));
+      page.details = normalizeCollection(details.data || details);
+    });
+
+    async function createInvite() {
+      try {
+        await api.get('/user/invite/save');
+        toast('邀请码已生成');
+        local.invite = await api.get('/user/invite/fetch');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function copyInvite(code) {
+      const url = `${location.origin}/#/register?invite_code=${encodeURIComponent(code)}`;
+      await copyText(url);
+      toast('已复制');
+    }
+
+    return () => {
+      const invite = local.invite || {};
+      const codes = normalizeCollection(invite.codes || []);
+      const codeRows = codes.map((item) => [
+        item.code,
+        item.pv ?? 0,
+        time(item.created_at),
+        h('button', { class: 'link-button', type: 'button', onClick: () => copyInvite(item.code) }, '复制链接'),
+      ]);
+      const detailRows = (local.details || []).map((item) => [
+        item.trade_no,
+        money(item.order_amount, currencySymbol()),
+        money(item.get_amount, currencySymbol()),
+        time(item.created_at),
+      ]);
+
+      return h('div', [
+        pageError(local.error),
+        statCards([
+          { label: '注册用户', value: invite.stat?.[0] ?? 0 },
+          { label: '累计佣金', value: money(invite.stat?.[1], currencySymbol()) },
+          { label: '确认中', value: money(invite.stat?.[2], currencySymbol()) },
+          { label: '佣金比例', value: `${invite.stat?.[3] ?? 0}%` },
+        ]),
+        h('section', { class: 'panel' }, [
+          h('div', { class: 'panel-heading' }, [
+            h('div', [h('h2', '邀请码'), h('p', '生成并分享邀请码。')]),
+            h('button', { class: 'primary-button', type: 'button', onClick: createInvite }, '生成邀请码'),
+          ]),
+          h(DataTable, { headers: ['邀请码', '访问量', '创建时间', '操作'], rows: codeRows, empty: '暂无邀请码' }),
+        ]),
+        h('section', { class: 'panel' }, [
+          h('div', { class: 'panel-heading' }, [h('div', [h('h2', '佣金明细'), h('p', '邀请订单产生的佣金。')])]),
+          h(DataTable, { headers: ['订单号', '订单金额', '获得佣金', '时间'], rows: detailRows, empty: '暂无佣金明细' }),
+        ]),
+      ]);
+    };
+  },
+};
+
+const KnowledgePage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      if (state.route.query.id) {
+        page.article = await api.get('/user/knowledge/fetch', { id: state.route.query.id, language: 'zh-CN' });
+        return;
+      }
+      page.grouped = await api.get('/user/knowledge/fetch', { language: 'zh-CN' }).catch(() => ({}));
+    });
+
+    return () => {
+      if (state.route.query.id) {
+        const article = local.article || {};
+        return h('section', { class: 'panel article-panel' }, [
+          pageError(local.error),
+          h('div', { class: 'panel-heading' }, [
+            h('div', [h('h2', article.title || '知识库'), h('p', time(article.updated_at))]),
+            h('a', { class: 'secondary-button', href: '#/knowledge' }, '返回列表'),
+          ]),
+          h('article', { class: 'article-body', innerHTML: safeBody(article.body || '') }),
+        ]);
+      }
+
+      const entries = Object.entries(local.grouped || {});
+      return h('div', [
+        pageError(local.error),
+        ...entries.map(([category, articles]) => h('section', { class: 'panel' }, [
+          h('div', { class: 'panel-heading' }, [h('div', [h('h2', category || '默认分类')])]),
+          h('div', { class: 'article-list' }, normalizeCollection(articles).length ? normalizeCollection(articles).map((article) => h('a', { class: 'article-link', href: `#/knowledge?id=${article.id}` }, [
+            h('strong', article.title),
+            h('span', time(article.updated_at)),
+          ])) : [emptyBlock('暂无文章')]),
+        ])),
+        local.ready && !entries.length ? emptyBlock('暂无知识库文章') : null,
+      ]);
+    };
+  },
+};
+
+const routeComponents = {
+  login: LoginPage,
+  register: RegisterPage,
+  forgot: ForgotPage,
+  dashboard: DashboardPage,
+  subscribe: SubscribePage,
+  plans: PlansPage,
+  orders: OrdersPage,
+  recharge: RechargePage,
+  profile: ProfilePage,
+  nodes: NodesPage,
+  traffic: TrafficPage,
+  tickets: TicketsPage,
+  invite: InvitePage,
+  knowledge: KnowledgePage,
+};
+
+const App = {
+  setup() {
+    async function ensureRoute() {
+      const current = state.route;
+      const publicRoute = publicRoutes.has(current.name);
+      await withProgress(async () => {
+        try {
+          await boot();
+          if (!publicRoute && !getToken()) {
+            go('login', { redirect: current.name });
+            return;
+          }
+          if (publicRoute && getToken() && current.name === 'login') {
+            go('dashboard');
+            return;
+          }
+          state.ready = true;
+        } catch (error) {
+          if (!publicRoute) {
+            toast(error.message || '登录已过期，请重新登录', 'error');
+            go('login', { redirect: current.name });
+          } else {
+            state.ready = true;
+          }
+        }
       });
-      await refreshUser();
-      toast('资料已保存');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      if (button) button.disabled = false;
-    }
-  });
-
-  $('[data-avatar-input]')?.addEventListener('change', async (event) => {
-    const file = event.currentTarget.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      event.currentTarget.value = '';
-      toast('头像不能超过 2MB', 'error');
-      return;
     }
 
-    const data = new FormData();
-    data.append('avatar', file);
-
-    try {
-      const preview = $('[data-avatar-preview]');
-      if (preview) preview.src = URL.createObjectURL(file);
-      await api.post('/user/avatar', data);
-      await refreshUser();
-      toast('头像已更新');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    } finally {
-      event.currentTarget.value = '';
-    }
-  });
-
-  $('[data-profile-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    try {
-      await api.post('/user/update', {
-        remind_expire: form.remind_expire.checked ? 1 : 0,
-        remind_traffic: form.remind_traffic.checked ? 1 : 0,
+    onMounted(() => {
+      window.addEventListener('hashchange', () => {
+        state.userMenuOpen = false;
+        state.sidebarOpen = false;
+        state.route = parseRoute();
       });
-      await refreshUser();
-      toast('设置已保存');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
-
-  $('[data-transfer-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const amount = Number(formData(event.currentTarget).amount || 0);
-    try {
-      await api.post('/user/transfer', { transfer_amount: Math.round(amount * 100) });
-      await refreshUser();
-      toast('划转成功');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
-
-  $('[data-password-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    try {
-      await api.post('/user/changePassword', formData(event.currentTarget));
-      toast('密码已更新');
-      event.currentTarget.reset();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
-
-  $('[data-gift-card-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    try {
-      await api.post('/user/gift-card/redeem', formData(event.currentTarget));
-      await refreshUser();
-      toast('兑换成功');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
-
-  $('[data-ticket-form]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    try {
-      await api.post('/user/ticket/save', formData(event.currentTarget));
-      toast('工单已提交');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
-
-  $('[data-ticket-reply]')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    try {
-      await api.post('/user/ticket/reply', {
-        id: event.currentTarget.dataset.ticketReply,
-        ...formData(event.currentTarget),
+      window.addEventListener('xboard:auth-expired', () => go('login'));
+      document.addEventListener('click', (event) => {
+        if (event.target instanceof Element && event.target.closest('.user-menu')) return;
+        state.userMenuOpen = false;
       });
-      toast('回复已发送');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
+    });
 
-  $('[data-close-ticket]')?.addEventListener('click', async (event) => {
-    if (!confirm('确定关闭该工单吗？')) return;
-    try {
-      await api.post('/user/ticket/close', { id: event.currentTarget.dataset.closeTicket });
-      toast('工单已关闭');
-      go('tickets');
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
+    watch(() => state.route.fullPath, ensureRoute, { immediate: true });
+    watch(() => state.theme, applyTheme, { immediate: true });
+    watch(() => state.sidebarCollapsed, (value) => {
+      document.body.classList.toggle('sidebar-collapsed', value);
+    }, { immediate: true });
+    watch(() => state.sidebarOpen, (value) => {
+      document.body.classList.toggle('sidebar-open', value);
+    }, { immediate: true });
 
-  $('[data-create-invite]')?.addEventListener('click', async () => {
-    try {
-      await api.get('/user/invite/save');
-      toast('邀请码已生成');
-      render();
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  });
-}
+    return () => {
+      const current = state.route;
+      const publicRoute = publicRoutes.has(current.name);
+      const Page = routeComponents[current.name] || DashboardPage;
+      const pageNode = h(Page, { key: current.fullPath });
+      return h('div', { class: 'app-root' }, [
+        h(RouteProgress),
+        state.ready
+          ? (publicRoute
+            ? h(AuthLayout, null, { default: () => pageNode })
+            : h(AppShell, null, { default: () => pageNode }))
+          : null,
+        h(ToastStack),
+      ]);
+    };
+  },
+};
 
-window.addEventListener('hashchange', render);
-window.addEventListener('xboard:auth-expired', () => go('login'));
-
-render();
+createApp(App).mount('#app');
