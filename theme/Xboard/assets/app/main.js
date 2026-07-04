@@ -555,14 +555,13 @@ const AppShell = {
                   class: item.code === language.code ? 'is-active' : '',
                   type: 'button',
                   role: 'menuitem',
-                  dir: item.rtl ? 'rtl' : null,
                   onClick: (event) => {
                     event.stopPropagation();
                     selectLanguage(item.code);
                   },
                 }, [
                   h('img', { src: appAsset(`flags/${item.flag}`), alt: '' }),
-                  h('span', item.label),
+                  h('span', { dir: item.rtl ? 'rtl' : null }, item.label),
                   item.code === language.code ? h('b', '✓') : null,
                 ]))),
               ]),

@@ -620,7 +620,7 @@ td {
   color: var(--text);
   padding: 0 11px 0 7px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .language-trigger:hover {
@@ -672,25 +672,28 @@ td {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--text);
+  color: var(--soft);
   padding: 0 8px;
   text-align: left;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
-.language-dropdown button[dir="rtl"] {
-  text-align: right;
+.language-dropdown button span[dir="rtl"] {
+  direction: rtl;
+  text-align: left;
+  unicode-bidi: isolate;
 }
 
 .language-dropdown button:hover,
 .language-dropdown button.is-active {
-  background: rgba(198, 239, 180, 0.9);
+  background: #f3f4f7;
+  color: var(--text);
 }
 
 :root[data-theme="dark"] .language-dropdown button:hover,
 :root[data-theme="dark"] .language-dropdown button.is-active {
-  background: rgba(105, 135, 96, 0.32);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .language-dropdown img {
