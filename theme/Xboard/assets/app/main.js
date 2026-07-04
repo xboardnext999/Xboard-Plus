@@ -554,10 +554,12 @@ const AppShell = {
                     state.userMenuOpen = false;
                     state.languageMenuOpen = !state.languageMenuOpen;
                   },
-                }, [
-                  h('img', { src: appAsset(`flags/${language.flag}`), alt: '' }),
-                  h('span', language.short),
-                ]),
+                }, h('img', {
+                  class: 'language-trigger-icon',
+                  src: appAsset('icons/language.webp'),
+                  alt: '',
+                  'aria-hidden': 'true',
+                })),
                 h('div', { class: 'language-dropdown', role: 'menu' }, languageOptions.map((item) => h('button', {
                   key: item.code,
                   class: item.code === language.code ? 'is-active' : '',

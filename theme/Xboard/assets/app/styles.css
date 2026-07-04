@@ -631,32 +631,35 @@ td {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  width: 34px;
+  min-width: 34px;
   height: 34px;
-  min-width: 64px;
   border: 0;
   border-radius: 999px;
-  background: var(--control-bg);
+  background: transparent;
   color: var(--text);
-  padding: 0 11px 0 7px;
-  font-size: 13px;
-  font-weight: 400;
+  padding: 0;
+  transition: background 0.16s ease;
 }
 
 .language-trigger:hover {
-  background: var(--panel-soft);
+  background: var(--control-bg);
 }
 
 :root[data-theme="light"] .language-trigger {
-  background: #fff;
+  background: transparent;
 }
 
-.language-trigger img {
+:root[data-theme="light"] .language-trigger:hover {
+  background: var(--control-bg);
+}
+
+.language-trigger-icon {
   display: block;
-  width: 23px;
-  height: 23px;
-  border-radius: 50%;
-  object-fit: cover;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .language-dropdown {
@@ -680,7 +683,9 @@ td {
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
-.language-menu.is-open .language-dropdown {
+.language-menu.is-open .language-dropdown,
+.language-menu:hover .language-dropdown,
+.language-menu:focus-within .language-dropdown {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -774,7 +779,9 @@ td {
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
-.user-menu.is-open .user-dropdown {
+.user-menu.is-open .user-dropdown,
+.user-menu:hover .user-dropdown,
+.user-menu:focus-within .user-dropdown {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
