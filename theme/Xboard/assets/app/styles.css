@@ -241,11 +241,11 @@ td {
 
 .sidebar {
   position: sticky;
-  top: 18px;
-  height: calc(100vh - 36px);
+  top: 10px;
+  height: calc(100vh - 20px);
   display: flex;
   flex-direction: column;
-  margin: 18px 8px 18px 10px;
+  margin: 10px 8px 10px 10px;
   border: 1px solid var(--sidebar-panel-border);
   border-radius: 18px;
   overflow-y: auto;
@@ -259,9 +259,9 @@ td {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 68px;
-  min-height: 68px;
-  padding: 0 20px;
+  height: 58px;
+  min-height: 58px;
+  padding: 8px 20px 0;
 }
 
 .brand-text-only {
@@ -536,7 +536,7 @@ td {
   gap: 14px;
   height: 58px;
   min-height: 58px;
-  margin-top: 22px;
+  margin-top: 8px;
   padding: 0 28px;
   background: var(--topbar-bg);
   backdrop-filter: blur(18px);
@@ -596,17 +596,17 @@ td {
 .theme-toggle {
   position: relative;
   display: inline-block;
-  width: 78px;
-  min-width: 78px;
-  height: 30px;
-  min-height: 30px;
+  width: 92px;
+  min-width: 92px;
+  height: 36px;
+  min-height: 36px;
   border: 0;
   border-radius: 999px;
   background: #4a613f;
   color: #fff;
   overflow: hidden;
   padding: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   transition: background 0.2s ease;
 }
@@ -633,36 +633,36 @@ td {
 }
 
 .theme-toggle.is-light .theme-toggle-label {
-  left: 13px;
+  left: 16px;
 }
 
 .theme-toggle.is-dark .theme-toggle-label {
-  right: 13px;
+  right: 16px;
 }
 
 .theme-toggle-knob {
   position: absolute;
-  top: 3px;
-  left: 3px;
+  top: 4px;
+  left: 4px;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #fff;
-  flex: 0 0 24px;
+  flex: 0 0 28px;
   transform: translateX(0);
   transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .theme-toggle.is-light .theme-toggle-knob {
-  transform: translateX(48px);
+  transform: translateX(56px);
 }
 
 .theme-toggle-icon {
   display: block;
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   background: #4a613f;
   -webkit-mask: var(--theme-icon-url) center / contain no-repeat;
   mask: var(--theme-icon-url) center / contain no-repeat;
