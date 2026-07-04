@@ -249,8 +249,8 @@ td {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 64px;
-  padding: 0 20px;
+  min-height: 76px;
+  padding: 16px 20px 6px;
 }
 
 .brand-text-only {
@@ -408,7 +408,7 @@ td {
 
   body.sidebar-collapsed .brand {
     justify-content: center;
-    padding: 0;
+    padding: 16px 0 6px;
   }
 
   body.sidebar-collapsed .brand span,
@@ -524,8 +524,8 @@ td {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 64px;
-  padding: 14px 28px;
+  min-height: 76px;
+  padding: 18px 28px 8px;
   background: var(--topbar-bg);
   backdrop-filter: blur(18px);
 }
