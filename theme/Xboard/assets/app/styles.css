@@ -249,8 +249,9 @@ td {
   display: flex;
   align-items: center;
   gap: 10px;
+  height: 76px;
   min-height: 76px;
-  padding: 16px 20px 6px;
+  padding: 0 20px;
 }
 
 .brand-text-only {
@@ -408,7 +409,7 @@ td {
 
   body.sidebar-collapsed .brand {
     justify-content: center;
-    padding: 16px 0 6px;
+    padding: 0;
   }
 
   body.sidebar-collapsed .brand span,
@@ -524,8 +525,9 @@ td {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
+  height: 76px;
   min-height: 76px;
-  padding: 18px 28px 8px;
+  padding: 0 28px;
   background: var(--topbar-bg);
   backdrop-filter: blur(18px);
 }
@@ -2054,6 +2056,7 @@ td {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+    height: auto;
     padding: 16px;
   }
 
