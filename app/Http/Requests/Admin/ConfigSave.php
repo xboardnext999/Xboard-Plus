@@ -22,7 +22,7 @@ class ConfigSave extends FormRequest
         'commission_distribution_l2' => 'nullable|numeric',
         'commission_distribution_l3' => 'nullable|numeric',
         // site
-        'logo' => 'nullable|url',
+        'logo' => 'nullable|string|max:2048',
         'force_https' => '',
         'stop_register' => '',
         'app_name' => '',
@@ -135,7 +135,7 @@ class ConfigSave extends FormRequest
             'tos_url.url' => '服务条款URL格式不正确，必须携带http(s)://',
             'telegram_webhook_url.url' => 'Telegram Webhook地址格式不正确，必须携带http(s)://',
             'telegram_discuss_link.url' => 'Telegram群组地址必须为URL格式，必须携带http(s)://',
-            'logo.url' => 'LOGO URL格式不正确，必须携带https(s)://',
+            'logo.max' => 'LOGO路径不能超过2048个字符',
             'secure_path.min' => '后台路径长度最小为8位',
             'secure_path.regex' => '后台路径只能为字母或数字',
             'captcha_type.in' => '人机验证类型只能选择 recaptcha、turnstile 或 recaptcha-v3',

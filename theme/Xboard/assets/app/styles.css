@@ -257,6 +257,10 @@ td {
   gap: 0;
 }
 
+.brand-with-logo {
+  justify-content: flex-start;
+}
+
 .sidebar .brand-text-only {
   justify-content: center;
   text-align: center;
@@ -264,8 +268,8 @@ td {
 }
 
 .brand-logo {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   flex: 0 0 auto;
 }

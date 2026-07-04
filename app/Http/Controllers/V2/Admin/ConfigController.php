@@ -10,6 +10,8 @@ use App\Services\TelegramService;
 use App\Services\ThemeService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ConfigController extends Controller
 {
@@ -236,6 +238,52 @@ class ConfigController extends Controller
         }
 
         return $this->success(true);
+    }
+
+    public function uploadLogo(Request $request)
+    {
+        $request->validate([
+            'logo' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+        ], [
+            'logo.required' => '请选择要上传的LOGO',
+            'logo.image' => 'LOGO必须是图片文件',
+            'logo.mimes' => 'LOGO仅支持 JPG、PNG、WebP、GIF 格式',
+            'logo.max' => 'LOGO大小不能超过2MB',
+        ]);
+
+        $file = $request->file('logo');
+        if (!$file || !$file->isValid()) {
+            return $this->fail([400, __('Upload failed')]);
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'webp');
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+            $extension = 'webp';
+        }
+
+        $filename = 'site_' . time() . '_' . Str::random(8) . '.' . $extension;
+        try {
+            $storedPath = Storage::disk('public')->putFileAs('logos', $file, $filename);
+        } catch (\Throwable $e) {
+            return $this->fail([400, __('Upload failed')]);
+        }
+
+        if (!$storedPath) {
+            return $this->fail([400, __('Upload failed')]);
+        }
+
+        $logo = '/storage/logos/' . $filename;
+        $previousLogo = (string) admin_setting('logo', '');
+        admin_setting(['logo' => $logo]);
+
+        if (str_starts_with($previousLogo, '/storage/logos/')) {
+            Storage::disk('public')->delete('logos/' . basename($previousLogo));
+        }
+
+        return $this->success([
+            'logo' => $logo,
+            'url' => $logo,
+        ]);
     }
 
     /**

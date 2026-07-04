@@ -125,6 +125,13 @@ function appAsset(file) {
   return `${base.replace(/\/$/, '')}/app/${file.replace(/^\//, '')}`;
 }
 
+function siteLogoUrl() {
+  const logo = String(settings.logo || '').trim();
+  if (!logo) return appAsset('icons/Logo.webp');
+  if (/^(https?:)?\/\//i.test(logo) || logo.startsWith('data:') || logo.startsWith('/')) return logo;
+  return `/${logo.replace(/^\//, '')}`;
+}
+
 function currentTitle(name) {
   return navItems.find((item) => item.key === name)?.label || '仪表盘';
 }
@@ -478,7 +485,8 @@ const AppShell = {
       const language = activeLanguage();
       return h('div', { class: 'app-shell' }, [
         h('aside', { class: 'sidebar' }, [
-          h('a', { class: 'brand brand-text-only', href: '#/dashboard', 'aria-label': appName() }, [
+          h('a', { class: 'brand brand-with-logo', href: '#/dashboard', 'aria-label': appName() }, [
+            h('img', { class: 'brand-logo', src: siteLogoUrl(), alt: '' }),
             h('span', [h('b', appName())]),
           ]),
           h('nav', { class: 'nav' }, navGroups().map((group) => h('div', { class: 'nav-group', key: group.name || 'main' }, [
@@ -600,7 +608,8 @@ const AuthLayout = {
     return () => h('main', { class: 'auth-page' }, [
       h('section', { class: 'auth-shell' }, [
         h('div', { class: 'auth-visual' }, [
-          h('a', { class: 'brand brand-text-only', href: '#/login', 'aria-label': appName() }, [
+          h('a', { class: 'brand brand-with-logo', href: '#/login', 'aria-label': appName() }, [
+            h('img', { class: 'brand-logo', src: siteLogoUrl(), alt: '' }),
             h('span', [h('b', appName())]),
           ]),
           h('section', { class: 'page-hero' }, [
