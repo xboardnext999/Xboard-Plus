@@ -59,10 +59,10 @@ const periods = [
 
 const navItems = [
   { key: 'dashboard', label: '仪表盘', group: '', icon: 'dashboard.webp' },
-  { key: 'subscribe', label: '我的订阅', group: '', icon: 'subscription.webp' },
   { key: 'plans', label: '购买套餐', group: '', icon: 'plan.webp' },
-  { key: 'recharge', label: '充值余额', group: '', icon: 'wallet.webp' },
   { key: 'invite', label: '邀请好友', group: '', icon: 'invite.webp' },
+  { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
+  { key: 'recharge', label: '充值余额', group: '订阅', icon: 'wallet.webp' },
   { key: 'knowledge', label: '使用教程', group: '服务', icon: 'knowledge.webp' },
   { key: 'tickets', label: '工单中心', group: '服务', icon: 'ticket.webp' },
   { key: 'nodes', label: '节点状态', group: '记录', icon: 'node.webp' },
