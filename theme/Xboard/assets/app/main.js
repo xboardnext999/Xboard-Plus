@@ -546,7 +546,15 @@ async function dashboardView() {
   const servers = await api.get('/user/server/fetch').catch(() => ({ data: [] }));
   const serverList = normalizeCollection(servers.data || servers);
   const onlineCount = serverList.filter((node) => node.is_online).length;
+  const maintenanceCount = Math.max(serverList.length - onlineCount, 0);
   const planName = subscribe.plan?.name || '未订阅套餐';
+  const planMetric = subscribe.plan?.name || '未订阅';
+  const noticeItems = normalizeCollection(notices.data || notices).slice(0, 2);
+  const nodeCells = Array.from({ length: 12 }).map((_, index) => {
+    const node = serverList[index];
+    const status = !node ? 'off' : (node.is_online ? 'online' : 'warn');
+    return `<i class="${status}"></i>`;
+  }).join('');
   const serverRows = serverList.slice(0, 5).map((node, index) => `
     <tr>
       <td>#${index + 1}</td>
@@ -558,64 +566,104 @@ async function dashboardView() {
   `);
 
   return shell(`
-    <section class="cards-row">
-      <article class="glass-card chart-card accent-orange">
-        <div class="card-title-row">
-          <span class="service-icon">∞</span>
-          <div><small>当前套餐</small><h2>${escapeHtml(planName)}</h2></div>
-          <a class="mini-button" href="#/subscribe">查看</a>
-        </div>
-        <p>本周期已用流量</p>
-        <strong>${bytes(usage.used)}</strong>
-        <span class="trend-pill up">↗ ${usage.ratio}%</span>
-        <svg viewBox="0 0 420 150" aria-hidden="true"><path d="M0 136 L55 62 L105 56 L155 58 L198 24 L238 130 L282 88 L326 96 L365 34 L420 74" /><circle cx="326" cy="96" r="7"/><circle cx="365" cy="34" r="7"/></svg>
+    <section class="dashboard-metrics">
+      <article class="dashboard-metric">
+        <div><small>账户余额</small><strong>${money(user.balance, currencySymbol())}</strong></div>
+        <span>¥</span>
       </article>
-      <article class="glass-card chart-card accent-purple">
-        <div class="card-title-row">
-          <span class="service-icon diamond">◆</span>
-          <div><small>可用节点</small><h2>全球节点池</h2></div>
+      <article class="dashboard-metric">
+        <div><small>当前套餐</small><strong>${escapeHtml(planMetric)}</strong></div>
+        <span>∞</span>
+      </article>
+      <article class="dashboard-metric">
+        <div><small>可用节点</small><strong>${serverList.length ? onlineCount : 0} 在线</strong></div>
+        <span>◆</span>
+      </article>
+      <article class="dashboard-metric">
+        <div><small>本月用量</small><strong>${usage.ratio}%</strong></div>
+        <span>↗</span>
+      </article>
+    </section>
+
+    <section class="dashboard-overview-grid">
+      <article class="dashboard-card dashboard-subscription-card">
+        <div class="dashboard-card-head">
+          <div><small>订阅概览</small><h2>${escapeHtml(planName)}</h2></div>
+          <div class="dashboard-actions">
+            <a class="mini-button primary-mini" href="#/plans">购买套餐</a>
+            <a class="mini-button" href="#/subscribe">查看订阅</a>
+          </div>
+        </div>
+        <div class="dashboard-usage-layout">
+          <div class="dashboard-usage-number">
+            <small>本周期已用流量</small>
+            <strong>${bytes(usage.used)}</strong>
+            <span class="trend-pill up">${usage.ratio}% 已使用</span>
+          </div>
+          <div class="dashboard-usage-chart">
+            <div class="progress-label"><span>流量进度</span><strong>${bytes(usage.used)} / ${usage.total ? bytes(usage.total) : '不限量'}</strong></div>
+            <div class="dashboard-progress"><i style="width:${usage.ratio}%"></i></div>
+            <svg viewBox="0 0 520 120" aria-hidden="true">
+              <path d="M8 104 L74 58 L132 52 L190 54 L240 24 L286 104 L336 76 L390 84 L442 42 L512 70" />
+              <circle cx="390" cy="84" r="6" />
+              <circle cx="442" cy="42" r="6" />
+            </svg>
+          </div>
+        </div>
+      </article>
+
+      <article class="dashboard-card dashboard-node-card">
+        <div class="dashboard-card-head">
+          <div><small>节点状态</small><h2>全球节点池</h2></div>
           <a class="mini-button" href="#/nodes">全部</a>
         </div>
-        <p>当前可连接节点</p>
-        <strong>${serverList.length ? onlineCount : 0}</strong>
-        <span class="trend-pill warn">↘ ${Math.max(serverList.length - onlineCount, 0)} 个维护中</span>
-        <svg viewBox="0 0 420 150" aria-hidden="true"><path d="M0 110 L50 88 L95 116 L136 52 L180 92 L224 64 L272 120 L326 72 L372 82 L420 34" /><circle cx="136" cy="52" r="7"/><circle cx="326" cy="72" r="7"/></svg>
+        <div class="dashboard-node-grid">${nodeCells}</div>
+        <div class="dashboard-node-stat"><span>可连接节点</span><strong>${serverList.length ? onlineCount : 0}</strong></div>
+        <div class="dashboard-node-stat"><span>维护中</span><strong class="danger-text">${maintenanceCount}</strong></div>
       </article>
     </section>
 
-    <section class="panel wide-panel">
-      <div class="section-title">
-        <p>实时更新</p>
-        <h2>节点概览</h2>
-        <a class="mini-button" href="#/nodes">全部</a>
-      </div>
-      ${table(['序号', '节点名称', '协议', '延迟', '状态'], serverRows, '暂无可用节点')}
+    <section class="dashboard-quick-row">
+      <a class="dashboard-action-card" href="#/subscribe">我的订阅<span>+</span></a>
+      <a class="dashboard-action-card" href="#/recharge">充值余额<span>¥</span></a>
+      <a class="dashboard-action-card" href="#/tickets">工单中心<span>?</span></a>
+      <a class="dashboard-action-card" href="#/knowledge">使用教程<span>i</span></a>
     </section>
 
-    <section class="panel">
-      <div class="section-title">
-        <p>站点通知</p>
-        <h2>公告</h2>
-        <a class="mini-button" href="#/knowledge">知识库</a>
-      </div>
-      <div class="notice-list">
-        ${normalizeCollection(notices.data || notices).slice(0, 4).map((notice) => `
-          <article class="notice-item">
-            <h3>${escapeHtml(notice.title || '公告')}</h3>
-            <div>${safeBody(notice.content || notice.body || '')}</div>
-          </article>
-        `).join('') || emptyView('暂无公告')}
-      </div>
+    <section class="dashboard-lower-grid">
+      <article class="dashboard-card">
+        <div class="dashboard-card-head">
+          <div><small>实时更新</small><h2>节点概览</h2></div>
+          <a class="mini-button" href="#/nodes">全部</a>
+        </div>
+        ${table(['序号', '节点名称', '协议', '延迟', '状态'], serverRows, '暂无可用节点')}
+      </article>
+
+      <article class="dashboard-card dashboard-notice-card">
+        <div class="dashboard-card-head">
+          <div><small>站点通知</small><h2>公告</h2></div>
+          <a class="mini-button" href="#/knowledge">知识库</a>
+        </div>
+        <div class="dashboard-notices">
+          ${noticeItems.length ? noticeItems.map((notice) => `
+            <article class="dashboard-notice-item">
+              <h3>${escapeHtml(notice.title || '公告')}</h3>
+              <div>${safeBody(notice.content || notice.body || '')}</div>
+            </article>
+          `).join('') : `
+            <article class="dashboard-notice-item">
+              <h3>暂无公告</h3>
+              <p>后续公告会以卡片形式展示，减少大面积空白。</p>
+            </article>
+            <article class="dashboard-notice-item">
+              <h3>快速提示</h3>
+              <p>优先引导用户购买套餐、复制订阅、查看节点。</p>
+            </article>
+          `}
+        </div>
+      </article>
     </section>
-  `, '节点与订阅\n实时概览', '查看订阅状态、账户余额、节点可用性与近期通知。', {
-    status: '已同步：2 分钟前',
-    stats: [
-      { label: '余额', value: money(user.balance, currencySymbol()) },
-      { label: '套餐', value: planName },
-      { label: '节点', value: `${serverList.length ? onlineCount : 0} 在线` },
-      { label: '用量', value: `${usage.ratio}%` },
-    ],
-  });
+  `, '仪表盘', '');
 }
 
 async function subscribeView() {
