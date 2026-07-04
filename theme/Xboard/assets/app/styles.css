@@ -241,11 +241,11 @@ td {
 
 .sidebar {
   position: sticky;
-  top: 10px;
-  height: calc(100vh - 20px);
+  top: 18px;
+  height: calc(100vh - 36px);
   display: flex;
   flex-direction: column;
-  margin: 10px 8px 10px 10px;
+  margin: 18px 8px 18px 10px;
   border: 1px solid var(--sidebar-panel-border);
   border-radius: 18px;
   overflow-y: auto;
@@ -536,6 +536,7 @@ td {
   gap: 14px;
   height: 58px;
   min-height: 58px;
+  margin-top: 8px;
   padding: 0 28px;
   background: var(--topbar-bg);
   backdrop-filter: blur(18px);
@@ -662,10 +663,14 @@ td {
   display: block;
   width: 17px;
   height: 17px;
-  background: #111827;
+  background: #4a613f;
   -webkit-mask: var(--theme-icon-url) center / contain no-repeat;
   mask: var(--theme-icon-url) center / contain no-repeat;
   pointer-events: none;
+}
+
+.theme-toggle.is-dark .theme-toggle-icon {
+  background: #222936;
 }
 
 .language-menu {
@@ -2125,6 +2130,7 @@ td {
     align-items: flex-start;
     flex-direction: column;
     height: auto;
+    margin-top: 0;
     padding: 16px;
   }
 
