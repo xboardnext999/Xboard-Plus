@@ -192,14 +192,6 @@ function routeMeta(name) {
   };
 }
 
-function lastLoginDate() {
-  return new Date().toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).replaceAll('/', '-');
-}
-
 async function boot(force = false) {
   if (state.bootPromise && !force) return state.bootPromise;
 
@@ -270,11 +262,8 @@ function navIconMarkup(item) {
 function shell(content, title, subtitle, meta = {}) {
   const active = route().name;
   const appName = settings.title || 'Xboard Plus';
-  const version = settings.version ? `v${settings.version}` : '';
   const user = state.user;
   const currentMeta = routeMeta(active);
-  const sidebarTitle = meta.sidebarTitle || `${currentMeta.label}\n${userDisplayName(user)}`;
-  const sidebarSubtitle = meta.sidebarSubtitle || `上次登录：${lastLoginDate()}`;
   const status = meta.status || '账户状态：已连接';
   const crumbGroup = meta.crumbGroup ?? currentMeta.group;
   const userEmail = user?.email || '当前账号';
@@ -291,12 +280,8 @@ function shell(content, title, subtitle, meta = {}) {
       <aside class="sidebar">
         <a class="brand" href="#/dashboard" aria-label="${escapeHtml(appName)}">
           ${logoMarkup()}
-          <span><b>${escapeHtml(appName)}</b><small>${escapeHtml(appDescription())}</small></span>
+          <span><b>${escapeHtml(appName)}</b></span>
         </a>
-        <section class="sidebar-hero">
-          <h2>${formatTitle(sidebarTitle)}</h2>
-          <p>${escapeHtml(sidebarSubtitle)}</p>
-        </section>
         <nav class="nav">
           ${Object.entries(groups).map(([group, items]) => `
             <div class="nav-group">
@@ -311,10 +296,6 @@ function shell(content, title, subtitle, meta = {}) {
             </div>
           `).join('')}
         </nav>
-        <div class="sidebar-footer">
-          <span class="version-dot"></span>
-          <span>${escapeHtml(version)}</span>
-        </div>
       </aside>
       <main class="workspace">
         <header class="topbar">
@@ -622,8 +603,6 @@ async function dashboardView() {
       </div>
     </section>
   `, '节点与订阅\n实时概览', '查看订阅状态、账户余额、节点可用性与近期通知。', {
-    sidebarTitle: `欢迎回来\n${userDisplayName(user)}`,
-    sidebarSubtitle: `上次登录：${lastLoginDate()}`,
     status: '已同步：2 分钟前',
     stats: [
       { label: '余额', value: money(user.balance, currencySymbol()) },
@@ -695,8 +674,6 @@ async function subscribeView() {
       ${table(['序号', '节点名称', '协议', '倍率', '状态'], serverRows, '暂无可用节点')}
     </section>
   `, '订阅链接\n与节点访问', '复制订阅链接，并查看当前套餐可用节点。', {
-    sidebarTitle: '安全订阅\n访问中心',
-    sidebarSubtitle: `重置周期：${subscribe.reset_day ? `每月 ${subscribe.reset_day} 日` : '跟随套餐'}`,
     status: '安全状态：已保护',
     stats: [
       { label: 'UUID', value: subscribe.uuid ? '已同步' : '已同步' },
@@ -739,8 +716,6 @@ async function plansView() {
       `).join('') || emptyView('暂无可购买套餐')}
     </div>
   `, '套餐购买\n与续费', '选择套餐周期，创建订单后完成支付。', {
-    sidebarTitle: '套餐购买\n与续费',
-    sidebarSubtitle: `当前余额：${money(state.user?.balance, currencySymbol())}`,
     status: '支付网关：可用',
     stats: [
       { label: '余额', value: money(state.user?.balance, currencySymbol()) },
@@ -859,8 +834,6 @@ async function rechargeView(params) {
       ${table(['充值单号', '金额', '状态', '支付方式', '创建时间'], rows, '暂无充值记录')}
     </section>
   `, '余额充值\n与记录', '为账户余额充值，用于购买套餐或续费。', {
-    sidebarTitle: '充值中心\n与订单',
-    sidebarSubtitle: `当前余额：${money(state.user?.balance, currencySymbol())}`,
     status: '支付网关：可用',
     stats: [
       { label: '余额', value: money(state.user?.balance, currencySymbol()) },

@@ -29,6 +29,8 @@
   --topbar-bg: linear-gradient(180deg, rgba(5, 8, 11, 0.92), rgba(5, 8, 11, 0.52));
   --nav-hover-bg: rgba(255, 255, 255, 0.06);
   --nav-active-bg: linear-gradient(90deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.04));
+  --nav-text: var(--muted);
+  --nav-group-text: var(--soft);
   --focus-border: rgba(185, 183, 255, 0.72);
   --focus-shadow: rgba(141, 138, 255, 0.20);
   --placeholder: rgba(199, 204, 218, 0.58);
@@ -63,6 +65,8 @@
   --topbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.68));
   --nav-hover-bg: rgba(15, 23, 42, 0.055);
   --nav-active-bg: linear-gradient(90deg, rgba(15, 23, 42, 0.10), rgba(15, 23, 42, 0.035));
+  --nav-text: #000;
+  --nav-group-text: #8f98a8;
   --focus-border: rgba(99, 91, 255, 0.62);
   --focus-shadow: rgba(99, 91, 255, 0.18);
   --placeholder: rgba(100, 116, 139, 0.62);
@@ -271,28 +275,6 @@ td {
   display: none;
 }
 
-.sidebar-hero {
-  position: relative;
-  z-index: 1;
-  margin: 24px 20px 22px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--line);
-}
-
-.sidebar-hero h2 {
-  margin: 0;
-  color: var(--text);
-  font-size: 24px;
-  line-height: 1.08;
-  letter-spacing: 0;
-}
-
-.sidebar-hero p {
-  margin: 14px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-
 .nav {
   position: relative;
   z-index: 1;
@@ -308,7 +290,7 @@ td {
 
 .nav-group > span {
   margin: 12px 4px 3px;
-  color: var(--soft);
+  color: var(--nav-group-text);
   font-size: 13px;
 }
 
@@ -319,7 +301,7 @@ td {
   gap: 12px;
   min-height: 40px;
   border-radius: 9px;
-  color: var(--muted);
+  color: var(--nav-text);
   padding: 0 12px;
   font-size: 14px;
   font-weight: 400;
@@ -371,8 +353,6 @@ td {
   }
 
   body.sidebar-collapsed .brand span,
-  body.sidebar-collapsed .sidebar-hero,
-  body.sidebar-collapsed .sidebar-footer,
   body.sidebar-collapsed .nav-group > span,
   body.sidebar-collapsed .nav-label,
   body.sidebar-collapsed .nav-item em {
@@ -470,25 +450,6 @@ td {
 .nav-icon.gear {
   border-radius: 50%;
   border-style: dashed;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 20px;
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  font-size: 12px;
-}
-
-.version-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--green);
 }
 
 .workspace {
@@ -1625,10 +1586,6 @@ td {
 @media (max-width: 1240px) {
   :root {
     --sidebar: 244px;
-  }
-
-  .sidebar-hero h2 {
-    font-size: 22px;
   }
 
   .cards-row,
