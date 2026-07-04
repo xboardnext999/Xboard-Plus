@@ -536,7 +536,7 @@ td {
   gap: 14px;
   height: 58px;
   min-height: 58px;
-  margin-top: 8px;
+  margin-top: 14px;
   padding: 0 28px;
   background: var(--topbar-bg);
   backdrop-filter: blur(18px);
@@ -594,83 +594,33 @@ td {
 }
 
 .theme-toggle {
-  position: relative;
-  display: inline-block;
-  width: 92px;
-  min-width: 92px;
-  height: 36px;
-  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
   border: 0;
   border-radius: 999px;
-  background: #4a613f;
-  color: #fff;
-  overflow: hidden;
+  background: transparent;
+  color: var(--soft);
+  overflow: visible;
   padding: 0;
-  font-size: 13px;
-  font-weight: 700;
-  transition: background 0.2s ease;
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
 .theme-toggle:hover {
-  background: #3f5536;
-}
-
-.theme-toggle.is-dark {
-  background: #222936;
-}
-
-.theme-toggle.is-dark:hover {
-  background: #1b2230;
-}
-
-.theme-toggle-label {
-  position: absolute;
-  top: 50%;
-  line-height: 1;
-  white-space: nowrap;
-  transform: translateY(-50%);
-  transition: left 0.22s ease, right 0.22s ease;
-}
-
-.theme-toggle.is-light .theme-toggle-label {
-  left: 16px;
-}
-
-.theme-toggle.is-dark .theme-toggle-label {
-  right: 16px;
-}
-
-.theme-toggle-knob {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #fff;
-  flex: 0 0 28px;
-  transform: translateX(0);
-  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.theme-toggle.is-light .theme-toggle-knob {
-  transform: translateX(56px);
+  background: var(--control-bg);
+  color: var(--text);
 }
 
 .theme-toggle-icon {
   display: block;
   width: 17px;
   height: 17px;
-  background: #4a613f;
-  -webkit-mask: var(--theme-icon-url) center / contain no-repeat;
-  mask: var(--theme-icon-url) center / contain no-repeat;
+  object-fit: contain;
   pointer-events: none;
-}
-
-.theme-toggle.is-dark .theme-toggle-icon {
-  background: #222936;
 }
 
 .language-menu {

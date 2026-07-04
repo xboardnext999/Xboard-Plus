@@ -531,21 +531,17 @@ const AppShell = {
             ]),
             h('div', { class: 'top-actions' }, [
               h('button', {
-                class: ['theme-toggle', state.theme === 'light' ? 'is-light' : 'is-dark'],
+                class: 'theme-toggle',
                 type: 'button',
                 'aria-label': state.theme === 'light' ? '切换到暗黑模式' : '切换到白天模式',
                 title: state.theme === 'light' ? '切换到暗黑模式' : '切换到白天模式',
                 onClick: () => { state.theme = state.theme === 'light' ? 'dark' : 'light'; },
-              }, [
-                h('span', { class: 'theme-toggle-label' }, state.theme === 'light' ? 'Light' : 'Dark'),
-                h('span', { class: 'theme-toggle-knob' }, [
-                  h('span', {
-                    class: 'theme-toggle-icon',
-                    style: { '--theme-icon-url': `url("${appAsset(state.theme === 'light' ? 'icons/theme-white.webp' : 'icons/theme-dark.webp')}")` },
-                    'aria-hidden': 'true',
-                  }),
-                ]),
-              ]),
+              }, h('img', {
+                class: 'theme-toggle-icon',
+                src: appAsset(state.theme === 'light' ? 'icons/theme-dark.webp' : 'icons/theme-white.webp'),
+                alt: '',
+                'aria-hidden': 'true',
+              })),
               h('div', { class: ['language-menu', state.languageMenuOpen ? 'is-open' : ''] }, [
                 h('button', {
                   class: 'language-trigger',
