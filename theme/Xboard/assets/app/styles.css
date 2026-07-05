@@ -593,7 +593,7 @@ td {
   overflow: visible;
 }
 
-.theme-toggle {
+.top-action-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -610,17 +610,27 @@ td {
   transition: background 0.16s ease, color 0.16s ease;
 }
 
-.theme-toggle:hover {
+.top-action-button:hover {
   background: var(--control-bg);
   color: var(--text);
 }
 
-.theme-toggle-icon {
+.top-action-icon {
   display: block;
   width: 17px;
   height: 17px;
   object-fit: contain;
   pointer-events: none;
+}
+
+.notification-icon {
+  width: 18px;
+  height: 18px;
+}
+
+:root[data-theme="dark"] .notification-icon {
+  filter: invert(1);
+  opacity: 0.92;
 }
 
 .language-menu {

@@ -577,13 +577,24 @@ const AppShell = {
             ]),
             h('div', { class: 'top-actions' }, [
               h('button', {
-                class: 'theme-toggle',
+                class: 'top-action-button notification-button',
+                type: 'button',
+                'aria-label': '消息通知',
+                title: '消息通知',
+              }, h('img', {
+                class: 'top-action-icon notification-icon',
+                src: appAsset('icons/Message_notification.webp'),
+                alt: '',
+                'aria-hidden': 'true',
+              })),
+              h('button', {
+                class: 'top-action-button theme-toggle',
                 type: 'button',
                 'aria-label': state.theme === 'light' ? '切换到暗黑模式' : '切换到白天模式',
                 title: state.theme === 'light' ? '切换到暗黑模式' : '切换到白天模式',
                 onClick: () => { state.theme = state.theme === 'light' ? 'dark' : 'light'; },
               }, h('img', {
-                class: 'theme-toggle-icon',
+                class: 'top-action-icon theme-toggle-icon',
                 src: appAsset(state.theme === 'light' ? 'icons/theme-dark.webp' : 'icons/theme-white.webp'),
                 alt: '',
                 'aria-hidden': 'true',
