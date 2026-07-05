@@ -53,7 +53,7 @@ const navItems = [
   { key: 'plans', label: '购买套餐', group: '', icon: 'plan.webp' },
   { key: 'invite', label: '邀请好友', group: '', icon: 'invite.webp' },
   { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
-  { key: 'recharge', label: '充值余额', group: '订阅', icon: 'wallet.webp' },
+  { key: 'recharge', label: '充值余额', group: '订阅', icon: 'Dollar.webp' },
   { key: 'knowledge', label: '使用教程', group: '服务', icon: 'knowledge.webp' },
   { key: 'tickets', label: '工单中心', group: '服务', icon: 'ticket.webp' },
   { key: 'nodes', label: '节点状态', group: '记录', icon: 'node.webp' },
@@ -384,9 +384,9 @@ function dashboardMetricBody(label, value, note) {
 
 function dashboardQuickCard({ href, icon, tone, title, description }) {
   return h('a', { class: ['dashboard-action-card', `dashboard-action-card-${tone}`], href }, [
-    h('span', { class: 'dashboard-action-icon' }, h('img', {
-      src: appAsset(`icons/${icon}`),
-      alt: '',
+    h('span', { class: 'dashboard-action-icon' }, h('span', {
+      class: 'dashboard-action-symbol',
+      style: { '--action-icon-url': `url("${appAsset(`icons/${icon}`)}")` },
       'aria-hidden': 'true',
     })),
     h('span', { class: 'dashboard-action-copy' }, [
@@ -971,7 +971,7 @@ const DashboardPage = {
         ]),
         h('section', { class: 'dashboard-quick-row' }, [
           dashboardQuickCard({ href: '#/subscribe', icon: 'subscription.webp', tone: 'subscribe', title: '我的订阅', description: '查看和管理订阅服务' }),
-          dashboardQuickCard({ href: '#/recharge', icon: 'wallet.webp', tone: 'recharge', title: '充值余额', description: '快速充值，便捷支付' }),
+          dashboardQuickCard({ href: '#/recharge', icon: 'Dollar.webp', tone: 'recharge', title: '充值余额', description: '快速充值，便捷支付' }),
           dashboardQuickCard({ href: '#/tickets', icon: 'ticket.webp', tone: 'ticket', title: '工单中心', description: '提交工单，快速响应' }),
           dashboardQuickCard({ href: '#/knowledge', icon: 'knowledge.webp', tone: 'knowledge', title: '使用教程', description: '新手指南，快速上手' }),
         ]),

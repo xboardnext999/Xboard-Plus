@@ -1019,7 +1019,7 @@ td {
 }
 
 .dashboard-metric > .dashboard-metric-icon-balance {
-  background: #daf6e7;
+  background: #ecf2fd;
 }
 
 .dashboard-metric > .dashboard-metric-icon-plan {
@@ -1035,7 +1035,7 @@ td {
 }
 
 :root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-balance {
-  background: rgba(21, 196, 102, 0.22);
+  background: rgba(59, 120, 245, 0.22);
 }
 
 :root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-plan {
@@ -1227,14 +1227,17 @@ td {
   width: 50px;
   height: 50px;
   border-radius: 13px;
+  background: var(--quick-icon-bg);
   flex: 0 0 auto;
 }
 
-.dashboard-action-icon img {
+.dashboard-action-symbol {
   display: block;
   width: 25px;
   height: 25px;
-  object-fit: contain;
+  background: var(--quick-icon-color);
+  -webkit-mask: var(--action-icon-url) center / contain no-repeat;
+  mask: var(--action-icon-url) center / contain no-repeat;
 }
 
 .dashboard-action-copy {
@@ -1264,36 +1267,24 @@ td {
   line-height: 1;
 }
 
-.dashboard-action-card-subscribe .dashboard-action-icon {
-  background: #f0e9ff;
+.dashboard-action-card-subscribe {
+  --quick-icon-color: #5347f4;
+  --quick-icon-bg: #eceafb;
 }
 
-.dashboard-action-card-recharge .dashboard-action-icon {
-  background: #eaf3ff;
+.dashboard-action-card-recharge {
+  --quick-icon-color: #3b78f5;
+  --quick-icon-bg: #ecf2fd;
 }
 
-.dashboard-action-card-ticket .dashboard-action-icon {
-  background: #e6fbf3;
+.dashboard-action-card-ticket {
+  --quick-icon-color: #71cbc0;
+  --quick-icon-bg: #ecf8f2;
 }
 
-.dashboard-action-card-knowledge .dashboard-action-icon {
-  background: #fff0dc;
-}
-
-:root[data-theme="dark"] .dashboard-action-card-subscribe .dashboard-action-icon {
-  background: rgba(124, 91, 255, 0.2);
-}
-
-:root[data-theme="dark"] .dashboard-action-card-recharge .dashboard-action-icon {
-  background: rgba(59, 130, 246, 0.2);
-}
-
-:root[data-theme="dark"] .dashboard-action-card-ticket .dashboard-action-icon {
-  background: rgba(34, 197, 148, 0.18);
-}
-
-:root[data-theme="dark"] .dashboard-action-card-knowledge .dashboard-action-icon {
-  background: rgba(255, 168, 43, 0.18);
+.dashboard-action-card-knowledge {
+  --quick-icon-color: #f4a847;
+  --quick-icon-bg: #fcf0e1;
 }
 
 .dashboard-lower-grid {
