@@ -1009,20 +1009,36 @@ td {
   object-fit: contain;
 }
 
-.dashboard-metric > .dashboard-metric-icon-green {
-  background: #dcfce7;
+.dashboard-metric > .dashboard-metric-icon-balance {
+  background: #daf6e7;
 }
 
-.dashboard-metric > .dashboard-metric-icon-purple {
-  background: #f1e9ff;
+.dashboard-metric > .dashboard-metric-icon-plan {
+  background: #f2e1fe;
 }
 
-:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-green {
-  background: rgba(18, 184, 105, 0.2);
+.dashboard-metric > .dashboard-metric-icon-nodes {
+  background: #d8f3e5;
 }
 
-:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-purple {
-  background: rgba(144, 84, 255, 0.22);
+.dashboard-metric > .dashboard-metric-icon-usage {
+  background: #fcefdc;
+}
+
+:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-balance {
+  background: rgba(21, 196, 102, 0.22);
+}
+
+:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-plan {
+  background: rgba(176, 65, 247, 0.22);
+}
+
+:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-nodes {
+  background: rgba(12, 179, 91, 0.22);
+}
+
+:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-usage {
+  background: rgba(237, 152, 36, 0.22);
 }
 
 .dashboard-overview-grid {

@@ -893,13 +893,13 @@ const DashboardPage = {
       return h('div', [
         pageError(local.error),
         h('section', { class: 'dashboard-metrics' }, [
-          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('账户余额', money(user.balance, currencySymbol()), '可用余额'), dashboardMetricIcon('Dollar.webp', 'green')]),
+          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('账户余额', money(user.balance, currencySymbol()), '可用余额'), dashboardMetricIcon('Dollar.webp', 'balance')]),
           h('article', { class: 'dashboard-metric' }, [
             dashboardMetricBody('当前套餐', subscribe.plan?.name || '未订阅', ['套餐状态：', h('span', { class: planStatusOk ? 'dashboard-metric-note-ok' : 'dashboard-metric-note-muted' }, planStatusText)]),
-            dashboardMetricIcon('member.webp', 'purple'),
+            dashboardMetricIcon('member.webp', 'plan'),
           ]),
-          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('可用节点', `${servers.length ? onlineCount : 0} 在线`, '全球节点加速'), dashboardMetricIcon('node1.webp', 'green')]),
-          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('本月用量', `${usage.ratio}%`, `已使用 ${bytes(usage.used)} / ${usageLimitText}`), dashboardMetricIcon('flow.webp', 'purple')]),
+          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('可用节点', `${servers.length ? onlineCount : 0} 在线`, '全球节点加速'), dashboardMetricIcon('node1.webp', 'nodes')]),
+          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('本月用量', `${usage.ratio}%`, `已使用 ${bytes(usage.used)} / ${usageLimitText}`), dashboardMetricIcon('flow.webp', 'usage')]),
         ]),
         h('section', { class: 'dashboard-overview-grid' }, [
           h('article', { class: 'dashboard-card dashboard-subscription-card' }, [
