@@ -1268,23 +1268,23 @@ td {
 }
 
 .dashboard-action-card-subscribe {
-  --quick-icon-color: #5347f4;
-  --quick-icon-bg: #eceafb;
+  --quick-icon-color: #4840f5;
+  --quick-icon-bg: #efefff;
 }
 
 .dashboard-action-card-recharge {
-  --quick-icon-color: #3b78f5;
-  --quick-icon-bg: #ecf2fd;
+  --quick-icon-color: #3974f4;
+  --quick-icon-bg: #edf4ff;
 }
 
 .dashboard-action-card-ticket {
-  --quick-icon-color: #71cbc0;
-  --quick-icon-bg: #ecf8f2;
+  --quick-icon-color: #70ccc2;
+  --quick-icon-bg: #ecfaf8;
 }
 
 .dashboard-action-card-knowledge {
-  --quick-icon-color: #f4a847;
-  --quick-icon-bg: #fcf0e1;
+  --quick-icon-color: #f3a846;
+  --quick-icon-bg: #fff3e4;
 }
 
 .dashboard-lower-grid {

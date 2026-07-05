@@ -970,10 +970,10 @@ const DashboardPage = {
           ]),
         ]),
         h('section', { class: 'dashboard-quick-row' }, [
-          dashboardQuickCard({ href: '#/subscribe', icon: 'subscription.webp', tone: 'subscribe', title: '我的订阅', description: '查看和管理订阅服务' }),
-          dashboardQuickCard({ href: '#/recharge', icon: 'wallet.webp', tone: 'recharge', title: '充值余额', description: '快速充值，便捷支付' }),
-          dashboardQuickCard({ href: '#/tickets', icon: 'ticket.webp', tone: 'ticket', title: '工单中心', description: '提交工单，快速响应' }),
-          dashboardQuickCard({ href: '#/knowledge', icon: 'knowledge.webp', tone: 'knowledge', title: '使用教程', description: '新手指南，快速上手' }),
+          dashboardQuickCard({ href: '#/subscribe', icon: 'subscription1.webp', tone: 'subscribe', title: '我的订阅', description: '查看和管理订阅服务' }),
+          dashboardQuickCard({ href: '#/recharge', icon: 'wallet1.webp', tone: 'recharge', title: '充值余额', description: '快速充值，便捷支付' }),
+          dashboardQuickCard({ href: '#/tickets', icon: 'tickets1.webp', tone: 'ticket', title: '工单中心', description: '提交工单，快速响应' }),
+          dashboardQuickCard({ href: '#/knowledge', icon: 'knowledge1.webp', tone: 'knowledge', title: '使用教程', description: '新手指南，快速上手' }),
         ]),
         h('section', { class: 'dashboard-lower-grid' }, [
           h('article', { class: 'dashboard-card' }, [
