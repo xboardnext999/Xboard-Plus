@@ -61,12 +61,12 @@
   --red: #dc2626;
   --shadow: none;
   --surface-shadow: none;
-  --body-bg: #fff;
-  --shell-bg: linear-gradient(135deg, #f6f8fb 0%, #f1f5ff 48%, #f8fbff 100%);
+  --body-bg: #fcfbfc;
+  --shell-bg: #fcfbfc;
   --sidebar-bg: #fff;
   --sidebar-panel-border: rgba(15, 23, 42, 0.08);
   --sidebar-panel-shadow: 0 14px 38px rgba(15, 23, 42, 0.07);
-  --workspace-bg: linear-gradient(135deg, #f6f8fb 0%, #f1f5ff 48%, #f8fbff 100%);
+  --workspace-bg: #fcfbfc;
   --topbar-bg: transparent;
   --nav-hover-bg: rgba(15, 23, 42, 0.055);
   --nav-active-bg: #f3f4f7;
@@ -920,7 +920,7 @@ td {
 .success-box,
 .error-box,
 .payment-frame {
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius);
   background: var(--card-bg);
   box-shadow: var(--surface-shadow);
@@ -944,7 +944,7 @@ td {
 .dashboard-metric,
 .dashboard-card,
 .dashboard-action-card {
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius);
   background: var(--card-bg);
   box-shadow: var(--surface-shadow);
@@ -1216,7 +1216,7 @@ td {
 }
 
 .dashboard-action-card:hover {
-  border-color: var(--focus-border);
+  border-color: transparent;
   color: var(--text);
   transform: translateY(-1px);
 }
@@ -1303,7 +1303,7 @@ td {
 }
 
 .dashboard-notice-item {
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: 10px;
   background: var(--panel-soft);
   padding: 14px;
@@ -1512,7 +1512,7 @@ td {
   gap: 18px;
   align-items: center;
   margin-bottom: 20px;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius);
   background: var(--panel-soft);
   padding: 16px;
@@ -1820,7 +1820,7 @@ td {
 }
 
 .plan-card.hot {
-  border-color: rgba(141, 138, 255, 0.36);
+  border-color: transparent;
   background: linear-gradient(145deg, rgba(141, 138, 255, 0.20), rgba(255, 255, 255, 0.03));
 }
 
@@ -2057,7 +2057,7 @@ td {
   grid-template-columns: minmax(0, 1.25fr) minmax(380px, 0.78fr);
   width: min(1180px, 100%);
   min-height: 640px;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   background: rgba(0, 0, 0, 0.24);
   box-shadow: var(--shadow);
 }
