@@ -985,6 +985,22 @@ td {
   object-fit: contain;
 }
 
+.dashboard-metric-icon-green {
+  background: rgba(18, 184, 105, 0.12);
+}
+
+.dashboard-metric-icon-purple {
+  background: rgba(144, 84, 255, 0.12);
+}
+
+:root[data-theme="dark"] .dashboard-metric-icon-green {
+  background: rgba(18, 184, 105, 0.18);
+}
+
+:root[data-theme="dark"] .dashboard-metric-icon-purple {
+  background: rgba(144, 84, 255, 0.18);
+}
+
 .dashboard-overview-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.65fr);

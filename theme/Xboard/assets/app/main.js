@@ -366,8 +366,8 @@ function statCards(cards) {
   ])));
 }
 
-function dashboardMetricIcon(icon) {
-  return h('span', { class: 'dashboard-metric-icon' }, h('img', {
+function dashboardMetricIcon(icon, tone) {
+  return h('span', { class: ['dashboard-metric-icon', tone ? `dashboard-metric-icon-${tone}` : ''] }, h('img', {
     src: appAsset(`icons/${icon}`),
     alt: '',
     'aria-hidden': 'true',
@@ -882,10 +882,10 @@ const DashboardPage = {
       return h('div', [
         pageError(local.error),
         h('section', { class: 'dashboard-metrics' }, [
-          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '账户余额'), h('strong', money(user.balance, currencySymbol()))]), dashboardMetricIcon('Dollar.webp')]),
-          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '当前套餐'), h('strong', subscribe.plan?.name || '未订阅')]), dashboardMetricIcon('member.webp')]),
-          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '可用节点'), h('strong', `${servers.length ? onlineCount : 0} 在线`)]), dashboardMetricIcon('node.webp')]),
-          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '本月用量'), h('strong', `${usage.ratio}%`)]), dashboardMetricIcon('flow.webp')]),
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '账户余额'), h('strong', money(user.balance, currencySymbol()))]), dashboardMetricIcon('Dollar.webp', 'green')]),
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '当前套餐'), h('strong', subscribe.plan?.name || '未订阅')]), dashboardMetricIcon('member.webp', 'purple')]),
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '可用节点'), h('strong', `${servers.length ? onlineCount : 0} 在线`)]), dashboardMetricIcon('node1.webp', 'green')]),
+          h('article', { class: 'dashboard-metric' }, [h('div', [h('small', '本月用量'), h('strong', `${usage.ratio}%`)]), dashboardMetricIcon('flow.webp', 'purple')]),
         ]),
         h('section', { class: 'dashboard-overview-grid' }, [
           h('article', { class: 'dashboard-card dashboard-subscription-card' }, [
