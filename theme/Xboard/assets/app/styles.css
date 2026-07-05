@@ -1014,7 +1014,7 @@ td {
 }
 
 .dashboard-metric > .dashboard-metric-icon-plan {
-  background: #f2e1fe;
+  background: #e1effe;
 }
 
 .dashboard-metric > .dashboard-metric-icon-nodes {
@@ -1022,7 +1022,7 @@ td {
 }
 
 .dashboard-metric > .dashboard-metric-icon-usage {
-  background: #fcefdc;
+  background: #f5e5ff;
 }
 
 :root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-balance {
@@ -1030,7 +1030,7 @@ td {
 }
 
 :root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-plan {
-  background: rgba(176, 65, 247, 0.22);
+  background: rgba(66, 155, 247, 0.22);
 }
 
 :root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-nodes {
@@ -1038,7 +1038,7 @@ td {
 }
 
 :root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-usage {
-  background: rgba(237, 152, 36, 0.22);
+  background: rgba(192, 95, 252, 0.22);
 }
 
 .dashboard-overview-grid {
