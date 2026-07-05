@@ -978,6 +978,13 @@ td {
   flex: 0 0 auto;
 }
 
+.dashboard-metric-icon img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
 .dashboard-overview-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.65fr);
