@@ -985,20 +985,20 @@ td {
   object-fit: contain;
 }
 
-.dashboard-metric-icon-green {
-  background: rgba(18, 184, 105, 0.12);
+.dashboard-metric > .dashboard-metric-icon-green {
+  background: #dcfce7;
 }
 
-.dashboard-metric-icon-purple {
-  background: rgba(144, 84, 255, 0.12);
+.dashboard-metric > .dashboard-metric-icon-purple {
+  background: #f1e9ff;
 }
 
-:root[data-theme="dark"] .dashboard-metric-icon-green {
-  background: rgba(18, 184, 105, 0.18);
+:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-green {
+  background: rgba(18, 184, 105, 0.2);
 }
 
-:root[data-theme="dark"] .dashboard-metric-icon-purple {
-  background: rgba(144, 84, 255, 0.18);
+:root[data-theme="dark"] .dashboard-metric > .dashboard-metric-icon-purple {
+  background: rgba(144, 84, 255, 0.22);
 }
 
 .dashboard-overview-grid {
