@@ -382,6 +382,21 @@ function dashboardMetricBody(label, value, note) {
   ]);
 }
 
+function dashboardQuickCard({ href, icon, tone, title, description }) {
+  return h('a', { class: ['dashboard-action-card', `dashboard-action-card-${tone}`], href }, [
+    h('span', { class: 'dashboard-action-icon' }, h('img', {
+      src: appAsset(`icons/${icon}`),
+      alt: '',
+      'aria-hidden': 'true',
+    })),
+    h('span', { class: 'dashboard-action-copy' }, [
+      h('strong', title),
+      h('small', description),
+    ]),
+    h('span', { class: 'dashboard-action-chevron', 'aria-hidden': 'true' }, '›'),
+  ]);
+}
+
 const DataTable = {
   name: 'DataTable',
   props: {
@@ -955,10 +970,10 @@ const DashboardPage = {
           ]),
         ]),
         h('section', { class: 'dashboard-quick-row' }, [
-          h('a', { class: 'dashboard-action-card', href: '#/subscribe' }, ['我的订阅', h('span', '+')]),
-          h('a', { class: 'dashboard-action-card', href: '#/recharge' }, ['充值余额', h('span', '¥')]),
-          h('a', { class: 'dashboard-action-card', href: '#/tickets' }, ['工单中心', h('span', '?')]),
-          h('a', { class: 'dashboard-action-card', href: '#/knowledge' }, ['使用教程', h('span', 'i')]),
+          dashboardQuickCard({ href: '#/subscribe', icon: 'subscription.webp', tone: 'subscribe', title: '我的订阅', description: '查看和管理订阅服务' }),
+          dashboardQuickCard({ href: '#/recharge', icon: 'wallet.webp', tone: 'recharge', title: '充值余额', description: '快速充值，便捷支付' }),
+          dashboardQuickCard({ href: '#/tickets', icon: 'ticket.webp', tone: 'ticket', title: '工单中心', description: '提交工单，快速响应' }),
+          dashboardQuickCard({ href: '#/knowledge', icon: 'knowledge.webp', tone: 'knowledge', title: '使用教程', description: '新手指南，快速上手' }),
         ]),
         h('section', { class: 'dashboard-lower-grid' }, [
           h('article', { class: 'dashboard-card' }, [

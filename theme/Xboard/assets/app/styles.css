@@ -999,8 +999,7 @@ td {
   color: var(--muted);
 }
 
-.dashboard-metric > span,
-.dashboard-action-card > span {
+.dashboard-metric > span {
   display: grid;
   place-items: center;
   width: 38px;
@@ -1199,25 +1198,102 @@ td {
 .dashboard-quick-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 16px;
 }
 
 .dashboard-action-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  min-height: 72px;
-  padding: 16px 18px;
+  gap: 16px;
+  min-height: 88px;
+  padding: 18px 20px;
   color: var(--text);
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 700;
+  transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
 }
 
 .dashboard-action-card:hover {
   border-color: var(--focus-border);
   color: var(--text);
+  transform: translateY(-1px);
+}
+
+.dashboard-action-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 13px;
+  flex: 0 0 auto;
+}
+
+.dashboard-action-icon img {
+  display: block;
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
+.dashboard-action-copy {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.dashboard-action-copy strong {
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.dashboard-action-copy small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.dashboard-action-chevron {
+  color: var(--soft);
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.dashboard-action-card-subscribe .dashboard-action-icon {
+  background: #f0e9ff;
+}
+
+.dashboard-action-card-recharge .dashboard-action-icon {
+  background: #eaf3ff;
+}
+
+.dashboard-action-card-ticket .dashboard-action-icon {
+  background: #e6fbf3;
+}
+
+.dashboard-action-card-knowledge .dashboard-action-icon {
+  background: #fff0dc;
+}
+
+:root[data-theme="dark"] .dashboard-action-card-subscribe .dashboard-action-icon {
+  background: rgba(124, 91, 255, 0.2);
+}
+
+:root[data-theme="dark"] .dashboard-action-card-recharge .dashboard-action-icon {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+:root[data-theme="dark"] .dashboard-action-card-ticket .dashboard-action-icon {
+  background: rgba(34, 197, 148, 0.18);
+}
+
+:root[data-theme="dark"] .dashboard-action-card-knowledge .dashboard-action-icon {
+  background: rgba(255, 168, 43, 0.18);
 }
 
 .dashboard-lower-grid {
