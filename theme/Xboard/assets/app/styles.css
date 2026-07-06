@@ -1215,7 +1215,7 @@ td {
   background:
     radial-gradient(circle at 18% 18%, rgba(99, 91, 255, 0.10), transparent 30%),
     radial-gradient(circle at 82% 30%, rgba(24, 189, 118, 0.10), transparent 30%),
-    linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.96));
+    linear-gradient(135deg, rgba(122, 202, 223, 0.72), rgba(244, 251, 253, 0.96));
 }
 
 :root[data-theme="dark"] .dashboard-leaflet-shell {
@@ -1228,7 +1228,11 @@ td {
 .dashboard-leaflet-map {
   width: 100%;
   height: 100%;
-  background: transparent;
+  background: #7acadf;
+}
+
+.dashboard-leaflet-map .leaflet-container {
+  background: #7acadf;
 }
 
 .dashboard-leaflet-map .leaflet-control-zoom {
