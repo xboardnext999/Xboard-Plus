@@ -919,7 +919,7 @@ const DashboardPage = {
       return h('div', [
         pageError(local.error),
         h('section', { class: 'dashboard-metrics' }, [
-          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('账户余额', money(user.balance, currencySymbol()), '可用余额'), dashboardMetricIcon('wallet.webp', 'balance')]),
+          h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('账户余额', money(user.balance, currencySymbol()), '可用余额'), dashboardMetricIcon('Dollar.webp', 'balance')]),
           h('article', { class: 'dashboard-metric' }, [
             dashboardMetricBody('当前套餐', subscribe.plan?.name || '未订阅', ['套餐状态：', h('span', { class: planStatusOk ? 'dashboard-metric-note-ok' : 'dashboard-metric-note-muted' }, planStatusText)]),
             dashboardMetricIcon('member.webp', 'plan'),
