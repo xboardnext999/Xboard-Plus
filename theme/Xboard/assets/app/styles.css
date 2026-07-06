@@ -1212,11 +1212,17 @@ td {
   height: 236px;
   margin: 0 -6px 14px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(244, 247, 255, 0.78), rgba(255, 255, 255, 0.92));
+  background:
+    radial-gradient(circle at 18% 18%, rgba(99, 91, 255, 0.10), transparent 30%),
+    radial-gradient(circle at 82% 30%, rgba(24, 189, 118, 0.10), transparent 30%),
+    linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.96));
 }
 
 :root[data-theme="dark"] .dashboard-leaflet-shell {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.92));
+  background:
+    radial-gradient(circle at 18% 18%, rgba(99, 91, 255, 0.18), transparent 32%),
+    radial-gradient(circle at 82% 30%, rgba(24, 189, 118, 0.12), transparent 30%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.92));
 }
 
 .dashboard-leaflet-map {
@@ -1238,13 +1244,8 @@ td {
   color: var(--text);
 }
 
-.dashboard-leaflet-map .leaflet-container,
 .dashboard-leaflet-map .leaflet-tile-pane {
-  filter: saturate(0.92) contrast(0.98);
-}
-
-:root[data-theme="dark"] .dashboard-leaflet-map .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.62) saturate(0.72);
+  will-change: transform;
 }
 
 .dashboard-map-marker-wrap {

@@ -725,17 +725,31 @@ const DashboardNodeMap = {
       try {
         const L = await ensureLeaflet();
         if (!mapEl.value) return;
+        const worldBounds = L.latLngBounds([[-75, -180], [85, 180]]);
         map = L.map(mapEl.value, {
           attributionControl: false,
           doubleClickZoom: false,
+          fadeAnimation: false,
+          markerZoomAnimation: false,
+          maxBounds: worldBounds,
+          maxBoundsViscosity: 0.9,
           scrollWheelZoom: false,
-          worldCopyJump: true,
+          preferCanvas: true,
+          worldCopyJump: false,
           zoomControl: true,
           minZoom: 1,
           maxZoom: 5,
         });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+          bounds: worldBounds,
+          crossOrigin: true,
+          detectRetina: false,
+          keepBuffer: 5,
+          noWrap: true,
           subdomains: 'abcd',
+          updateInterval: 250,
+          updateWhenIdle: true,
+          updateWhenZooming: false,
           maxZoom: 5,
         }).addTo(map);
         renderMarkers();
