@@ -397,6 +397,72 @@ function dashboardQuickCard({ href, icon, tone, title, description }) {
   ]);
 }
 
+const dashboardNodeRegions = [
+  { className: 'us', tone: 'green', name: '美国', count: '2 节点' },
+  { className: 'br', tone: 'purple', name: '巴西', count: '1 节点' },
+  { className: 'de', tone: 'green', name: '德国', count: '2 节点' },
+  { className: 'tr', tone: 'purple', name: '土耳其', count: '1 节点' },
+  { className: 'sg', tone: 'green', name: '新加坡', count: '3 节点' },
+  { className: 'jp', tone: 'purple', name: '日本', count: '3 节点' },
+];
+
+function dashboardNodePin(region) {
+  return h('span', { class: ['dashboard-map-pin', `pin-${region.className}`, `pin-${region.tone}`] }, [
+    h('i', { class: 'dashboard-pin-marker', 'aria-hidden': 'true' }),
+    h('em', [region.name, h('strong', region.count)]),
+  ]);
+}
+
+function dashboardWorldMap() {
+  return h('div', { class: 'dashboard-world-map' }, [
+    h('svg', {
+      class: 'dashboard-map-dots',
+      viewBox: '0 0 1060 260',
+      'aria-hidden': 'true',
+    }, [
+      h('defs', [
+        h('pattern', { id: 'dashboardDotPattern', width: '7', height: '7', patternUnits: 'userSpaceOnUse' }, [
+          h('circle', { cx: '2.2', cy: '2.2', r: '1.55' }),
+        ]),
+      ]),
+      h('path', { d: 'M38 102 C70 74 116 80 144 92 C174 72 230 74 264 92 C296 112 280 150 238 154 C188 159 156 172 116 156 C76 140 28 142 38 102Z' }),
+      h('path', { d: 'M260 142 C306 134 350 158 362 198 C374 240 336 255 305 232 C282 214 264 182 260 142Z' }),
+      h('path', { d: 'M410 76 C456 48 522 55 568 83 C595 100 618 93 638 113 C658 132 633 154 604 145 C558 132 517 137 480 154 C430 176 380 144 410 76Z' }),
+      h('path', { d: 'M482 142 C532 124 590 148 596 194 C602 234 566 252 532 228 C500 206 470 178 482 142Z' }),
+      h('path', { d: 'M616 74 C690 40 806 64 878 96 C948 130 1016 114 1022 154 C1028 192 946 190 900 170 C840 144 778 156 724 178 C654 206 592 142 616 74Z' }),
+      h('path', { d: 'M822 198 C866 184 918 198 942 230 C900 248 842 240 822 198Z' }),
+    ]),
+    ...dashboardNodeRegions.map(dashboardNodePin),
+  ]);
+}
+
+function dashboardNodeStatusCard(totalCount, onlineCount, maintenanceCount) {
+  return h('article', { class: 'dashboard-card dashboard-node-card' }, [
+    h('div', { class: 'dashboard-node-card-head' }, [
+      h('div', [
+        h('h2', '全球节点池'),
+        h('p', `共 ${totalCount} 个可用节点`),
+      ]),
+      h('a', { class: 'dashboard-node-arrow', href: '#/nodes', 'aria-label': '查看节点状态' }, '›'),
+    ]),
+    dashboardWorldMap(),
+    h('div', { class: 'dashboard-node-summary-row' }, [
+      h('div', { class: 'dashboard-node-summary-card' }, [
+        h('div', { class: 'dashboard-node-summary-copy' }, [
+          h('small', '可连接节点'),
+          h('span', [h('strong', String(onlineCount)), h('em', '在线可用')]),
+        ]),
+      ]),
+      h('div', { class: 'dashboard-node-summary-card danger' }, [
+        h('div', { class: 'dashboard-node-summary-copy' }, [
+          h('small', '维护中节点'),
+          h('span', [h('strong', String(maintenanceCount)), h('em', '暂时不可用')]),
+        ]),
+      ]),
+    ]),
+  ]);
+}
+
 const DataTable = {
   name: 'DataTable',
   props: {
@@ -956,18 +1022,7 @@ const DashboardPage = {
               ]),
             ]),
           ]),
-          h('article', { class: 'dashboard-card dashboard-node-card' }, [
-            h('div', { class: 'dashboard-card-head' }, [
-              h('div', [h('small', '节点状态'), h('h2', '全球节点池')]),
-              miniButton('全部', { href: '#/nodes' }),
-            ]),
-            h('div', { class: 'dashboard-node-grid' }, Array.from({ length: 12 }).map((_, index) => {
-              const node = servers[index];
-              return h('i', { class: !node ? 'off' : (node.is_online ? 'online' : 'warn') });
-            })),
-            h('div', { class: 'dashboard-node-stat' }, [h('span', '可连接节点'), h('strong', String(servers.length ? onlineCount : 0))]),
-            h('div', { class: 'dashboard-node-stat' }, [h('span', '维护中'), h('strong', { class: 'danger-text' }, String(maintenanceCount))]),
-          ]),
+          dashboardNodeStatusCard(servers.length, servers.length ? onlineCount : 0, maintenanceCount),
         ]),
         h('section', { class: 'dashboard-quick-row' }, [
           dashboardQuickCard({ href: '#/subscribe', icon: 'subscription1.webp', tone: 'subscribe', title: '我的订阅', description: '查看和管理订阅服务' }),
