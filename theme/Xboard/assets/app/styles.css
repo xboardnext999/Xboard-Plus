@@ -1312,20 +1312,33 @@ td {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
 }
 
-.dashboard-map-label span {
+.dashboard-map-label-title {
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
 }
 
-.dashboard-map-label img,
 .dashboard-map-label-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  object-fit: cover;
   flex: 0 0 auto;
+  overflow: hidden;
+  background: #eef2f7;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dashboard-map-label-flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .dashboard-map-label b {

@@ -681,7 +681,7 @@ const DashboardNodeMap = {
     function markerHtml(region) {
       const status = region.online > 0 ? 'online' : 'offline';
       const flag = region.flag
-        ? `<img src="${escapeHtml(flagAssetPath(region.flag))}" alt="">`
+        ? `<span class="dashboard-map-label-flag"><img src="${escapeHtml(flagAssetPath(region.flag))}" alt=""></span>`
         : '<span class="dashboard-map-label-flag">?</span>';
       const detail = region.offline > 0
         ? `${region.online} 在线 / ${region.offline} 离线`
@@ -689,7 +689,7 @@ const DashboardNodeMap = {
       return `
         <span class="dashboard-map-marker dashboard-map-marker-${status}"><i></i></span>
         <span class="dashboard-map-label">
-          <span>${flag}<b>${escapeHtml(region.name)}</b></span>
+          <span class="dashboard-map-label-title">${flag}<b>${escapeHtml(region.name)}</b></span>
           <em>${escapeHtml(detail)}</em>
         </span>
       `;
