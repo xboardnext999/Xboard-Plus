@@ -1,4 +1,4 @@
-import { createApp, h, onMounted, reactive, watch } from './vendor/vue.esm-browser.prod.js';
+import { createApp, h, onBeforeUnmount, onMounted, reactive, ref, watch } from './vendor/vue.esm-browser.prod.js';
 import { api, clearToken, getToken, isAuthenticated, setToken } from './api.js';
 import {
   bytes,
@@ -138,6 +138,271 @@ function currentTitle(name) {
 
 function activeLanguage() {
   return languageOptions.find((item) => item.code === state.language) || languageOptions[0];
+}
+
+const countryCoordinates = {
+  AD: [42.5462, 1.6016],
+  AE: [23.4241, 53.8478],
+  AF: [33.9391, 67.7100],
+  AG: [17.0608, -61.7964],
+  AL: [41.1533, 20.1683],
+  AM: [40.0691, 45.0382],
+  AO: [-11.2027, 17.8739],
+  AR: [-38.4161, -63.6167],
+  AT: [47.5162, 14.5501],
+  AU: [-25.2744, 133.7751],
+  AZ: [40.1431, 47.5769],
+  BA: [43.9159, 17.6791],
+  BD: [23.6850, 90.3563],
+  BE: [50.5039, 4.4699],
+  BG: [42.7339, 25.4858],
+  BH: [25.9304, 50.6378],
+  BR: [-14.2350, -51.9253],
+  BY: [53.7098, 27.9534],
+  CA: [56.1304, -106.3468],
+  CH: [46.8182, 8.2275],
+  CL: [-35.6751, -71.5430],
+  CN: [35.8617, 104.1954],
+  CO: [4.5709, -74.2973],
+  CR: [9.7489, -83.7534],
+  CY: [35.1264, 33.4299],
+  CZ: [49.8175, 15.4730],
+  DE: [51.1657, 10.4515],
+  DK: [56.2639, 9.5018],
+  DO: [18.7357, -70.1627],
+  DZ: [28.0339, 1.6596],
+  EC: [-1.8312, -78.1834],
+  EE: [58.5953, 25.0136],
+  EG: [26.8206, 30.8025],
+  ES: [40.4637, -3.7492],
+  FI: [61.9241, 25.7482],
+  FR: [46.2276, 2.2137],
+  GB: [55.3781, -3.4360],
+  GE: [42.3154, 43.3569],
+  GR: [39.0742, 21.8243],
+  HK: [22.3193, 114.1694],
+  HR: [45.1000, 15.2000],
+  HU: [47.1625, 19.5033],
+  ID: [-0.7893, 113.9213],
+  IE: [53.1424, -7.6921],
+  IL: [31.0461, 34.8516],
+  IN: [20.5937, 78.9629],
+  IQ: [33.2232, 43.6793],
+  IR: [32.4279, 53.6880],
+  IS: [64.9631, -19.0208],
+  IT: [41.8719, 12.5674],
+  JO: [30.5852, 36.2384],
+  JP: [36.2048, 138.2529],
+  KH: [12.5657, 104.9910],
+  KR: [35.9078, 127.7669],
+  KW: [29.3117, 47.4818],
+  KZ: [48.0196, 66.9237],
+  LA: [19.8563, 102.4955],
+  LK: [7.8731, 80.7718],
+  LT: [55.1694, 23.8813],
+  LU: [49.8153, 6.1296],
+  LV: [56.8796, 24.6032],
+  MA: [31.7917, -7.0926],
+  MD: [47.4116, 28.3699],
+  MM: [21.9162, 95.9560],
+  MN: [46.8625, 103.8467],
+  MO: [22.1987, 113.5439],
+  MX: [23.6345, -102.5528],
+  MY: [4.2105, 101.9758],
+  NG: [9.0820, 8.6753],
+  NL: [52.1326, 5.2913],
+  NO: [60.4720, 8.4689],
+  NP: [28.3949, 84.1240],
+  NZ: [-40.9006, 174.8860],
+  OM: [21.4735, 55.9754],
+  PA: [8.5380, -80.7821],
+  PE: [-9.1900, -75.0152],
+  PH: [12.8797, 121.7740],
+  PK: [30.3753, 69.3451],
+  PL: [51.9194, 19.1451],
+  PT: [39.3999, -8.2245],
+  QA: [25.3548, 51.1839],
+  RO: [45.9432, 24.9668],
+  RS: [44.0165, 21.0059],
+  RU: [61.5240, 105.3188],
+  SA: [23.8859, 45.0792],
+  SE: [60.1282, 18.6435],
+  SG: [1.3521, 103.8198],
+  SI: [46.1512, 14.9955],
+  SK: [48.6690, 19.6990],
+  TH: [15.8700, 100.9925],
+  TR: [38.9637, 35.2433],
+  TW: [23.6978, 120.9605],
+  UA: [48.3794, 31.1656],
+  US: [37.0902, -95.7129],
+  UY: [-32.5228, -55.7658],
+  UZ: [41.3775, 64.5853],
+  VN: [14.0583, 108.2772],
+  ZA: [-30.5595, 22.9375],
+};
+
+let flagsPromise = null;
+let leafletPromise = null;
+
+function flagAssetPath(file) {
+  return `/flags/${String(file || '').replace(/^\/+/, '')}`;
+}
+
+function loadCountryFlags() {
+  if (!flagsPromise) {
+    flagsPromise = fetch('/flags/flags.json', { cache: 'force-cache' })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((data) => (Array.isArray(data) ? data : []))
+      .catch(() => []);
+  }
+  return flagsPromise;
+}
+
+function ensureLeaflet() {
+  if (window.L) return Promise.resolve(window.L);
+  if (!leafletPromise) {
+    leafletPromise = new Promise((resolve, reject) => {
+      if (!document.querySelector('[data-leaflet-css]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = appAsset('vendor/leaflet/leaflet.css');
+        link.dataset.leafletCss = 'true';
+        document.head.appendChild(link);
+      }
+
+      const script = document.createElement('script');
+      script.src = appAsset('vendor/leaflet/leaflet.js');
+      script.async = true;
+      script.onload = () => resolve(window.L);
+      script.onerror = () => reject(new Error('地图资源加载失败'));
+      document.head.appendChild(script);
+    });
+  }
+  return leafletPromise;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
+function parseFlagRemark(flag) {
+  if (!flag?.remark) return {};
+  try {
+    return JSON.parse(flag.remark);
+  } catch {
+    return {};
+  }
+}
+
+function flagCode(flag) {
+  return String(flag?.value || '').replace(/\.[^.]+$/, '').toUpperCase();
+}
+
+function flattenText(value) {
+  if (Array.isArray(value)) return value.map(flattenText).join(' ');
+  if (value && typeof value === 'object') return Object.values(value).map(flattenText).join(' ');
+  return String(value ?? '');
+}
+
+function comparableText(value) {
+  return flattenText(value).toLocaleLowerCase().replace(/[\s_\-./|()[\]{}]+/g, '');
+}
+
+function tokenText(value) {
+  return ` ${flattenText(value).toLocaleLowerCase().replace(/[^a-z0-9]+/g, ' ')} `;
+}
+
+function createFlagIndex(flags = []) {
+  return flags.map((flag) => {
+    const code = flagCode(flag);
+    const remark = parseFlagRemark(flag);
+    const names = Object.values(flag.names || {});
+    const aliases = new Set([
+      flag.name,
+      code,
+      ...names,
+      ...(Array.isArray(remark.name) ? remark.name : []),
+    ].filter(Boolean).map((item) => String(item).trim()).filter(Boolean));
+
+    return {
+      code,
+      flag: flag.value,
+      name: flag.names?.['zh-CN'] || flag.name || code,
+      aliases: [...aliases].sort((a, b) => b.length - a.length),
+    };
+  }).filter((item) => item.code && countryCoordinates[item.code]);
+}
+
+function resolveNodeRegion(node, flagIndex) {
+  const sourceText = [
+    node.country_code,
+    node.country,
+    node.region,
+    node.area,
+    node.location,
+    node.tags,
+    node.name,
+  ].map(flattenText).join(' ');
+  const compactSource = comparableText(sourceText);
+  const sourceTokens = tokenText(sourceText);
+
+  for (const flag of flagIndex) {
+    if (sourceTokens.includes(` ${flag.code.toLocaleLowerCase()} `)) {
+      return flag;
+    }
+    if (flag.aliases.some((alias) => {
+      const compactAlias = comparableText(alias);
+      if (!compactAlias || compactAlias.length < 2) return false;
+      if (/^[a-z]{2}$/i.test(alias)) return sourceTokens.includes(` ${alias.toLocaleLowerCase()} `);
+      return compactSource.includes(compactAlias);
+    })) {
+      return flag;
+    }
+  }
+
+  return {
+    code: '',
+    flag: '',
+    name: String(node.name || '未知地区').trim() || '未知地区',
+    aliases: [],
+  };
+}
+
+function nodeIsOnline(node) {
+  return node?.is_online === true || node?.is_online === 1 || node?.is_online === '1';
+}
+
+function buildNodeRegionStats(servers = [], flags = []) {
+  const flagIndex = createFlagIndex(flags);
+  const regions = new Map();
+
+  servers.forEach((node) => {
+    const region = resolveNodeRegion(node, flagIndex);
+    const key = region.code || region.name;
+    if (!regions.has(key)) {
+      regions.set(key, {
+        code: region.code,
+        flag: region.flag,
+        name: region.name,
+        coords: countryCoordinates[region.code] || null,
+        total: 0,
+        online: 0,
+        offline: 0,
+      });
+    }
+    const item = regions.get(key);
+    item.total += 1;
+    if (nodeIsOnline(node)) item.online += 1;
+    else item.offline += 1;
+  });
+
+  return [...regions.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'zh-Hans-CN'));
 }
 
 function selectLanguage(code) {
@@ -397,55 +662,113 @@ function dashboardQuickCard({ href, icon, tone, title, description }) {
   ]);
 }
 
-const dashboardNodeRegions = [
-  { className: 'us', tone: 'green', name: '美国', count: '2 节点' },
-  { className: 'br', tone: 'purple', name: '巴西', count: '1 节点' },
-  { className: 'de', tone: 'green', name: '德国', count: '2 节点' },
-  { className: 'tr', tone: 'purple', name: '土耳其', count: '1 节点' },
-  { className: 'sg', tone: 'green', name: '新加坡', count: '3 节点' },
-  { className: 'jp', tone: 'purple', name: '日本', count: '3 节点' },
-];
+const DashboardNodeMap = {
+  name: 'DashboardNodeMap',
+  props: {
+    regions: { type: Array, default: () => [] },
+  },
+  setup(props) {
+    const mapEl = ref(null);
+    const local = reactive({ error: '' });
+    let map = null;
+    let markers = [];
 
-function dashboardNodePin(region) {
-  return h('span', { class: ['dashboard-map-pin', `pin-${region.className}`, `pin-${region.tone}`] }, [
-    h('i', { class: 'dashboard-pin-marker', 'aria-hidden': 'true' }),
-    h('em', [region.name, h('strong', region.count)]),
-  ]);
-}
+    function clearMarkers() {
+      markers.forEach((marker) => marker.remove());
+      markers = [];
+    }
 
-function dashboardWorldMap() {
-  return h('div', { class: 'dashboard-world-map' }, [
-    h('svg', {
-      class: 'dashboard-map-dots',
-      viewBox: '0 0 1060 260',
-      'aria-hidden': 'true',
-    }, [
-      h('defs', [
-        h('pattern', { id: 'dashboardDotPattern', width: '7', height: '7', patternUnits: 'userSpaceOnUse' }, [
-          h('circle', { cx: '2.2', cy: '2.2', r: '1.55' }),
-        ]),
-      ]),
-      h('path', { d: 'M38 102 C70 74 116 80 144 92 C174 72 230 74 264 92 C296 112 280 150 238 154 C188 159 156 172 116 156 C76 140 28 142 38 102Z' }),
-      h('path', { d: 'M260 142 C306 134 350 158 362 198 C374 240 336 255 305 232 C282 214 264 182 260 142Z' }),
-      h('path', { d: 'M410 76 C456 48 522 55 568 83 C595 100 618 93 638 113 C658 132 633 154 604 145 C558 132 517 137 480 154 C430 176 380 144 410 76Z' }),
-      h('path', { d: 'M482 142 C532 124 590 148 596 194 C602 234 566 252 532 228 C500 206 470 178 482 142Z' }),
-      h('path', { d: 'M616 74 C690 40 806 64 878 96 C948 130 1016 114 1022 154 C1028 192 946 190 900 170 C840 144 778 156 724 178 C654 206 592 142 616 74Z' }),
-      h('path', { d: 'M822 198 C866 184 918 198 942 230 C900 248 842 240 822 198Z' }),
-    ]),
-    ...dashboardNodeRegions.map(dashboardNodePin),
-  ]);
-}
+    function markerHtml(region) {
+      const status = region.online > 0 ? 'online' : 'offline';
+      const flag = region.flag
+        ? `<img src="${escapeHtml(flagAssetPath(region.flag))}" alt="">`
+        : '<span class="dashboard-map-label-flag">?</span>';
+      const detail = region.offline > 0
+        ? `${region.online} 在线 / ${region.offline} 离线`
+        : `${region.online} 在线`;
+      return `
+        <span class="dashboard-map-marker dashboard-map-marker-${status}"><i></i></span>
+        <span class="dashboard-map-label">
+          <span>${flag}<b>${escapeHtml(region.name)}</b></span>
+          <em>${escapeHtml(detail)}</em>
+        </span>
+      `;
+    }
 
-function dashboardNodeStatusCard(totalCount, onlineCount, maintenanceCount) {
+    function renderMarkers() {
+      if (!map || !window.L) return;
+      clearMarkers();
+      const points = props.regions.filter((region) => Array.isArray(region.coords));
+
+      points.forEach((region) => {
+        const icon = window.L.divIcon({
+          className: 'dashboard-map-marker-wrap',
+          html: markerHtml(region),
+          iconSize: [132, 46],
+          iconAnchor: [16, 38],
+        });
+        markers.push(window.L.marker(region.coords, { icon }).addTo(map));
+      });
+
+      if (points.length > 1) {
+        const bounds = window.L.latLngBounds(points.map((region) => region.coords));
+        map.fitBounds(bounds, { padding: [24, 24], maxZoom: 3 });
+      } else if (points.length === 1) {
+        map.setView(points[0].coords, 3);
+      } else {
+        map.setView([22, 12], 1.35);
+      }
+      setTimeout(() => map?.invalidateSize(), 80);
+    }
+
+    onMounted(async () => {
+      try {
+        const L = await ensureLeaflet();
+        if (!mapEl.value) return;
+        map = L.map(mapEl.value, {
+          attributionControl: false,
+          doubleClickZoom: false,
+          scrollWheelZoom: false,
+          worldCopyJump: true,
+          zoomControl: true,
+          minZoom: 1,
+          maxZoom: 5,
+        });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+          subdomains: 'abcd',
+          maxZoom: 5,
+        }).addTo(map);
+        renderMarkers();
+      } catch (error) {
+        local.error = error.message || '地图加载失败';
+      }
+    });
+
+    watch(() => props.regions, renderMarkers, { deep: true });
+
+    onBeforeUnmount(() => {
+      clearMarkers();
+      if (map) map.remove();
+    });
+
+    return () => h('div', { class: 'dashboard-leaflet-shell' }, [
+      h('div', { ref: mapEl, class: 'dashboard-leaflet-map' }),
+      !props.regions.length ? h('div', { class: 'dashboard-map-empty' }, '暂无节点地区数据') : null,
+      local.error ? h('div', { class: 'dashboard-map-empty' }, local.error) : null,
+    ]);
+  },
+};
+
+function dashboardNodeStatusCard(totalCount, onlineCount, offlineCount, regions) {
   return h('article', { class: 'dashboard-card dashboard-node-card' }, [
     h('div', { class: 'dashboard-node-card-head' }, [
       h('div', [
         h('h2', '全球节点池'),
-        h('p', `共 ${totalCount} 个可用节点`),
+        h('p', `共 ${onlineCount} 个可用节点 · ${regions.length} 个地区`),
       ]),
       h('a', { class: 'dashboard-node-arrow', href: '#/nodes', 'aria-label': '查看节点状态' }, '›'),
     ]),
-    dashboardWorldMap(),
+    h(DashboardNodeMap, { regions }),
     h('div', { class: 'dashboard-node-summary-row' }, [
       h('div', { class: 'dashboard-node-summary-card' }, [
         h('div', { class: 'dashboard-node-summary-copy' }, [
@@ -455,8 +778,8 @@ function dashboardNodeStatusCard(totalCount, onlineCount, maintenanceCount) {
       ]),
       h('div', { class: 'dashboard-node-summary-card danger' }, [
         h('div', { class: 'dashboard-node-summary-copy' }, [
-          h('small', '维护中节点'),
-          h('span', [h('strong', String(maintenanceCount)), h('em', '暂时不可用')]),
+          h('small', '离线节点'),
+          h('span', [h('strong', String(offlineCount)), h('em', '暂时不可用')]),
         ]),
       ]),
     ]),
@@ -954,12 +1277,14 @@ const ForgotPage = {
 const DashboardPage = {
   setup() {
     const local = useAsyncPage(async (page) => {
-      const [notices, servers] = await Promise.all([
+      const [notices, servers, flags] = await Promise.all([
         api.get('/user/notice/fetch', { current: 1 }).catch(() => ({ data: [] })),
         api.get('/user/server/fetch').catch(() => ({ data: [] })),
+        loadCountryFlags(),
       ]);
       page.notices = normalizeCollection(notices.data || notices).slice(0, 2);
       page.servers = normalizeCollection(servers.data || servers);
+      page.flags = flags;
     });
 
     return () => {
@@ -967,8 +1292,9 @@ const DashboardPage = {
       const subscribe = state.subscribe || {};
       const usage = usageSummary(subscribe);
       const servers = local.servers || [];
-      const onlineCount = servers.filter((node) => node.is_online).length;
-      const maintenanceCount = Math.max(servers.length - onlineCount, 0);
+      const onlineCount = servers.filter(nodeIsOnline).length;
+      const offlineCount = Math.max(servers.length - onlineCount, 0);
+      const nodeRegions = buildNodeRegionStats(servers, local.flags || []);
       const planName = subscribe.plan?.name || '未订阅套餐';
       const planStatusOk = Boolean(subscribe.plan?.name);
       const planStatusText = planStatusOk ? '正常' : '未订阅';
@@ -977,8 +1303,8 @@ const DashboardPage = {
         `#${index + 1}`,
         [h('i', { class: `node-dot dot-${index % 3}` }), node.name || '-'],
         node.type || '-',
-        node.is_online ? (node.last_check_at ? '良好' : '-') : '-',
-        node.is_online ? badge('在线', 'ok') : badge('维护', 'danger'),
+        nodeIsOnline(node) ? (node.last_check_at ? '良好' : '-') : '-',
+        nodeIsOnline(node) ? badge('在线', 'ok') : badge('离线', 'danger'),
       ]);
       const notices = local.notices || [];
 
@@ -1022,7 +1348,7 @@ const DashboardPage = {
               ]),
             ]),
           ]),
-          dashboardNodeStatusCard(servers.length, servers.length ? onlineCount : 0, maintenanceCount),
+          dashboardNodeStatusCard(servers.length, servers.length ? onlineCount : 0, offlineCount, nodeRegions),
         ]),
         h('section', { class: 'dashboard-quick-row' }, [
           dashboardQuickCard({ href: '#/subscribe', icon: 'subscription1.webp', tone: 'subscribe', title: '我的订阅', description: '查看和管理订阅服务' }),
