@@ -1,18 +1,24 @@
 (function () {
   var ENTRY_ID = 'xboard-group-buy-entry-style';
   var ENTRY_ATTR = 'data-xboard-group-buy-entry';
-  var FALLBACK_ATTR = 'data-xboard-group-buy-fallback';
-  var ANCHOR_LABELS = ['套餐管理', '订单管理', '优惠券管理', '插件管理', '支付配置'];
+  var ANCHOR_LABELS = [
+    '礼品卡管理',
+    '优惠券管理',
+    '订单管理',
+    '套餐管理',
+    'Gift Card Management',
+    'Coupon Management',
+    'Order Management',
+    'Plan Management'
+  ];
 
   function ensureStyle() {
     if (document.getElementById(ENTRY_ID)) return;
     var style = document.createElement('style');
     style.id = ENTRY_ID;
     style.textContent = [
-      '.xboard-group-buy-entry{display:flex;align-items:center;gap:10px;min-height:36px;border-radius:8px;padding:8px 12px;margin:4px 0;color:hsl(var(--foreground));text-decoration:none;font-size:14px;font-weight:500}',
-      '.xboard-group-buy-entry:hover{background:hsl(var(--muted));color:hsl(var(--foreground))}',
-      '.xboard-group-buy-entry svg{width:16px;height:16px;color:hsl(var(--muted-foreground))}',
-      '.xboard-group-buy-entry-fallback{position:fixed;right:18px;bottom:18px;z-index:40;background:hsl(var(--foreground));color:hsl(var(--background));box-shadow:0 12px 28px rgba(15,23,42,.18)}'
+      '[' + ENTRY_ATTR + '="menu"]{cursor:pointer}',
+      '[' + ENTRY_ATTR + '="menu"] svg{flex-shrink:0}'
     ].join('');
     document.head.appendChild(style);
   }
@@ -25,14 +31,23 @@
     return String(node && node.textContent ? node.textContent : '').replace(/\s+/g, '').trim();
   }
 
+  function isSidebarCandidate(node) {
+    if (!node || !node.getBoundingClientRect) return false;
+    var rect = node.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.left < Math.min(520, window.innerWidth * 0.42);
+  }
+
   function findMenuAnchor() {
     var nodes = Array.prototype.slice.call(document.querySelectorAll('a, button, [role="menuitem"], li, div, span'));
-    var match = nodes.find(function (node) {
-      var text = textOf(node);
-      if (!text || text.length > 24 || text === '拼团管理') return false;
-      return ANCHOR_LABELS.some(function (label) {
-        return text === label || text.indexOf(label) !== -1;
+    var match = null;
+    ANCHOR_LABELS.some(function (label) {
+      match = nodes.find(function (node) {
+        var text = textOf(node);
+        if (!text || text.length > 30 || text === '拼团管理') return false;
+        if (!isSidebarCandidate(node)) return false;
+        return text === label;
       });
+      return Boolean(match);
     });
     return closestItem(match);
   }
@@ -59,6 +74,25 @@
     return false;
   }
 
+  function replaceIcon(node) {
+    var oldIcon = node.querySelector('svg');
+    if (!oldIcon) return;
+    var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '2');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    icon.innerHTML = [
+      '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>',
+      '<circle cx="9" cy="7" r="4"></circle>',
+      '<path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>',
+      '<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>'
+    ].join('');
+    oldIcon.replaceWith(icon);
+  }
+
   function cloneFrom(reference) {
     var clone = reference.cloneNode(true);
     clone.setAttribute(ENTRY_ATTR, 'menu');
@@ -67,6 +101,13 @@
     clone.removeAttribute('aria-current');
     clone.removeAttribute('data-state');
     clone.classList.remove('active');
+    clone.classList.remove('router-link-active');
+    clone.classList.remove('router-link-exact-active');
+    clone.querySelectorAll('[aria-current], [data-state]').forEach(function (node) {
+      node.removeAttribute('aria-current');
+      node.removeAttribute('data-state');
+    });
+    replaceIcon(clone);
     replaceText(clone, '拼团管理');
     clone.addEventListener('click', function (event) {
       event.preventDefault();
@@ -75,36 +116,18 @@
     return clone;
   }
 
-  function createFallback() {
-    var link = document.createElement('a');
-    link.href = pageUrl();
-    link.className = 'xboard-group-buy-entry xboard-group-buy-entry-fallback';
-    link.setAttribute(FALLBACK_ATTR, '1');
-    link.innerHTML = [
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
-      '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>',
-      '<circle cx="9" cy="7" r="4"></circle>',
-      '<path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>',
-      '<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>',
-      '</svg><span>拼团管理</span>'
-    ].join('');
-    document.body.appendChild(link);
-  }
-
   function inject() {
     ensureStyle();
 
+    document.querySelectorAll('a.xboard-group-buy-entry-fallback, [data-xboard-group-buy-fallback]').forEach(function (node) {
+      node.remove();
+    });
+
+    if (document.querySelector('[' + ENTRY_ATTR + '="menu"]')) return;
+
     var anchor = findMenuAnchor();
     if (anchor && anchor.parentElement) {
-      if (document.querySelector('[' + ENTRY_ATTR + '="menu"]')) return;
       anchor.insertAdjacentElement('afterend', cloneFrom(anchor));
-      var fallback = document.querySelector('[' + FALLBACK_ATTR + ']');
-      if (fallback) fallback.remove();
-      return;
-    }
-
-    if (document.querySelector('#root') && !document.querySelector('[' + FALLBACK_ATTR + ']')) {
-      createFallback();
     }
   }
 
