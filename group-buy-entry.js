@@ -1,6 +1,8 @@
 (function () {
   var ENTRY_ID = 'xboard-group-buy-entry-style';
   var ENTRY_ATTR = 'data-xboard-group-buy-entry';
+  var FALLBACK_ATTR = 'data-xboard-group-buy-fallback';
+  var ANCHOR_LABELS = ['套餐管理', '订单管理', '优惠券管理', '插件管理', '支付配置'];
 
   function ensureStyle() {
     if (document.getElementById(ENTRY_ID)) return;
@@ -20,14 +22,19 @@
   }
 
   function textOf(node) {
-    return String(node && node.textContent ? node.textContent : '').trim();
+    return String(node && node.textContent ? node.textContent : '').replace(/\s+/g, '').trim();
   }
 
-  function findLabel(label) {
-    var nodes = Array.prototype.slice.call(document.querySelectorAll('a, button, [role="menuitem"], div, span'));
-    return nodes.find(function (node) {
-      return textOf(node) === label;
+  function findMenuAnchor() {
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('a, button, [role="menuitem"], li, div, span'));
+    var match = nodes.find(function (node) {
+      var text = textOf(node);
+      if (!text || text.length > 24 || text === '拼团管理') return false;
+      return ANCHOR_LABELS.some(function (label) {
+        return text === label || text.indexOf(label) !== -1;
+      });
     });
+    return closestItem(match);
   }
 
   function closestItem(node) {
@@ -54,9 +61,11 @@
 
   function cloneFrom(reference) {
     var clone = reference.cloneNode(true);
-    clone.setAttribute(ENTRY_ATTR, '1');
+    clone.setAttribute(ENTRY_ATTR, 'menu');
     clone.setAttribute('href', pageUrl());
     clone.onclick = null;
+    clone.removeAttribute('aria-current');
+    clone.removeAttribute('data-state');
     clone.classList.remove('active');
     replaceText(clone, '拼团管理');
     clone.addEventListener('click', function (event) {
@@ -70,7 +79,7 @@
     var link = document.createElement('a');
     link.href = pageUrl();
     link.className = 'xboard-group-buy-entry xboard-group-buy-entry-fallback';
-    link.setAttribute(ENTRY_ATTR, '1');
+    link.setAttribute(FALLBACK_ATTR, '1');
     link.innerHTML = [
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
       '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>',
@@ -83,16 +92,18 @@
   }
 
   function inject() {
-    if (document.querySelector('[' + ENTRY_ATTR + ']')) return;
     ensureStyle();
 
-    var anchor = closestItem(findLabel('套餐管理')) || closestItem(findLabel('订单管理'));
+    var anchor = findMenuAnchor();
     if (anchor && anchor.parentElement) {
+      if (document.querySelector('[' + ENTRY_ATTR + '="menu"]')) return;
       anchor.insertAdjacentElement('afterend', cloneFrom(anchor));
+      var fallback = document.querySelector('[' + FALLBACK_ATTR + ']');
+      if (fallback) fallback.remove();
       return;
     }
 
-    if (document.querySelector('#root')) {
+    if (document.querySelector('#root') && !document.querySelector('[' + FALLBACK_ATTR + ']')) {
       createFallback();
     }
   }
