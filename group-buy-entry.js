@@ -70,10 +70,16 @@
     style.id = STYLE_ID;
     style.textContent = [
       '[' + ENTRY_ATTR + '="menu"]{cursor:pointer}',
-      '[' + ENTRY_ATTR + '="menu"] svg{flex-shrink:0}',
+      '[' + ENTRY_ATTR + '="menu"] svg{flex-shrink:0;width:18px;height:18px}',
       '[' + ENTRY_ATTR + '="menu"].xgb-active,',
       '[' + ENTRY_ATTR + '="menu"].xgb-active a{background:#eef2ff!important;color:#4f46e5!important;font-weight:700!important}',
       '[' + ENTRY_ATTR + '="menu"].xgb-active svg{color:#4f46e5!important}',
+      '[data-xboard-group-buy-plan-muted="true"],',
+      '[data-xboard-group-buy-plan-muted="true"] a,',
+      '[data-xboard-group-buy-plan-muted="true"] *{background:transparent!important}',
+      '[data-xboard-group-buy-plan-muted="true"],',
+      '[data-xboard-group-buy-plan-muted="true"] a{font-weight:600!important}',
+      '[data-xboard-group-buy-plan-muted="true"] svg{color:inherit!important}',
       '#xboard-group-buy-page{position:fixed;top:0;right:0;bottom:0;left:var(--xgb-sidebar-left,280px);z-index:40;overflow:auto;background:#f8fafc;color:#0f172a;padding:28px 34px 42px;font-family:inherit}',
       '#xboard-group-buy-page *{box-sizing:border-box}',
       '#xboard-group-buy-page .xgb-shell{max-width:1440px;margin:0 auto}',
@@ -205,22 +211,34 @@
     return false;
   }
 
-  function replaceIcon(node) {
-    var oldIcon = node.querySelector('svg');
-    if (!oldIcon) return;
+  function groupBuyIcon() {
     var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('width', '18');
+    icon.setAttribute('height', '18');
     icon.setAttribute('fill', 'none');
     icon.setAttribute('stroke', 'currentColor');
     icon.setAttribute('stroke-width', '2');
     icon.setAttribute('stroke-linecap', 'round');
     icon.setAttribute('stroke-linejoin', 'round');
+    icon.setAttribute('aria-hidden', 'true');
     icon.innerHTML = [
       '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>',
       '<circle cx="9" cy="7" r="4"></circle>',
       '<path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>',
       '<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>'
     ].join('');
+    return icon;
+  }
+
+  function replaceIcon(node) {
+    var icon = groupBuyIcon();
+    var oldIcon = node.querySelector('svg');
+    if (!oldIcon) {
+      var target = node.querySelector('a, button, [role="menuitem"]') || node;
+      target.insertBefore(icon, target.firstChild);
+      return;
+    }
     oldIcon.replaceWith(icon);
   }
 
@@ -311,9 +329,23 @@
   }
 
   function updateEntryActive() {
+    document.querySelectorAll('[data-xboard-group-buy-plan-muted]').forEach(function (node) {
+      node.removeAttribute('data-xboard-group-buy-plan-muted');
+    });
     document.querySelectorAll('[' + ENTRY_ATTR + '="menu"]').forEach(function (node) {
       node.classList.toggle('xgb-active', isGroupBuyRoute());
     });
+    if (isGroupBuyRoute()) {
+      var planAnchor = findMenuAnchor();
+      if (planAnchor) {
+        planAnchor.setAttribute('data-xboard-group-buy-plan-muted', 'true');
+        planAnchor.classList.remove('active');
+        planAnchor.classList.remove('router-link-active');
+        planAnchor.classList.remove('router-link-exact-active');
+        planAnchor.removeAttribute('aria-current');
+        planAnchor.removeAttribute('data-state');
+      }
+    }
   }
 
   function baseUrl() {
