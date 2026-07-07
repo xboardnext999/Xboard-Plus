@@ -6,8 +6,9 @@
   var HOST_ATTR = 'data-xboard-group-buy-host';
   var HIDDEN_ATTR = 'data-xboard-group-buy-hidden';
   var PLAN_MUTED_ATTR = 'data-xboard-group-buy-plan-muted';
-  var ROUTE_HASH = '#/finance/plan?xgb=group-buy';
-  var LEGACY_ROUTE_HASH = '#/finance/group-buy';
+  var ROUTE_HASH = '#/finance/group-buy';
+  var LEGACY_ROUTE_HASH = '#/finance/plan?xgb=group-buy';
+  var PLAN_ROUTE_HASH = '#/finance/plan';
   var activeHost = null;
   var injectQueued = false;
   var ANCHOR_LABELS = [
@@ -273,6 +274,26 @@
     syncRoute();
   }
 
+  function hashFromLink(node) {
+    var link = node && node.closest ? node.closest('a[href]') : null;
+    var href = link ? String(link.getAttribute('href') || '') : '';
+    if (!href) return PLAN_ROUTE_HASH;
+    var index = href.indexOf('#');
+    return index >= 0 ? href.slice(index) : PLAN_ROUTE_HASH;
+  }
+
+  function goPlan(event, planAnchor) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+    }
+    var targetHash = hashFromLink(planAnchor);
+    removeGroupBuyPage();
+    window.location.hash = targetHash || PLAN_ROUTE_HASH;
+    setTimeout(syncRoute, 0);
+  }
+
   function cloneFrom(reference) {
     var clone = reference.cloneNode(true);
     clone.setAttribute(ENTRY_ATTR, 'menu');
@@ -309,6 +330,24 @@
       : null;
     if (!entry) return;
     goGroupBuy(event);
+  }
+
+  function interceptPlanClick(event) {
+    if (!isGroupBuyRoute()) return;
+    if (event.target && event.target.closest && event.target.closest('[' + ENTRY_ATTR + '="menu"]')) return;
+    var planAnchor = findMenuAnchor();
+    if (!planAnchor) return;
+    var clickTarget = event.target && event.target.closest
+      ? event.target.closest('a, button, [role="menuitem"], [role="treeitem"], [role="listitem"], li, div')
+      : null;
+    if (!clickTarget) return;
+    var targetText = textOf(clickTarget);
+    var isPlanText = ANCHOR_LABELS.some(function (label) {
+      return targetText === label.replace(/\s+/g, '');
+    });
+    if (planAnchor === clickTarget || planAnchor.contains(clickTarget) || isPlanText) {
+      goPlan(event, planAnchor);
+    }
   }
 
   function sidebarRight() {
@@ -837,6 +876,10 @@
         return text === '订阅套餐'
           || text === '套餐管理'
           || text === '添加套餐'
+          || text === '404'
+          || text === 'NotFound'
+          || text === '页面不存在'
+          || text === '找不到页面'
           || text.indexOf('搜索套餐') !== -1;
       });
     for (var i = 0; i < markers.length; i += 1) {
@@ -1006,6 +1049,8 @@
 
   document.addEventListener('click', interceptEntryClick, true);
   document.addEventListener('mousedown', interceptEntryClick, true);
+  document.addEventListener('click', interceptPlanClick, true);
+  document.addEventListener('mousedown', interceptPlanClick, true);
   window.addEventListener('hashchange', syncRoute);
   window.addEventListener('resize', function () {
     if (isGroupBuyRoute()) updatePageOffset();
