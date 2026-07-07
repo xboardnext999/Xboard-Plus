@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>拼团活动管理</title>
+    <script src="/settings.js"></script>
+    <script src="/settings.local.js"></script>
+    <link rel="stylesheet" href="./group-buy.css" />
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <div class="topbar">
+        <div>
+          <a class="back-link" :href="adminHome">返回后台</a>
+          <h1>拼团活动管理</h1>
+          <p>管理套餐拼团活动、查看队伍进度，并控制活动启停。</p>
+        </div>
+        <button class="primary-btn" type="button" @click="startCreate">新建活动</button>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span>活动总数</span>
+          <strong>{{ summary.total }}</strong>
+        </div>
+        <div class="summary-card">
+          <span>启用中</span>
+          <strong>{{ summary.enabled }}</strong>
+        </div>
+        <div class="summary-card">
+          <span>进行中队伍</span>
+          <strong>{{ summary.openGroups }}</strong>
+        </div>
+        <div class="summary-card">
+          <span>已成团队伍</span>
+          <strong>{{ summary.completedGroups }}</strong>
+        </div>
+      </div>
+
+      <section class="panel" v-if="showForm">
+        <div class="panel-head">
+          <div>
+            <h2>{{ form.id ? '编辑拼团活动' : '新建拼团活动' }}</h2>
+            <p>固定优惠按元填写，保存后会自动转换为订单金额单位。</p>
+          </div>
+          <button class="ghost-btn" type="button" @click="cancelForm">收起</button>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>活动标题</span>
+            <input v-model.trim="form.title" placeholder="例如：标准会员拼团" />
+          </label>
+          <label>
+            <span>绑定套餐</span>
+            <select v-model.number="form.plan_id" @change="syncPeriod">
+              <option value="">请选择套餐</option>
+              <option v-for="plan in plans" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
+            </select>
+          </label>
+          <label>
+            <span>套餐周期</span>
+            <select v-model="form.period">
+              <option value="">请选择周期</option>
+              <option v-for="period in periodOptions" :key="period.value" :value="period.value">
+                {{ period.label }} · {{ formatMoney(period.price) }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>成团人数</span>
+            <input v-model.number="form.group_size" type="number" min="2" max="100" />
+          </label>
+          <label>
+            <span>优惠类型</span>
+            <select v-model.number="form.discount_type">
+              <option :value="1">固定金额</option>
+              <option :value="2">百分比折扣</option>
+            </select>
+          </label>
+          <label v-if="form.discount_type === 1">
+            <span>固定优惠（元）</span>
+            <input v-model.number="form.discount_value_yuan" type="number" min="0" step="0.01" />
+          </label>
+          <label v-else>
+            <span>折扣比例（%）</span>
+            <input v-model.number="form.discount_value_percent" type="number" min="0" max="100" step="1" />
+          </label>
+          <label>
+            <span>开始时间</span>
+            <input v-model="form.started_at" type="datetime-local" />
+          </label>
+          <label>
+            <span>结束时间</span>
+            <input v-model="form.ended_at" type="datetime-local" />
+          </label>
+          <label>
+            <span>队伍有效期（分钟）</span>
+            <input v-model.number="form.expire_minutes" type="number" min="1" max="10080" />
+          </label>
+          <label>
+            <span>活动状态</span>
+            <select v-model.number="form.status">
+              <option :value="1">启用</option>
+              <option :value="0">停用</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="ghost-btn" type="button" @click="cancelForm">取消</button>
+          <button class="primary-btn" type="button" :disabled="saving" @click="saveActivity">
+            {{ saving ? '保存中...' : '保存活动' }}
+          </button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>活动列表</h2>
+            <p>可以按套餐、状态和关键字筛选。</p>
+          </div>
+        </div>
+
+        <div class="filters">
+          <input v-model.trim="filters.keyword" placeholder="搜索活动 / 套餐名称" @keyup.enter="fetchActivities(1)" />
+          <select v-model="filters.status" @change="fetchActivities(1)">
+            <option value="all">全部状态</option>
+            <option value="1">启用</option>
+            <option value="0">停用</option>
+          </select>
+          <select v-model="filters.plan_id" @change="fetchActivities(1)">
+            <option value="">全部套餐</option>
+            <option v-for="plan in plans" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
+          </select>
+          <button class="ghost-btn" type="button" @click="fetchActivities(1)">筛选</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>活动</th>
+                <th>套餐周期</th>
+                <th>成团人数</th>
+                <th>优惠</th>
+                <th>时间</th>
+                <th>队伍</th>
+                <th>状态</th>
+                <th class="right">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading">
+                <td colspan="9" class="empty">加载中...</td>
+              </tr>
+              <tr v-else-if="activities.length === 0">
+                <td colspan="9" class="empty">暂无拼团活动</td>
+              </tr>
+              <tr v-for="activity in activities" :key="activity.id">
+                <td>#{{ activity.id }}</td>
+                <td>
+                  <strong>{{ activity.title }}</strong>
+                  <small>{{ activity.plan_name }}</small>
+                </td>
+                <td>
+                  {{ activity.period_label }}
+                  <small>{{ formatMoney(activity.period_price) }}</small>
+                </td>
+                <td>{{ activity.group_size }} 人</td>
+                <td>{{ activity.discount_label }}</td>
+                <td>
+                  <small>开始：{{ formatTime(activity.started_at) }}</small>
+                  <small>结束：{{ formatTime(activity.ended_at) }}</small>
+                </td>
+                <td>
+                  <button class="link-btn" type="button" @click="openGroups(activity)">
+                    {{ activity.open_groups_count }} 进行中 / {{ activity.completed_groups_count }} 已成团
+                  </button>
+                </td>
+                <td>
+                  <span class="status-pill" :class="{ off: activity.status !== 1 }">{{ activity.status_label }}</span>
+                </td>
+                <td class="actions">
+                  <button class="ghost-btn sm" type="button" @click="editActivity(activity)">编辑</button>
+                  <button class="ghost-btn sm" type="button" @click="toggleActivity(activity)">
+                    {{ activity.status === 1 ? '停用' : '启用' }}
+                  </button>
+                  <button class="danger-btn sm" type="button" @click="deleteActivity(activity)">删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span>共 {{ pagination.total }} 条</span>
+          <button class="ghost-btn sm" type="button" :disabled="pagination.current_page <= 1" @click="fetchActivities(pagination.current_page - 1)">上一页</button>
+          <span>{{ pagination.current_page }} / {{ pagination.last_page || 1 }}</span>
+          <button class="ghost-btn sm" type="button" :disabled="pagination.current_page >= pagination.last_page" @click="fetchActivities(pagination.current_page + 1)">下一页</button>
+        </div>
+      </section>
+
+      <section class="panel" v-if="selectedActivity">
+        <div class="panel-head">
+          <div>
+            <h2>队伍列表</h2>
+            <p>{{ selectedActivity.title }} 的拼团队伍状态。</p>
+          </div>
+          <button class="ghost-btn" type="button" @click="selectedActivity = null">关闭</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>队伍ID</th>
+                <th>团长</th>
+                <th>人数</th>
+                <th>状态</th>
+                <th>过期时间</th>
+                <th>成员</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="groupLoading">
+                <td colspan="6" class="empty">加载中...</td>
+              </tr>
+              <tr v-else-if="groups.length === 0">
+                <td colspan="6" class="empty">暂无队伍</td>
+              </tr>
+              <tr v-for="group in groups" :key="group.id">
+                <td>#{{ group.id }}</td>
+                <td>{{ group.leader_email }}</td>
+                <td>{{ group.current_count }} / {{ group.required_count }}</td>
+                <td>{{ group.status_label }}</td>
+                <td>{{ formatTime(group.expired_at) }}</td>
+                <td>
+                  <div class="member-list">
+                    <span v-for="member in group.members" :key="member.id">
+                      {{ member.email }} · {{ member.status_label }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="toast" v-if="message.text" :class="{ error: message.type === 'error' }">{{ message.text }}</div>
+    </div>
+
+    <script type="module" src="./group-buy.js"></script>
+  </body>
+</html>
