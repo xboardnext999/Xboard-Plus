@@ -2,8 +2,10 @@
   var STYLE_ID = 'xboard-group-buy-entry-style';
   var PAGE_ID = 'xboard-group-buy-page';
   var ENTRY_ATTR = 'data-xboard-group-buy-entry';
+  var LINK_ATTR = 'data-xboard-group-buy-link';
   var HOST_ATTR = 'data-xboard-group-buy-host';
   var HIDDEN_ATTR = 'data-xboard-group-buy-hidden';
+  var PLAN_MUTED_ATTR = 'data-xboard-group-buy-plan-muted';
   var ROUTE_HASH = '#/finance/plan?xgb=group-buy';
   var LEGACY_ROUTE_HASH = '#/finance/group-buy';
   var activeHost = null;
@@ -78,12 +80,12 @@
       '[' + ENTRY_ATTR + '="menu"].xgb-active,',
       '[' + ENTRY_ATTR + '="menu"].xgb-active a{background:#eef2ff!important;color:#4f46e5!important;font-weight:700!important}',
       '[' + ENTRY_ATTR + '="menu"].xgb-active svg{color:#4f46e5!important}',
-      '[data-xboard-group-buy-plan-muted="true"],',
-      '[data-xboard-group-buy-plan-muted="true"] a,',
-      '[data-xboard-group-buy-plan-muted="true"] *{background:transparent!important}',
-      '[data-xboard-group-buy-plan-muted="true"],',
-      '[data-xboard-group-buy-plan-muted="true"] a{font-weight:600!important}',
-      '[data-xboard-group-buy-plan-muted="true"] svg{color:inherit!important}',
+      '[' + PLAN_MUTED_ATTR + '="true"],',
+      '[' + PLAN_MUTED_ATTR + '="true"] a,',
+      '[' + PLAN_MUTED_ATTR + '="true"] *{background:transparent!important;box-shadow:none!important}',
+      '[' + PLAN_MUTED_ATTR + '="true"],',
+      '[' + PLAN_MUTED_ATTR + '="true"] a{font-weight:600!important;color:inherit!important}',
+      '[' + PLAN_MUTED_ATTR + '="true"] svg{color:inherit!important}',
       '#xboard-group-buy-page{width:100%;min-height:calc(100vh - 56px);overflow:visible;background:#f8fafc;color:#0f172a;padding:28px 34px 42px;font-family:inherit}',
       '#xboard-group-buy-page.xgb-floating{position:fixed;top:0;right:0;bottom:0;left:var(--xgb-sidebar-left,280px);z-index:40;overflow:auto}',
       '#xboard-group-buy-page *{box-sizing:border-box}',
@@ -255,7 +257,7 @@
     nodes = nodes.concat(Array.prototype.slice.call(node.querySelectorAll('a')));
     nodes.forEach(function (link) {
       link.setAttribute('href', pageUrl());
-      link.setAttribute(ENTRY_ATTR, 'link');
+      link.setAttribute(LINK_ATTR, 'true');
     });
   }
 
@@ -303,7 +305,7 @@
 
   function interceptEntryClick(event) {
     var entry = event.target && event.target.closest
-      ? event.target.closest('[' + ENTRY_ATTR + '="menu"]')
+      ? event.target.closest('[' + ENTRY_ATTR + '="menu"],[' + LINK_ATTR + '="true"]')
       : null;
     if (!entry) return;
     goGroupBuy(event);
@@ -353,9 +355,52 @@
     updatePageOffset();
   }
 
+  function clearMenuActiveState(node) {
+    if (!node || !node.classList) return;
+    node.classList.remove('active');
+    node.classList.remove('router-link-active');
+    node.classList.remove('router-link-exact-active');
+    node.classList.remove('bg-muted');
+    node.classList.remove('text-primary');
+    node.classList.remove('text-accent-foreground');
+    node.removeAttribute('aria-current');
+    node.removeAttribute('data-state');
+    Array.prototype.slice.call(node.querySelectorAll('[aria-current], [data-state], .active, .router-link-active, .router-link-exact-active, .bg-muted, .text-primary, .text-accent-foreground')).forEach(function (child) {
+      if (child.classList) {
+        child.classList.remove('active');
+        child.classList.remove('router-link-active');
+        child.classList.remove('router-link-exact-active');
+        child.classList.remove('bg-muted');
+        child.classList.remove('text-primary');
+        child.classList.remove('text-accent-foreground');
+      }
+      child.removeAttribute('aria-current');
+      child.removeAttribute('data-state');
+    });
+  }
+
+  function mutePlanMenu(planAnchor) {
+    var nodes = [planAnchor];
+    var li = planAnchor.closest && planAnchor.closest('li');
+    if (li) nodes.push(li);
+    var roleItem = planAnchor.closest && planAnchor.closest('[role="menuitem"],[role="treeitem"],[role="listitem"]');
+    if (roleItem) nodes.push(roleItem);
+
+    var current = planAnchor.parentElement;
+    for (var i = 0; current && i < 3; i += 1) {
+      if (textOf(current) === '套餐管理') nodes.push(current);
+      current = current.parentElement;
+    }
+
+    nodes.forEach(function (node) {
+      node.setAttribute(PLAN_MUTED_ATTR, 'true');
+      clearMenuActiveState(node);
+    });
+  }
+
   function updateEntryActive() {
-    document.querySelectorAll('[data-xboard-group-buy-plan-muted]').forEach(function (node) {
-      node.removeAttribute('data-xboard-group-buy-plan-muted');
+    document.querySelectorAll('[' + PLAN_MUTED_ATTR + ']').forEach(function (node) {
+      node.removeAttribute(PLAN_MUTED_ATTR);
     });
     document.querySelectorAll('[' + ENTRY_ATTR + '="menu"]').forEach(function (node) {
       node.classList.toggle('xgb-active', isGroupBuyRoute());
@@ -363,12 +408,7 @@
     if (isGroupBuyRoute()) {
       var planAnchor = findMenuAnchor();
       if (planAnchor) {
-        planAnchor.setAttribute('data-xboard-group-buy-plan-muted', 'true');
-        planAnchor.classList.remove('active');
-        planAnchor.classList.remove('router-link-active');
-        planAnchor.classList.remove('router-link-exact-active');
-        planAnchor.removeAttribute('aria-current');
-        planAnchor.removeAttribute('data-state');
+        mutePlanMenu(planAnchor);
       }
     }
   }
