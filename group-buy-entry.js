@@ -2,7 +2,8 @@
   var STYLE_ID = 'xboard-group-buy-entry-style';
   var PAGE_ID = 'xboard-group-buy-page';
   var ENTRY_ATTR = 'data-xboard-group-buy-entry';
-  var ROUTE_HASH = '#/finance/group-buy';
+  var ROUTE_HASH = '#/finance/plan?xgb=group-buy';
+  var LEGACY_ROUTE_HASH = '#/finance/group-buy';
   var ANCHOR_LABELS = [
     '套餐管理',
     'Plan Management',
@@ -144,8 +145,18 @@
     return ROUTE_HASH;
   }
 
+  function currentHash() {
+    return String(window.location.hash || '').replace(/\/$/, '');
+  }
+
+  function normalizeLegacyRoute() {
+    if (currentHash() !== LEGACY_ROUTE_HASH) return false;
+    window.location.hash = ROUTE_HASH;
+    return true;
+  }
+
   function isGroupBuyRoute() {
-    return String(window.location.hash || '').replace(/\/$/, '') === ROUTE_HASH;
+    return currentHash() === ROUTE_HASH;
   }
 
   function textOf(node) {
@@ -227,7 +238,7 @@
       event.preventDefault();
       event.stopPropagation();
     }
-    if (window.location.hash !== ROUTE_HASH) {
+    if (currentHash() !== ROUTE_HASH) {
       window.location.hash = ROUTE_HASH;
     }
     syncRoute();
@@ -777,6 +788,7 @@
   }
 
   function syncRoute() {
+    if (normalizeLegacyRoute()) return;
     inject();
     updateEntryActive();
     if (isGroupBuyRoute()) {
