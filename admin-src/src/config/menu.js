@@ -30,7 +30,7 @@ export const menuGroups = [
     title: '订阅管理',
     items: [
       { title: '套餐管理', path: '/subscription/plan', icon: 'Store' },
-      { title: '拼团管理', path: '/finance/group-buy', icon: 'UsersRound' },
+      { title: '拼团管理', path: '/finance/plan?xgb=group-buy', icon: 'UsersRound' },
       { title: '订单管理', path: '/subscription/order', icon: 'CreditCard' },
       { title: '优惠券管理', path: '/subscription/coupon', icon: 'BadgePercent' },
       { title: '礼品卡管理', path: '/subscription/gift-card', icon: 'Gift' },
