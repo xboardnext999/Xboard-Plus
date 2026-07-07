@@ -78,6 +78,7 @@
     <script src="/assets/admin/locales/ko-KR.js"></script>
   @endif
   <script src="/assets/admin/logo-upload.js?v={{ rawurlencode($version) }}" defer></script>
+  <script src="/assets/admin/group-buy-entry.js?v={{ rawurlencode($version) }}" defer></script>
 </head>
 
 <body>
