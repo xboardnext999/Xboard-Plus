@@ -15,6 +15,7 @@ use App\Http\Controllers\V2\Admin\NoticeController;
 use App\Http\Controllers\V2\Admin\TicketController;
 use App\Http\Controllers\V2\Admin\CouponController;
 use App\Http\Controllers\V2\Admin\GiftCardController;
+use App\Http\Controllers\V2\Admin\GroupBuyController;
 use App\Http\Controllers\V2\Admin\KnowledgeController;
 use App\Http\Controllers\V2\Admin\PaymentController;
 use App\Http\Controllers\V2\Admin\SystemController;
@@ -222,6 +223,17 @@ class AdminRoute
                 // Statistics
                 $router->any('/statistics', [GiftCardController::class, 'statistics']);
                 $router->get('/types', [GiftCardController::class, 'types']);
+            });
+
+            // Group Buy
+            $router->group([
+                'prefix' => 'group-buy'
+            ], function ($router) {
+                $router->any('/fetch', [GroupBuyController::class, 'fetch']);
+                $router->post('/save', [GroupBuyController::class, 'save']);
+                $router->post('/update', [GroupBuyController::class, 'update']);
+                $router->post('/drop', [GroupBuyController::class, 'drop']);
+                $router->any('/groups', [GroupBuyController::class, 'groups']);
             });
 
             // Knowledge
