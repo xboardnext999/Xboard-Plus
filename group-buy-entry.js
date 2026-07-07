@@ -6,8 +6,8 @@
   var HOST_ATTR = 'data-xboard-group-buy-host';
   var HIDDEN_ATTR = 'data-xboard-group-buy-hidden';
   var PLAN_MUTED_ATTR = 'data-xboard-group-buy-plan-muted';
-  var ROUTE_HASH = '#/finance/group-buy';
-  var LEGACY_ROUTE_HASH = '#/finance/plan?xgb=group-buy';
+  var ROUTE_HASH = '#/finance/plan?xgb=group-buy';
+  var LEGACY_ROUTE_HASH = '#/finance/group-buy';
   var PLAN_ROUTE_HASH = '#/finance/plan';
   var activeHost = null;
   var injectQueued = false;
