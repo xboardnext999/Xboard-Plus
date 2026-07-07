@@ -6,7 +6,7 @@ import Placeholder from '../pages/Placeholder.vue';
 import { flatMenus } from '../config/menu';
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/subscription/group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/finance/group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -29,7 +29,7 @@ const router = createRouter({
           meta: { title: '仪表盘' },
         },
         {
-          path: 'subscription/group-buy',
+          path: 'finance/group-buy',
           name: 'GroupBuy',
           component: GroupBuy,
           meta: { title: '拼团管理', group: '订阅管理' },
