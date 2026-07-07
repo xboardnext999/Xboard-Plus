@@ -2,14 +2,10 @@
   var ENTRY_ID = 'xboard-group-buy-entry-style';
   var ENTRY_ATTR = 'data-xboard-group-buy-entry';
   var ANCHOR_LABELS = [
-    '礼品卡管理',
-    '优惠券管理',
-    '订单管理',
     '套餐管理',
-    'Gift Card Management',
-    'Coupon Management',
-    'Order Management',
-    'Plan Management'
+    'Plan Management',
+    '套餐',
+    'Plan'
   ];
 
   function ensureStyle() {
@@ -123,10 +119,16 @@
       node.remove();
     });
 
-    if (document.querySelector('[' + ENTRY_ATTR + '="menu"]')) return;
-
     var anchor = findMenuAnchor();
     if (anchor && anchor.parentElement) {
+      var existing = document.querySelector('[' + ENTRY_ATTR + '="menu"]');
+      if (existing) {
+        if (existing.previousElementSibling !== anchor) {
+          existing.remove();
+          anchor.insertAdjacentElement('afterend', cloneFrom(anchor));
+        }
+        return;
+      }
       anchor.insertAdjacentElement('afterend', cloneFrom(anchor));
     }
   }
