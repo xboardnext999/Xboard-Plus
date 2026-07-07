@@ -2,8 +2,12 @@
   var STYLE_ID = 'xboard-group-buy-entry-style';
   var PAGE_ID = 'xboard-group-buy-page';
   var ENTRY_ATTR = 'data-xboard-group-buy-entry';
+  var HOST_ATTR = 'data-xboard-group-buy-host';
+  var HIDDEN_ATTR = 'data-xboard-group-buy-hidden';
   var ROUTE_HASH = '#/finance/plan?xgb=group-buy';
   var LEGACY_ROUTE_HASH = '#/finance/group-buy';
+  var activeHost = null;
+  var injectQueued = false;
   var ANCHOR_LABELS = [
     '套餐管理',
     'Plan Management',
@@ -80,8 +84,11 @@
       '[data-xboard-group-buy-plan-muted="true"],',
       '[data-xboard-group-buy-plan-muted="true"] a{font-weight:600!important}',
       '[data-xboard-group-buy-plan-muted="true"] svg{color:inherit!important}',
-      '#xboard-group-buy-page{position:fixed;top:0;right:0;bottom:0;left:var(--xgb-sidebar-left,280px);z-index:40;overflow:auto;background:#f8fafc;color:#0f172a;padding:28px 34px 42px;font-family:inherit}',
+      '#xboard-group-buy-page{width:100%;min-height:calc(100vh - 56px);overflow:visible;background:#f8fafc;color:#0f172a;padding:28px 34px 42px;font-family:inherit}',
+      '#xboard-group-buy-page.xgb-floating{position:fixed;top:0;right:0;bottom:0;left:var(--xgb-sidebar-left,280px);z-index:40;overflow:auto}',
       '#xboard-group-buy-page *{box-sizing:border-box}',
+      '[' + HOST_ATTR + '="true"]{position:relative}',
+      '[' + HIDDEN_ATTR + '="true"]{display:none!important}',
       '#xboard-group-buy-page .xgb-shell{max-width:1440px;margin:0 auto}',
       '#xboard-group-buy-page .xgb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}',
       '#xboard-group-buy-page .xgb-eyebrow{font-size:13px;font-weight:700;color:#64748b;margin-bottom:6px}',
@@ -141,7 +148,7 @@
       '.dark #xboard-group-buy-page .xgb-table th{background:#111827;color:#94a3b8}',
       '.dark #xboard-group-buy-page .xgb-table th,.dark #xboard-group-buy-page .xgb-table td,.dark #xboard-group-buy-page .xgb-pagination{border-color:#243042}',
       '.dark #xboard-group-buy-page .xgb-group-item{background:#111827;border-color:#243042}',
-      '@media (max-width:1100px){#xboard-group-buy-page{left:var(--xgb-sidebar-left,280px);padding:20px}#xboard-group-buy-page .xgb-grid,#xboard-group-buy-page .xgb-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#xboard-group-buy-page .xgb-group-list{grid-template-columns:1fr}}',
+      '@media (max-width:1100px){#xboard-group-buy-page{padding:20px}#xboard-group-buy-page.xgb-floating{left:var(--xgb-sidebar-left,280px)}#xboard-group-buy-page .xgb-grid,#xboard-group-buy-page .xgb-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#xboard-group-buy-page .xgb-group-list{grid-template-columns:1fr}}',
       '@media (max-width:720px){#xboard-group-buy-page .xgb-grid,#xboard-group-buy-page .xgb-form-grid{grid-template-columns:1fr}#xboard-group-buy-page .xgb-field-wide{grid-column:span 1}#xboard-group-buy-page .xgb-toolbar{align-items:stretch;flex-direction:column}#xboard-group-buy-page .xgb-toolbar input{min-width:0;width:100%}}'
     ].join('');
     document.head.appendChild(style);
@@ -248,6 +255,7 @@
     nodes = nodes.concat(Array.prototype.slice.call(node.querySelectorAll('a')));
     nodes.forEach(function (link) {
       link.setAttribute('href', pageUrl());
+      link.setAttribute(ENTRY_ATTR, 'link');
     });
   }
 
@@ -255,6 +263,7 @@
     if (event) {
       event.preventDefault();
       event.stopPropagation();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
     }
     if (currentHash() !== ROUTE_HASH) {
       window.location.hash = ROUTE_HASH;
@@ -271,15 +280,33 @@
     clone.classList.remove('active');
     clone.classList.remove('router-link-active');
     clone.classList.remove('router-link-exact-active');
+    clone.classList.remove('bg-muted');
+    clone.classList.remove('text-primary');
+    clone.classList.remove('text-accent-foreground');
     clone.querySelectorAll('[aria-current], [data-state]').forEach(function (node) {
       node.removeAttribute('aria-current');
       node.removeAttribute('data-state');
     });
+    clone.querySelectorAll('.active,.router-link-active,.router-link-exact-active,.bg-muted,.text-primary,.text-accent-foreground').forEach(function (node) {
+      node.classList.remove('active');
+      node.classList.remove('router-link-active');
+      node.classList.remove('router-link-exact-active');
+      node.classList.remove('bg-muted');
+      node.classList.remove('text-primary');
+      node.classList.remove('text-accent-foreground');
+    });
     replaceIcon(clone);
     replaceText(clone, '拼团管理');
     setEntryHref(clone);
-    clone.addEventListener('click', goGroupBuy, true);
     return clone;
+  }
+
+  function interceptEntryClick(event) {
+    var entry = event.target && event.target.closest
+      ? event.target.closest('[' + ENTRY_ATTR + '="menu"]')
+      : null;
+    if (!entry) return;
+    goGroupBuy(event);
   }
 
   function sidebarRight() {
@@ -314,8 +341,6 @@
       var existing = document.querySelector('[' + ENTRY_ATTR + '="menu"]');
       if (existing) {
         setEntryHref(existing);
-        existing.removeEventListener('click', goGroupBuy, true);
-        existing.addEventListener('click', goGroupBuy, true);
         if (existing.previousElementSibling !== anchor) {
           existing.remove();
           anchor.insertAdjacentElement('afterend', cloneFrom(anchor));
@@ -724,6 +749,92 @@
     ].join('');
   }
 
+  function restoreContentHost() {
+    if (!activeHost) return;
+    Array.prototype.slice.call(activeHost.children).forEach(function (child) {
+      if (child.getAttribute && child.getAttribute(HIDDEN_ATTR) === 'true') {
+        child.removeAttribute(HIDDEN_ATTR);
+      }
+    });
+    activeHost.removeAttribute(HOST_ATTR);
+    activeHost = null;
+  }
+
+  function rectOf(node) {
+    if (!node || !node.getBoundingClientRect) return null;
+    var rect = node.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    return rect;
+  }
+
+  function isContentCandidate(node, sidebarEdge) {
+    if (!node || node === document.body || node === document.documentElement) return false;
+    if (node.id === PAGE_ID) return false;
+    if (node.closest && node.closest('[' + ENTRY_ATTR + '="menu"]')) return false;
+    var tag = String(node.tagName || '').toLowerCase();
+    if (tag === 'aside' || tag === 'nav') return false;
+    var rect = rectOf(node);
+    if (!rect) return false;
+    return rect.left >= sidebarEdge - 24 && rect.width >= 480 && rect.height >= 260;
+  }
+
+  function bestAncestorFrom(marker, sidebarEdge) {
+    var best = null;
+    var node = marker;
+    while (node && node.parentElement && node !== document.body) {
+      if (isContentCandidate(node, sidebarEdge)) best = node;
+      node = node.parentElement;
+    }
+    return best;
+  }
+
+  function findContentHost() {
+    var sidebarEdge = sidebarRight();
+    var markers = Array.prototype.slice.call(document.querySelectorAll('h1, h2, button, input, div, span'))
+      .filter(function (node) {
+        if (node.id === PAGE_ID || (node.closest && node.closest('#' + PAGE_ID))) return false;
+        var text = textOf(node);
+        return text === '订阅套餐'
+          || text === '套餐管理'
+          || text === '添加套餐'
+          || text.indexOf('搜索套餐') !== -1;
+      });
+    for (var i = 0; i < markers.length; i += 1) {
+      var host = bestAncestorFrom(markers[i], sidebarEdge);
+      if (host) return host;
+    }
+
+    var candidates = Array.prototype.slice.call(document.querySelectorAll('main, [role="main"], #root main, #root [class*="content"], #root [class*="main"], #root > div > div, #root div'))
+      .filter(function (node) {
+        return isContentCandidate(node, sidebarEdge);
+      })
+      .sort(function (a, b) {
+        var ar = rectOf(a);
+        var br = rectOf(b);
+        return (br.width * br.height) - (ar.width * ar.height);
+      });
+    return candidates[0] || null;
+  }
+
+  function mountGroupBuyPage(page) {
+    var host = findContentHost();
+    if (!host) {
+      restoreContentHost();
+      page.classList.add('xgb-floating');
+      if (page.parentNode !== document.body) document.body.appendChild(page);
+      return;
+    }
+
+    page.classList.remove('xgb-floating');
+    if (activeHost && activeHost !== host) restoreContentHost();
+    activeHost = host;
+    host.setAttribute(HOST_ATTR, 'true');
+    if (page.parentNode !== host) host.appendChild(page);
+    Array.prototype.slice.call(host.children).forEach(function (child) {
+      if (child !== page) child.setAttribute(HIDDEN_ATTR, 'true');
+    });
+  }
+
   function renderGroupBuyPage() {
     if (!isGroupBuyRoute()) return;
     ensureStyle();
@@ -732,12 +843,12 @@
     if (!page) {
       page = document.createElement('div');
       page.id = PAGE_ID;
-      document.body.appendChild(page);
       page.addEventListener('click', handlePageClick);
       page.addEventListener('input', handlePageInput);
       page.addEventListener('change', handlePageInput);
       page.addEventListener('submit', handlePageSubmit);
     }
+    mountGroupBuyPage(page);
     var message = state.message
       ? '<div class="xgb-message ' + escapeHtml(state.message.type) + '">' + escapeHtml(state.message.text) + '</div>'
       : '';
@@ -817,6 +928,7 @@
   function removeGroupBuyPage() {
     var page = document.getElementById(PAGE_ID);
     if (page) page.remove();
+    restoreContentHost();
   }
 
   function syncRoute() {
@@ -830,12 +942,30 @@
     }
   }
 
-  var observer = new MutationObserver(function () {
-    inject();
-    if (isGroupBuyRoute()) updatePageOffset();
-  });
+  function scheduleRouteSyncFromMutation(mutations) {
+    var onlyPageChanged = mutations && mutations.length && Array.prototype.every.call(mutations, function (mutation) {
+      return mutation.target && mutation.target.closest && mutation.target.closest('#' + PAGE_ID);
+    });
+    if (onlyPageChanged) return;
+    if (injectQueued) return;
+    injectQueued = true;
+    window.requestAnimationFrame(function () {
+      injectQueued = false;
+      inject();
+      updateEntryActive();
+      if (isGroupBuyRoute()) {
+        renderGroupBuyPage();
+      } else {
+        removeGroupBuyPage();
+      }
+    });
+  }
+
+  var observer = new MutationObserver(scheduleRouteSyncFromMutation);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
+  document.addEventListener('click', interceptEntryClick, true);
+  document.addEventListener('mousedown', interceptEntryClick, true);
   window.addEventListener('hashchange', syncRoute);
   window.addEventListener('resize', function () {
     if (isGroupBuyRoute()) updatePageOffset();
