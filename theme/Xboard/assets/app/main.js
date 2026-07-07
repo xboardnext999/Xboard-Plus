@@ -902,6 +902,13 @@ function paymentMethods(methods = [], selected = '') {
   ])));
 }
 
+function quoteLine(label, value, type = '') {
+  return h('span', { class: ['quote-line', type] }, [
+    h('em', label),
+    h('strong', value),
+  ]);
+}
+
 const ToastStack = {
   setup() {
     return () => h('div', { class: 'toast-stack' }, state.toasts.map((item) => h('div', {
@@ -1471,48 +1478,172 @@ const SubscribePage = {
   },
 };
 
+const PlanPurchaseCard = {
+  props: {
+    plan: { type: Object, required: true },
+    index: { type: Number, default: 0 },
+    methods: { type: Array, default: () => [] },
+  },
+  setup(props) {
+    const options = periodOptions(props.plan);
+    const selectedPeriod = ref(options[0]?.key || '');
+    const couponCode = ref('');
+    const selectedMethod = ref(props.methods[0]?.id ? String(props.methods[0].id) : '');
+    const local = reactive({
+      quote: null,
+      quoteError: '',
+      quoteLoading: false,
+      submitting: false,
+    });
+    let quoteTimer = null;
+    let quoteSeq = 0;
+
+    async function refreshQuote() {
+      if (!selectedPeriod.value) {
+        local.quote = null;
+        return;
+      }
+
+      const seq = ++quoteSeq;
+      local.quoteLoading = true;
+      local.quoteError = '';
+      try {
+        const quote = await api.post('/user/order/quote', {
+          plan_id: props.plan.id,
+          period: selectedPeriod.value,
+          coupon_code: couponCode.value.trim(),
+          method: selectedMethod.value,
+        });
+        if (seq === quoteSeq) local.quote = quote;
+      } catch (error) {
+        if (seq === quoteSeq) {
+          local.quote = null;
+          local.quoteError = error.message || '价格计算失败';
+        }
+      } finally {
+        if (seq === quoteSeq) local.quoteLoading = false;
+      }
+    }
+
+    function scheduleQuote() {
+      clearTimeout(quoteTimer);
+      quoteTimer = setTimeout(refreshQuote, 260);
+    }
+
+    watch(() => props.methods?.[0]?.id, (id) => {
+      if (!selectedMethod.value && id) selectedMethod.value = String(id);
+    }, { immediate: true });
+
+    watch(() => [selectedPeriod.value, couponCode.value, selectedMethod.value], scheduleQuote, { immediate: true });
+
+    onBeforeUnmount(() => clearTimeout(quoteTimer));
+
+    async function buyPlan(event) {
+      event.preventDefault();
+      if (!selectedPeriod.value) return;
+      local.submitting = true;
+      try {
+        const tradeNo = await api.post('/user/order/save', {
+          plan_id: props.plan.id,
+          period: selectedPeriod.value,
+          coupon_code: couponCode.value.trim(),
+        });
+        toast('订单已创建');
+        go('orders', { trade_no: tradeNo, method: selectedMethod.value });
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        local.submitting = false;
+      }
+    }
+
+    return () => {
+      const quote = local.quote || {};
+      const original = quote.original_amount ?? Number(props.plan[selectedPeriod.value] || 0);
+      const discount = Number(quote.discount_amount || 0) + Number(quote.surplus_amount || 0);
+      const balance = Number(quote.balance_amount || 0);
+      const handling = Number(quote.handling_amount || 0);
+      const payAmount = quote.pay_amount ?? quote.total_amount ?? original;
+
+      return h('form', {
+        class: ['plan-card', props.index === 1 ? 'hot' : ''],
+        onSubmit: buyPlan,
+      }, [
+        h('small', props.index === 1 ? 'Popular' : (props.index === 0 ? 'Starter' : 'Plan')),
+        h('div', { class: 'plan-head' }, [
+          h('h2', props.plan.name),
+          h('span', props.plan.transfer_enable ? bytes(Number(props.plan.transfer_enable) * 1024 * 1024 * 1024) : '不限流量'),
+        ]),
+        h('div', { class: 'plan-content', innerHTML: safeBody(props.plan.content) }),
+        h('div', { class: 'plan-meta' }, [
+          h('span', `速度 ${props.plan.speed_limit || '不限'}`),
+          h('span', `设备 ${props.plan.device_limit || '不限'}`),
+        ]),
+        h('label', ['周期', h('select', {
+          name: 'period',
+          value: selectedPeriod.value,
+          onChange: (event) => { selectedPeriod.value = event.target.value; },
+        }, options.map((item) => h('option', { value: item.key }, item.label)))]),
+        h('label', ['优惠码', h('input', {
+          name: 'coupon_code',
+          value: couponCode.value,
+          placeholder: '输入后自动计算',
+          onInput: (event) => { couponCode.value = event.target.value; },
+        })]),
+        h('div', { class: 'plan-field' }, [
+          h('span', '支付方式'),
+          props.methods?.length ? h('div', { class: 'payment-methods plan-payment-methods' }, props.methods.map((method, index) => h('label', { class: 'payment-method' }, [
+            h('input', {
+              type: 'radio',
+              name: `method-${props.plan.id}`,
+              value: method.id,
+              checked: String(selectedMethod.value || props.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0),
+              onChange: (event) => { selectedMethod.value = event.target.value; },
+            }),
+            method.icon
+              ? h('img', { src: method.icon, alt: '' })
+              : h('span', { class: 'pay-icon' }, '¥'),
+            h('span', method.name || method.payment || `支付方式 ${method.id}`),
+          ]))) : emptyBlock('暂无可用支付方式'),
+        ]),
+        h('div', { class: 'plan-quote' }, [
+          h('div', { class: 'plan-quote-main' }, [
+            h('span', '预计实付'),
+            h('strong', local.quoteLoading ? '计算中...' : money(payAmount, currencySymbol())),
+          ]),
+          h('div', { class: 'plan-quote-lines' }, [
+            quoteLine('套餐原价', money(original, currencySymbol())),
+            quoteLine('优惠/折抵', discount > 0 ? `-${money(discount, currencySymbol())}` : money(0, currencySymbol()), discount > 0 ? 'ok' : ''),
+            quoteLine('余额抵扣', balance > 0 ? `-${money(balance, currencySymbol())}` : money(0, currencySymbol()), balance > 0 ? 'ok' : ''),
+            quoteLine('支付手续费', money(handling, currencySymbol()), handling > 0 ? 'warn' : ''),
+          ]),
+          local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
+        ]),
+        h('button', {
+          class: 'primary-button',
+          type: 'submit',
+          disabled: local.submitting || local.quoteLoading || Boolean(local.quoteError) || !selectedPeriod.value,
+        }, local.submitting ? '创建中...' : '选择套餐'),
+      ]);
+    };
+  },
+};
+
 const PlansPage = {
   setup() {
     const local = useAsyncPage(async (page) => {
       page.plans = normalizeCollection(await api.get('/user/plan/fetch'));
+      page.methods = await api.get('/user/order/getPaymentMethod').catch(() => []);
     });
-
-    async function buyPlan(event, planId) {
-      event.preventDefault();
-      const button = event.submitter;
-      if (button) button.disabled = true;
-      try {
-        const payload = { ...formData(event.currentTarget), plan_id: planId };
-        const tradeNo = await api.post('/user/order/save', payload);
-        toast('订单已创建');
-        go('orders', { trade_no: tradeNo });
-      } catch (error) {
-        toast(error.message, 'error');
-      } finally {
-        if (button) button.disabled = false;
-      }
-    }
 
     return () => h('div', [
       pageError(local.error),
-      h('div', { class: 'plan-grid' }, (local.plans || []).map((plan, index) => h('form', {
-        class: ['plan-card', index === 1 ? 'hot' : ''],
-        onSubmit: (event) => buyPlan(event, plan.id),
-      }, [
-        h('small', index === 1 ? 'Popular' : (index === 0 ? 'Starter' : 'Plan')),
-        h('div', { class: 'plan-head' }, [
-          h('h2', plan.name),
-          h('span', plan.transfer_enable ? bytes(Number(plan.transfer_enable) * 1024 * 1024 * 1024) : '不限流量'),
-        ]),
-        h('div', { class: 'plan-content', innerHTML: safeBody(plan.content) }),
-        h('div', { class: 'plan-meta' }, [
-          h('span', `速度 ${plan.speed_limit || '不限'}`),
-          h('span', `设备 ${plan.device_limit || '不限'}`),
-        ]),
-        h('label', ['周期', h('select', { name: 'period' }, periodOptions(plan).map((item) => h('option', { value: item.key }, item.label)))]),
-        h('label', ['优惠码', h('input', { name: 'coupon_code', placeholder: '可选' })]),
-        h('button', { class: 'primary-button', type: 'submit' }, '选择套餐'),
-      ]))),
+      h('div', { class: 'plan-grid' }, (local.plans || []).map((plan, index) => h(PlanPurchaseCard, {
+        key: plan.id,
+        plan,
+        index,
+        methods: local.methods || [],
+      }))),
       local.ready && !(local.plans || []).length ? emptyBlock('暂无可购买套餐') : null,
     ]);
   },
@@ -1520,7 +1651,10 @@ const PlansPage = {
 
 const OrdersPage = {
   setup() {
-    if (state.route.query.trade_no) return () => h(OrderDetailPage, { tradeNo: state.route.query.trade_no });
+    if (state.route.query.trade_no) return () => h(OrderDetailPage, {
+      tradeNo: state.route.query.trade_no,
+      method: state.route.query.method,
+    });
     const local = useAsyncPage(async (page) => {
       page.orders = normalizeCollection(await api.get('/user/order/fetch'));
     });
@@ -1542,7 +1676,10 @@ const OrdersPage = {
 };
 
 const OrderDetailPage = {
-  props: { tradeNo: { type: String, required: true } },
+  props: {
+    tradeNo: { type: String, required: true },
+    method: { type: String, default: '' },
+  },
   setup(props) {
     const local = useAsyncPage(async (page) => {
       page.order = await api.get('/user/order/detail', { trade_no: props.tradeNo });
@@ -1594,7 +1731,7 @@ const OrderDetailPage = {
         ]),
         Number(order.status) === 0 ? h('div', { class: 'checkout-box', 'data-checkout': props.tradeNo }, [
           h('h3', '支付订单'),
-          paymentMethods(local.methods || [], order.payment_id),
+          paymentMethods(local.methods || [], props.method || order.payment_id),
           h('div', { class: 'split-actions' }, [
             h('button', { class: 'primary-button', type: 'button', onClick: checkout }, '立即支付'),
             h('button', { class: 'secondary-button', type: 'button', onClick: cancelOrder }, '取消订单'),

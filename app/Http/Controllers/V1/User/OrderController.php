@@ -87,6 +87,27 @@ class OrderController extends Controller
         return $this->success($order->trade_no);
     }
 
+    public function quote(Request $request)
+    {
+        $request->validate([
+            'plan_id' => 'required|exists:App\Models\Plan,id',
+            'period' => 'required|string',
+            'coupon_code' => 'nullable|string',
+            'method' => 'nullable|integer',
+        ]);
+
+        $user = User::findOrFail($request->user()->id);
+        $plan = Plan::findOrFail($request->input('plan_id'));
+
+        return $this->success(OrderService::quote(
+            $user,
+            $plan,
+            $request->input('period'),
+            $request->input('coupon_code'),
+            $request->input('method') ? (int) $request->input('method') : null
+        ));
+    }
+
     protected function applyCoupon(Order $order, string $couponCode): void
     {
         $couponService = new CouponService($couponCode);

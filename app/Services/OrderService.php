@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\ApiException;
 use App\Jobs\OrderHandleJob;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\TrafficResetLog;
 use App\Models\User;
@@ -90,6 +91,105 @@ class OrderService
 
             return $order;
         });
+    }
+
+    /**
+     * Preview an order amount without creating an order, deducting balance,
+     * or consuming a coupon.
+     */
+    public static function quote(
+        User $user,
+        Plan $plan,
+        string $period,
+        ?string $couponCode = null,
+        ?int $paymentMethodId = null,
+    ): array {
+        $planService = new PlanService($plan);
+        $planService->validatePurchase($user, $period);
+
+        $newPeriod = PlanService::getPeriodKey($period);
+        $order = new Order([
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'period' => $newPeriod,
+            'trade_no' => Helper::generateOrderNo(),
+            'total_amount' => (int) (optional($plan->prices)[$newPeriod] * 100),
+        ]);
+
+        $orderService = new self($order);
+        $originalAmount = (int) $order->total_amount;
+        $coupon = null;
+        $couponDiscountAmount = 0;
+
+        if ($couponCode) {
+            $coupon = $orderService->applyCouponForQuote($couponCode);
+            $couponDiscountAmount = (int) $order->discount_amount;
+        }
+
+        $discountAmountBeforeVip = (int) $order->discount_amount;
+        $orderService->setVipDiscount($user);
+        $vipDiscountAmount = max(0, (int) $order->discount_amount - $discountAmountBeforeVip);
+        $orderService->setOrderType($user);
+
+        if ($user->balance && $order->total_amount > 0) {
+            $orderService->applyBalanceForQuote($user);
+        }
+
+        $payment = null;
+        $handlingAmount = 0;
+        if ($paymentMethodId && $order->total_amount > 0) {
+            $payment = Payment::select([
+                'id',
+                'name',
+                'payment',
+                'icon',
+                'handling_fee_fixed',
+                'handling_fee_percent'
+            ])
+                ->where('id', $paymentMethodId)
+                ->where('enable', 1)
+                ->first();
+
+            if (!$payment) {
+                throw new ApiException(__('Payment method is not available'));
+            }
+
+            if ($payment->handling_fee_fixed || $payment->handling_fee_percent) {
+                $handlingAmount = (int) round(($order->total_amount * ($payment->handling_fee_percent / 100)) + $payment->handling_fee_fixed);
+            }
+        }
+
+        $totalAmount = max(0, (int) $order->total_amount);
+        $handlingAmount = max(0, $handlingAmount);
+
+        return [
+            'plan_id' => $plan->id,
+            'period' => $newPeriod,
+            'order_type' => (int) $order->type,
+            'original_amount' => max(0, $originalAmount),
+            'discount_amount' => max(0, (int) $order->discount_amount),
+            'coupon_discount_amount' => max(0, $couponDiscountAmount),
+            'vip_discount_amount' => max(0, $vipDiscountAmount),
+            'surplus_amount' => max(0, (int) $order->surplus_amount),
+            'surplus_credit' => max(0, (int) $order->surplus_credit),
+            'balance_amount' => max(0, (int) $order->balance_amount),
+            'handling_amount' => $handlingAmount,
+            'total_amount' => $totalAmount,
+            'pay_amount' => $totalAmount + $handlingAmount,
+            'coupon' => $coupon ? [
+                'id' => $coupon->id,
+                'code' => $coupon->code,
+                'type' => $coupon->type,
+                'value' => $coupon->value,
+            ] : null,
+            'payment' => $payment ? [
+                'id' => $payment->id,
+                'name' => $payment->name,
+                'payment' => $payment->payment,
+                'handling_fee_fixed' => $payment->handling_fee_fixed,
+                'handling_fee_percent' => $payment->handling_fee_percent,
+            ] : null,
+        ];
     }
 
     public function open(): void
@@ -402,6 +502,33 @@ class OrderService
         $this->order->coupon_id = $couponService->getId();
     }
 
+    protected function applyCouponForQuote(string $couponCode)
+    {
+        $couponService = new CouponService($couponCode);
+        $couponService->setPlanId($this->order->plan_id);
+        $couponService->setUserId($this->order->user_id);
+        $couponService->setPeriod($this->order->period);
+        $couponService->check();
+
+        $coupon = $couponService->getCoupon();
+        switch ($coupon->type) {
+            case 1:
+                $this->order->discount_amount = $coupon->value;
+                break;
+            case 2:
+                $this->order->discount_amount = $this->order->total_amount * ($coupon->value / 100);
+                break;
+        }
+
+        if ($this->order->discount_amount > $this->order->total_amount) {
+            $this->order->discount_amount = $this->order->total_amount;
+        }
+
+        $this->order->coupon_id = $couponService->getId();
+
+        return $coupon;
+    }
+
     /**
      * Summary of handleUserBalance
      * @param User $user
@@ -425,5 +552,17 @@ class OrderService
             $this->order->balance_amount = $user->balance;
             $this->order->total_amount = $this->order->total_amount - $user->balance;
         }
+    }
+
+    protected function applyBalanceForQuote(User $user): void
+    {
+        $balance = max(0, (int) $user->balance);
+        if ($balance <= 0 || $this->order->total_amount <= 0) {
+            return;
+        }
+
+        $balanceAmount = min($balance, (int) $this->order->total_amount);
+        $this->order->balance_amount = $balanceAmount;
+        $this->order->total_amount = (int) $this->order->total_amount - $balanceAmount;
     }
 }
