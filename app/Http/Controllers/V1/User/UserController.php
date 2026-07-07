@@ -10,9 +10,11 @@ use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\UserSubscription;
 use App\Services\Auth\LoginService;
 use App\Services\AuthService;
 use App\Services\Plugin\HookManager;
+use App\Services\SubscriptionService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
@@ -136,7 +138,9 @@ class UserController extends Controller
     {
         $user = User::where('id', $request->user()->id)
             ->select([
+                'id',
                 'plan_id',
+                'group_id',
                 'token',
                 'expired_at',
                 'u',
@@ -152,12 +156,28 @@ class UserController extends Controller
         if (!$user) {
             return $this->fail([400, __('The user does not exist')]);
         }
+        $subscriptionService = app(SubscriptionService::class);
+        $subscriptionService->ensureLegacySubscription($user);
+        $subscriptionService->syncUserFromSubscriptions($user, true);
+        $subscriptions = $subscriptionService->subscriptionsForUser($user);
         if ($user->plan_id) {
             $user['plan'] = Plan::find($user->plan_id);
             if (!$user['plan']) {
                 return $this->fail([400, __('Subscription plan does not exist')]);
             }
         }
+        $user['subscriptions'] = $subscriptions->map(fn(UserSubscription $subscription) => [
+            'id' => $subscription->id,
+            'plan_id' => $subscription->plan_id,
+            'plan_name' => $subscription->plan?->name,
+            'period' => $subscription->period,
+            'transfer_enable' => $subscription->transfer_enable,
+            'expired_at' => $subscription->expired_at,
+            'status' => $subscription->status,
+            'is_primary' => $subscription->is_primary,
+            'frozen_at' => $subscription->frozen_at,
+            'freeze_ends_at' => $subscription->freeze_ends_at,
+        ])->values();
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
         $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);

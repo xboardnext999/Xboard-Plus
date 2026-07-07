@@ -62,7 +62,10 @@ class OrderController extends Controller
     {
         $request->validate([
             'plan_id' => 'required|exists:App\Models\Plan,id',
-            'period' => 'required|string'
+            'period' => 'required|string',
+            'subscription_mode' => 'nullable|string|in:append,multi,replace',
+            'group_buy_activity_id' => 'nullable|integer|required_with:group_buy_group_id',
+            'group_buy_group_id' => 'nullable|integer',
         ]);
 
         $user = User::findOrFail($request->user()->id);
@@ -81,7 +84,10 @@ class OrderController extends Controller
             $user,
             $plan,
             $request->input('period'),
-            $request->input('coupon_code')
+            $request->input('coupon_code'),
+            $request->input('subscription_mode'),
+            $request->input('group_buy_activity_id') ? (int) $request->input('group_buy_activity_id') : null,
+            $request->input('group_buy_group_id') ? (int) $request->input('group_buy_group_id') : null
         );
 
         return $this->success($order->trade_no);
@@ -94,6 +100,8 @@ class OrderController extends Controller
             'period' => 'required|string',
             'coupon_code' => 'nullable|string',
             'method' => 'nullable|integer',
+            'subscription_mode' => 'nullable|string|in:append,multi,replace',
+            'group_buy_activity_id' => 'nullable|integer',
         ]);
 
         $user = User::findOrFail($request->user()->id);
@@ -104,7 +112,9 @@ class OrderController extends Controller
             $plan,
             $request->input('period'),
             $request->input('coupon_code'),
-            $request->input('method') ? (int) $request->input('method') : null
+            $request->input('method') ? (int) $request->input('method') : null,
+            $request->input('subscription_mode'),
+            $request->input('group_buy_activity_id') ? (int) $request->input('group_buy_activity_id') : null
         ));
     }
 

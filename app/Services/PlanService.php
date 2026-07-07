@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Plan;
 use App\Models\User;
+use App\Models\UserSubscription;
 use App\Exceptions\ApiException;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -168,12 +169,25 @@ class PlanService
             return true;
         }
 
-        $activeUserCount = User::where('plan_id', $plan->id)
+        $activeSubscriptionCount = UserSubscription::where('plan_id', $plan->id)
+            ->where('status', UserSubscription::STATUS_ACTIVE)
             ->where(function ($query) {
                 $query->where('expired_at', '>=', time())
                     ->orWhereNull('expired_at');
             })
             ->count();
+        $legacyUserCount = User::where('plan_id', $plan->id)
+            ->where(function ($query) {
+                $query->where('expired_at', '>=', time())
+                    ->orWhereNull('expired_at');
+            })
+            ->whereNotExists(function ($query) {
+                $query->selectRaw(1)
+                    ->from('v2_user_subscription')
+                    ->whereColumn('v2_user_subscription.user_id', 'v2_user.id');
+            })
+            ->count();
+        $activeUserCount = $activeSubscriptionCount + $legacyUserCount;
 
         return ($plan->capacity_limit - $activeUserCount) > 0;
     }

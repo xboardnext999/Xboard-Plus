@@ -11,6 +11,7 @@ use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 
@@ -56,12 +57,12 @@ class ServerService
      */
     public static function getAvailableServers(User $user): array
     {
-        $groupId = (int) $user->group_id;
-        if ($groupId <= 0) {
+        $groupIds = app(SubscriptionService::class)->activeGroupIds($user);
+        if (empty($groupIds)) {
             return [];
         }
 
-        $servers = self::whereGroupIdsContain(Server::query(), $groupId)
+        $servers = self::whereGroupIdsContainAny(Server::query(), $groupIds)
             ->where('show', true)
             ->where(function ($query) {
                 $query->whereNull('transfer_enable')
@@ -101,7 +102,20 @@ class ServerService
             return collect();
         }
         $users = User::toBase()
-            ->whereIn('group_id', $groupIds)
+            ->where(function ($query) use ($groupIds) {
+                $query->whereIn('group_id', $groupIds)
+                    ->orWhereExists(function ($subQuery) use ($groupIds) {
+                        $subQuery->select(DB::raw(1))
+                            ->from('v2_user_subscription')
+                            ->whereColumn('v2_user_subscription.user_id', 'v2_user.id')
+                            ->where('v2_user_subscription.status', \App\Models\UserSubscription::STATUS_ACTIVE)
+                            ->whereIn('v2_user_subscription.group_id', $groupIds)
+                            ->where(function ($dateQuery) {
+                                $dateQuery->whereNull('v2_user_subscription.expired_at')
+                                    ->orWhere('v2_user_subscription.expired_at', '>=', time());
+                            });
+                    });
+            })
             ->whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
                 $query->where('expired_at', '>=', time())
@@ -128,6 +142,26 @@ class ServerService
         return $query->where(function (Builder $query) use ($groupId) {
             $query->whereJsonContains('group_ids', $groupId)
                 ->orWhereJsonContains('group_ids', (string) $groupId);
+        });
+    }
+
+    public static function whereGroupIdsContainAny(Builder $query, array $groupIds): Builder
+    {
+        $groupIds = collect($groupIds)
+            ->map(fn($groupId) => (int) $groupId)
+            ->filter(fn(int $groupId) => $groupId > 0)
+            ->unique()
+            ->values();
+
+        if ($groupIds->isEmpty()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (Builder $query) use ($groupIds) {
+            foreach ($groupIds as $groupId) {
+                $query->orWhereJsonContains('group_ids', $groupId)
+                    ->orWhereJsonContains('group_ids', (string) $groupId);
+            }
         });
     }
 
@@ -213,7 +247,8 @@ class ServerService
 
         $usedTraffic = (int) $user->u + (int) $user->d;
         $transferEnable = (int) $user->transfer_enable;
-        $inNodeGroups = in_array((int) $user->group_id, $groupIds, true);
+        $userGroupIds = app(SubscriptionService::class)->activeGroupIds($user);
+        $inNodeGroups = !empty(array_intersect($userGroupIds, $groupIds));
         $banned = (bool) $user->banned;
         $expired = $user->expired_at !== null && (int) $user->expired_at < time();
         $trafficExceeded = $transferEnable <= 0 || $usedTraffic >= $transferEnable;
@@ -233,7 +268,7 @@ class ServerService
         return [
             'X-Debug-User-Found' => '1',
             'X-Debug-User-Id' => (string) $user->id,
-            'X-Debug-User-Group' => (string) ($user->group_id ?? ''),
+            'X-Debug-User-Group' => implode(',', $userGroupIds),
             'X-Debug-User-Plan' => (string) ($user->plan_id ?? ''),
             'X-Debug-User-In-Node-Groups' => $inNodeGroups ? '1' : '0',
             'X-Debug-User-Banned' => $banned ? '1' : '0',

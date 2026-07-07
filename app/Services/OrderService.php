@@ -49,6 +49,9 @@ class OrderService
         Plan $plan,
         string $period,
         ?string $couponCode = null,
+        ?string $subscriptionMode = null,
+        ?int $groupBuyActivityId = null,
+        ?int $groupBuyGroupId = null,
     ): Order {
         $userService = app(UserService::class);
         $planService = new PlanService($plan);
@@ -56,8 +59,11 @@ class OrderService
         $planService->validatePurchase($user, $period);
         HookManager::call('order.create.before', [$user, $plan, $period, $couponCode]);
 
-        return DB::transaction(function () use ($user, $plan, $period, $couponCode, $userService) {
+        return DB::transaction(function () use ($user, $plan, $period, $couponCode, $subscriptionMode, $groupBuyActivityId, $groupBuyGroupId, $userService) {
             $newPeriod = PlanService::getPeriodKey($period);
+            if ($groupBuyGroupId && !$groupBuyActivityId) {
+                throw new ApiException('请选择拼团活动');
+            }
 
             $order = new Order([
                 'user_id' => $user->id,
@@ -65,16 +71,22 @@ class OrderService
                 'period' => $newPeriod,
                 'trade_no' => Helper::generateOrderNo(),
                 'total_amount' => (int) (optional($plan->prices)[$newPeriod] * 100),
+                'group_buy_activity_id' => $groupBuyActivityId,
+                'group_buy_group_id' => $groupBuyGroupId,
             ]);
 
             $orderService = new self($order);
+
+            if ($groupBuyActivityId) {
+                app(GroupBuyService::class)->applyDiscount($order, $plan, $newPeriod, $groupBuyActivityId);
+            }
 
             if ($couponCode) {
                 $orderService->applyCoupon($couponCode);
             }
 
             $orderService->setVipDiscount($user);
-            $orderService->setOrderType($user);
+            $orderService->setOrderType($user, $subscriptionMode);
             $orderService->setInvite(user: $user);
 
             if ($user->balance && $order->total_amount > 0) {
@@ -103,6 +115,8 @@ class OrderService
         string $period,
         ?string $couponCode = null,
         ?int $paymentMethodId = null,
+        ?string $subscriptionMode = null,
+        ?int $groupBuyActivityId = null,
     ): array {
         $planService = new PlanService($plan);
         $planService->validatePurchase($user, $period);
@@ -114,12 +128,18 @@ class OrderService
             'period' => $newPeriod,
             'trade_no' => Helper::generateOrderNo(),
             'total_amount' => (int) (optional($plan->prices)[$newPeriod] * 100),
+            'group_buy_activity_id' => $groupBuyActivityId,
         ]);
 
         $orderService = new self($order);
         $originalAmount = (int) $order->total_amount;
+        $groupBuyDiscountAmount = 0;
         $coupon = null;
         $couponDiscountAmount = 0;
+
+        if ($groupBuyActivityId) {
+            $groupBuyDiscountAmount = app(GroupBuyService::class)->applyDiscount($order, $plan, $newPeriod, $groupBuyActivityId);
+        }
 
         if ($couponCode) {
             $coupon = $orderService->applyCouponForQuote($couponCode);
@@ -129,7 +149,7 @@ class OrderService
         $discountAmountBeforeVip = (int) $order->discount_amount;
         $orderService->setVipDiscount($user);
         $vipDiscountAmount = max(0, (int) $order->discount_amount - $discountAmountBeforeVip);
-        $orderService->setOrderType($user);
+        $orderService->setOrderType($user, $subscriptionMode);
 
         if ($user->balance && $order->total_amount > 0) {
             $orderService->applyBalanceForQuote($user);
@@ -169,6 +189,7 @@ class OrderService
             'original_amount' => max(0, $originalAmount),
             'discount_amount' => max(0, (int) $order->discount_amount),
             'coupon_discount_amount' => max(0, $couponDiscountAmount),
+            'group_buy_discount_amount' => max(0, $groupBuyDiscountAmount),
             'vip_discount_amount' => max(0, $vipDiscountAmount),
             'surplus_amount' => max(0, (int) $order->surplus_amount),
             'surplus_credit' => max(0, (int) $order->surplus_credit),
@@ -202,6 +223,10 @@ class OrderService
 
         DB::transaction(function () use ($order, $plan) {
             $this->user = User::lockForUpdate()->find($order->user_id);
+            $subscriptionService = app(SubscriptionService::class);
+            if ($order->period !== Plan::PERIOD_RESET_TRAFFIC) {
+                $subscriptionService->ensureLegacySubscription($this->user);
+            }
 
             if ($order->surplus_credit) {
                 $this->user->balance += $order->surplus_credit;
@@ -221,6 +246,8 @@ class OrderService
             $this->setSpeedLimit($plan->speed_limit);
             $this->setDeviceLimit($plan->device_limit);
 
+            $subscriptionService->openFromOrder($this->user, $plan, $order);
+
             if (!$this->user->save()) {
                 throw new \RuntimeException('用户信息保存失败');
             }
@@ -228,6 +255,10 @@ class OrderService
             $order->status = Order::STATUS_COMPLETED;
             if (!$order->save()) {
                 throw new \RuntimeException('订单信息保存失败');
+            }
+
+            if ($order->group_buy_group_id) {
+                app(GroupBuyService::class)->markOrderPaid($order);
             }
         });
 
@@ -246,11 +277,24 @@ class OrderService
     }
 
 
-    public function setOrderType(User $user)
+    public function setOrderType(User $user, ?string $subscriptionMode = null)
     {
         $order = $this->order;
         if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
             $order->type = Order::TYPE_RESET_TRAFFIC;
+        } else if (in_array($subscriptionMode, ['append', 'multi'], true)) {
+            $hasSamePlan = \App\Models\UserSubscription::where('user_id', $user->id)
+                ->where('plan_id', $order->plan_id)
+                ->where('status', \App\Models\UserSubscription::STATUS_ACTIVE)
+                ->where(function ($query) {
+                    $query->whereNull('expired_at')
+                        ->orWhere('expired_at', '>=', time());
+                })
+                ->exists();
+            if (!$hasSamePlan && (int) $user->plan_id === (int) $order->plan_id && ($user->expired_at === null || $user->expired_at > time())) {
+                $hasSamePlan = true;
+            }
+            $order->type = $hasSamePlan ? Order::TYPE_RENEWAL : Order::TYPE_NEW_PURCHASE;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
             if (!(int) admin_setting('plan_change_enable', 1))
                 throw new ApiException('目前不允许更改订阅，请联系客服或提交工单操作');
@@ -444,9 +488,10 @@ class OrderService
         if ((int) $order->type === Order::TYPE_UPGRADE) {
             $this->user->expired_at = time();
         }
+        $hasAvailableSubscriptions = app(SubscriptionService::class)->hasAvailableSubscriptions($this->user);
         $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
         // 从一次性转换到循环或者新购的时候，重置流量
-        if ($this->user->expired_at === NULL || $order->type === Order::TYPE_NEW_PURCHASE)
+        if (!$hasAvailableSubscriptions && ($this->user->expired_at === NULL || $order->type === Order::TYPE_NEW_PURCHASE))
             app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;

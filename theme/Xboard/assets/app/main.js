@@ -1402,13 +1402,16 @@ const DashboardPage = {
 const SubscribePage = {
   setup() {
     const local = useAsyncPage(async (page) => {
-      const [subscribe, servers] = await Promise.all([
+      const [subscribe, servers, subscriptionData] = await Promise.all([
         api.get('/user/getSubscribe'),
         api.get('/user/server/fetch').catch(() => ({ data: [] })),
+        api.get('/user/subscription/fetch').catch(() => ({ data: [], summary: {} })),
       ]);
       state.subscribe = subscribe;
       page.subscribe = subscribe;
       page.servers = normalizeCollection(servers.data || servers);
+      page.subscriptions = normalizeCollection(subscriptionData.data || subscriptionData);
+      page.subscriptionSummary = subscriptionData.summary || {};
     });
 
     async function resetSecurity() {
@@ -1428,9 +1431,53 @@ const SubscribePage = {
       toast('已复制');
     }
 
+    async function refreshSubscriptions() {
+      const [subscribe, subscriptionData] = await Promise.all([
+        api.get('/user/getSubscribe'),
+        api.get('/user/subscription/fetch').catch(() => ({ data: [], summary: {} })),
+      ]);
+      state.subscribe = subscribe;
+      local.subscribe = subscribe;
+      local.subscriptions = normalizeCollection(subscriptionData.data || subscriptionData);
+      local.subscriptionSummary = subscriptionData.summary || {};
+    }
+
+    async function freezeSubscription(subscription) {
+      const days = Number(prompt('请输入冻结天数', '7') || 0);
+      if (!days) return;
+      try {
+        await api.post('/user/subscription/freeze', { id: subscription.id, days });
+        await refreshSubscriptions();
+        toast('订阅已冻结');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function unfreezeSubscription(subscription) {
+      try {
+        await api.post('/user/subscription/unfreeze', { id: subscription.id });
+        await refreshSubscriptions();
+        toast('订阅已解冻');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    async function setPrimarySubscription(subscription) {
+      try {
+        await api.post('/user/subscription/primary', { id: subscription.id });
+        await refreshSubscriptions();
+        toast('已设为主订阅');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
     return () => {
       const subscribe = local.subscribe || state.subscribe || {};
       const servers = local.servers || [];
+      const subscriptions = local.subscriptions || [];
       const usage = usageSummary(subscribe);
       const rows = servers.map((node, index) => [
         `#${index + 1}`,
@@ -1442,6 +1489,29 @@ const SubscribePage = {
 
       return h('div', [
         pageError(local.error),
+        h('section', { class: 'subscription-list' }, subscriptions.length ? subscriptions.map((item) => h('article', {
+          class: ['subscription-item', item.is_primary ? 'primary-subscription' : '', item.status === 2 ? 'frozen-subscription' : ''],
+        }, [
+          h('div', { class: 'subscription-item-main' }, [
+            h('small', item.is_primary ? '主订阅' : (item.status_text || '订阅')),
+            h('h2', item.plan_name || '未知套餐'),
+            h('p', [
+              item.expired_at ? `到期 ${date(item.expired_at)}` : '长期有效',
+              ' · ',
+              item.traffic_text || bytes(item.transfer_enable || 0),
+            ]),
+          ]),
+          h('div', { class: 'subscription-item-actions' }, [
+            item.status === 1 && !item.is_primary ? miniButton('设为主订阅', { onClick: () => setPrimarySubscription(item) }) : null,
+            item.status === 1 ? miniButton('冻结', { onClick: () => freezeSubscription(item) }) : null,
+            item.status === 2 ? miniButton('解冻', { onClick: () => unfreezeSubscription(item) }) : null,
+          ]),
+        ])) : [
+          h('article', { class: 'subscription-item empty-subscription' }, [
+            h('div', { class: 'subscription-item-main' }, [h('small', '暂无订阅'), h('h2', '购买套餐后会显示在这里')]),
+            miniButton('购买套餐', { href: '#/plans' }),
+          ]),
+        ]),
         h('section', { class: 'subscription-grid' }, [
           h('article', { class: 'panel access-card' }, [
             h('div', { class: 'section-title' }, [
@@ -1483,17 +1553,21 @@ const PlanPurchaseCard = {
     plan: { type: Object, required: true },
     index: { type: Number, default: 0 },
     methods: { type: Array, default: () => [] },
+    groupBuy: { type: Object, default: () => ({ activities: [], groups: [] }) },
   },
   setup(props) {
     const options = periodOptions(props.plan);
     const selectedPeriod = ref(options[0]?.key || '');
     const couponCode = ref('');
     const selectedMethod = ref(props.methods[0]?.id ? String(props.methods[0].id) : '');
+    const selectedGroupActivity = ref('');
+    const selectedGroup = ref('');
     const local = reactive({
       quote: null,
       quoteError: '',
       quoteLoading: false,
       submitting: false,
+      groupCreating: false,
     });
     let quoteTimer = null;
     let quoteSeq = 0;
@@ -1513,6 +1587,8 @@ const PlanPurchaseCard = {
           period: selectedPeriod.value,
           coupon_code: couponCode.value.trim(),
           method: selectedMethod.value,
+          subscription_mode: 'append',
+          group_buy_activity_id: selectedGroupActivity.value || null,
         });
         if (seq === quoteSeq) local.quote = quote;
       } catch (error) {
@@ -1534,7 +1610,7 @@ const PlanPurchaseCard = {
       if (!selectedMethod.value && id) selectedMethod.value = String(id);
     }, { immediate: true });
 
-    watch(() => [selectedPeriod.value, couponCode.value, selectedMethod.value], scheduleQuote, { immediate: true });
+    watch(() => [selectedPeriod.value, couponCode.value, selectedMethod.value, selectedGroupActivity.value], scheduleQuote, { immediate: true });
 
     onBeforeUnmount(() => clearTimeout(quoteTimer));
 
@@ -1547,6 +1623,9 @@ const PlanPurchaseCard = {
           plan_id: props.plan.id,
           period: selectedPeriod.value,
           coupon_code: couponCode.value.trim(),
+          subscription_mode: 'append',
+          group_buy_activity_id: selectedGroupActivity.value || null,
+          group_buy_group_id: selectedGroup.value || null,
         });
         toast('订单已创建');
         go('orders', { trade_no: tradeNo, method: selectedMethod.value });
@@ -1557,7 +1636,29 @@ const PlanPurchaseCard = {
       }
     }
 
+    async function createGroup() {
+      if (!selectedGroupActivity.value) return;
+      local.groupCreating = true;
+      try {
+        const group = await api.post('/user/group-buy/create', { activity_id: selectedGroupActivity.value });
+        selectedGroup.value = String(group.id);
+        toast('拼团已创建');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        local.groupCreating = false;
+      }
+    }
+
     return () => {
+      const activities = (props.groupBuy.activities || []).filter((item) =>
+        Number(item.plan_id) === Number(props.plan.id)
+        && (!selectedPeriod.value || item.period === selectedPeriod.value)
+      );
+      const groups = (props.groupBuy.groups || []).filter((item) =>
+        Number(item.plan_id) === Number(props.plan.id)
+        && (!selectedGroupActivity.value || Number(item.activity_id) === Number(selectedGroupActivity.value))
+      );
       const quote = local.quote || {};
       const original = quote.original_amount ?? Number(props.plan[selectedPeriod.value] || 0);
       const discount = Number(quote.discount_amount || 0) + Number(quote.surplus_amount || 0);
@@ -1606,6 +1707,29 @@ const PlanPurchaseCard = {
             h('span', method.name || method.payment || `支付方式 ${method.id}`),
           ]))) : emptyBlock('暂无可用支付方式'),
         ]),
+        activities.length ? h('div', { class: 'plan-field group-buy-field' }, [
+          h('span', '拼团优惠'),
+          h('select', {
+            value: selectedGroupActivity.value,
+            onChange: (event) => {
+              selectedGroupActivity.value = event.target.value;
+              selectedGroup.value = '';
+            },
+          }, [
+            h('option', { value: '' }, '不参与拼团'),
+            ...activities.map((activity) => h('option', { value: activity.id }, `${activity.title} · ${activity.group_size}人成团`)),
+          ]),
+          selectedGroupActivity.value ? h('div', { class: 'group-buy-actions' }, [
+            groups.length ? h('select', {
+              value: selectedGroup.value,
+              onChange: (event) => { selectedGroup.value = event.target.value; },
+            }, [
+              h('option', { value: '' }, '自己开团'),
+              ...groups.map((group) => h('option', { value: group.id }, `加入团 #${group.id} · ${group.current_count}/${group.required_count}`)),
+            ]) : null,
+            h('button', { class: 'secondary-button', type: 'button', disabled: local.groupCreating, onClick: createGroup }, local.groupCreating ? '开团中...' : '创建拼团'),
+          ]) : null,
+        ]) : null,
         h('div', { class: 'plan-quote' }, [
           h('div', { class: 'plan-quote-main' }, [
             h('span', '预计实付'),
@@ -1632,8 +1756,14 @@ const PlanPurchaseCard = {
 const PlansPage = {
   setup() {
     const local = useAsyncPage(async (page) => {
-      page.plans = normalizeCollection(await api.get('/user/plan/fetch'));
-      page.methods = await api.get('/user/order/getPaymentMethod').catch(() => []);
+      const [plans, methods, groupBuy] = await Promise.all([
+        api.get('/user/plan/fetch'),
+        api.get('/user/order/getPaymentMethod').catch(() => []),
+        api.get('/user/group-buy/fetch').catch(() => ({ activities: [], groups: [] })),
+      ]);
+      page.plans = normalizeCollection(plans);
+      page.methods = methods;
+      page.groupBuy = groupBuy || { activities: [], groups: [] };
     });
 
     return () => h('div', [
@@ -1643,6 +1773,7 @@ const PlansPage = {
         plan,
         index,
         methods: local.methods || [],
+        groupBuy: local.groupBuy || { activities: [], groups: [] },
       }))),
       local.ready && !(local.plans || []).length ? emptyBlock('暂无可购买套餐') : null,
     ]);

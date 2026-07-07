@@ -4,6 +4,7 @@ namespace App\Http\Routes\V1;
 use App\Http\Controllers\V1\User\CommController;
 use App\Http\Controllers\V1\User\CouponController;
 use App\Http\Controllers\V1\User\GiftCardController;
+use App\Http\Controllers\V1\User\GroupBuyController;
 use App\Http\Controllers\V1\User\InviteController;
 use App\Http\Controllers\V1\User\KnowledgeController;
 use App\Http\Controllers\V1\User\NoticeController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\V1\User\PlanController;
 use App\Http\Controllers\V1\User\RechargeController;
 use App\Http\Controllers\V1\User\ServerController;
 use App\Http\Controllers\V1\User\StatController;
+use App\Http\Controllers\V1\User\SubscriptionController;
 use App\Http\Controllers\V1\User\TelegramController;
 use App\Http\Controllers\V1\User\TicketController;
 use App\Http\Controllers\V1\User\UserController;
@@ -47,6 +49,15 @@ class UserRoute
             $router->get('/order/fetch', [OrderController::class, 'fetch']);
             $router->get('/order/getPaymentMethod', [OrderController::class, 'getPaymentMethod']);
             $router->post('/order/cancel', [OrderController::class, 'cancel']);
+            // Subscription
+            $router->get('/subscription/fetch', [SubscriptionController::class, 'fetch']);
+            $router->post('/subscription/freeze', [SubscriptionController::class, 'freeze']);
+            $router->post('/subscription/unfreeze', [SubscriptionController::class, 'unfreeze']);
+            $router->post('/subscription/primary', [SubscriptionController::class, 'primary']);
+            // Group Buy
+            $router->get('/group-buy/fetch', [GroupBuyController::class, 'fetch']);
+            $router->post('/group-buy/create', [GroupBuyController::class, 'create']);
+            $router->post('/group-buy/join', [GroupBuyController::class, 'join']);
             // Recharge
             $router->post('/recharge/save', [RechargeController::class, 'save']);
             $router->post('/recharge/checkout', [RechargeController::class, 'checkout']);

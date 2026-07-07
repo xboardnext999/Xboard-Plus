@@ -131,6 +131,11 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'user_id', 'id');
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(UserSubscription::class, 'user_id', 'id');
+    }
+
     public function stat(): HasMany
     {
         return $this->hasMany(StatUser::class, 'user_id', 'id');
