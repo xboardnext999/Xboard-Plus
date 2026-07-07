@@ -73,7 +73,7 @@
       '[' + ENTRY_ATTR + '="menu"].xgb-active,',
       '[' + ENTRY_ATTR + '="menu"].xgb-active a{background:#eef2ff!important;color:#4f46e5!important;font-weight:700!important}',
       '[' + ENTRY_ATTR + '="menu"].xgb-active svg{color:#4f46e5!important}',
-      '#xboard-group-buy-page{position:fixed;top:0;right:0;bottom:0;left:var(--xgb-sidebar-left,280px);z-index:80;overflow:auto;background:#f8fafc;color:#0f172a;padding:28px 34px 42px;font-family:inherit}',
+      '#xboard-group-buy-page{position:fixed;top:0;right:0;bottom:0;left:var(--xgb-sidebar-left,280px);z-index:40;overflow:auto;background:#f8fafc;color:#0f172a;padding:28px 34px 42px;font-family:inherit}',
       '#xboard-group-buy-page *{box-sizing:border-box}',
       '#xboard-group-buy-page .xgb-shell{max-width:1440px;margin:0 auto}',
       '#xboard-group-buy-page .xgb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}',
@@ -134,7 +134,7 @@
       '.dark #xboard-group-buy-page .xgb-table th{background:#111827;color:#94a3b8}',
       '.dark #xboard-group-buy-page .xgb-table th,.dark #xboard-group-buy-page .xgb-table td,.dark #xboard-group-buy-page .xgb-pagination{border-color:#243042}',
       '.dark #xboard-group-buy-page .xgb-group-item{background:#111827;border-color:#243042}',
-      '@media (max-width:1100px){#xboard-group-buy-page{left:0;padding:20px}#xboard-group-buy-page .xgb-grid,#xboard-group-buy-page .xgb-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#xboard-group-buy-page .xgb-group-list{grid-template-columns:1fr}}',
+      '@media (max-width:1100px){#xboard-group-buy-page{left:var(--xgb-sidebar-left,280px);padding:20px}#xboard-group-buy-page .xgb-grid,#xboard-group-buy-page .xgb-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#xboard-group-buy-page .xgb-group-list{grid-template-columns:1fr}}',
       '@media (max-width:720px){#xboard-group-buy-page .xgb-grid,#xboard-group-buy-page .xgb-form-grid{grid-template-columns:1fr}#xboard-group-buy-page .xgb-field-wide{grid-column:span 1}#xboard-group-buy-page .xgb-toolbar{align-items:stretch;flex-direction:column}#xboard-group-buy-page .xgb-toolbar input{min-width:0;width:100%}}'
     ].join('');
     document.head.appendChild(style);
