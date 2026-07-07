@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Exceptions\ApiException;
 use App\Jobs\OrderHandleJob;
+use App\Models\GroupBuyActivity;
+use App\Models\GroupBuyGroup;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Plan;
@@ -63,6 +65,23 @@ class OrderService
             $newPeriod = PlanService::getPeriodKey($period);
             if ($groupBuyGroupId && !$groupBuyActivityId) {
                 throw new ApiException('请选择拼团活动');
+            }
+
+            if ($groupBuyActivityId) {
+                $groupBuyService = app(GroupBuyService::class);
+                if ($groupBuyGroupId) {
+                    $group = GroupBuyGroup::find($groupBuyGroupId);
+                    if (!$group || (int) $group->activity_id !== (int) $groupBuyActivityId) {
+                        throw new ApiException('拼团队伍不可用');
+                    }
+                    $groupBuyService->joinGroup($user, $group);
+                } else {
+                    $activity = GroupBuyActivity::find($groupBuyActivityId);
+                    if (!$activity) {
+                        throw new ApiException('拼团活动不可用');
+                    }
+                    $groupBuyGroupId = $groupBuyService->createGroup($user, $activity)->id;
+                }
             }
 
             $order = new Order([

@@ -1562,6 +1562,9 @@ const PlanPurchaseCard = {
     const selectedMethod = ref(props.methods[0]?.id ? String(props.methods[0].id) : '');
     const selectedGroupActivity = ref('');
     const selectedGroup = ref('');
+    const groupState = reactive({
+      groups: [],
+    });
     const local = reactive({
       quote: null,
       quoteError: '',
@@ -1610,22 +1613,58 @@ const PlanPurchaseCard = {
       if (!selectedMethod.value && id) selectedMethod.value = String(id);
     }, { immediate: true });
 
+    watch(() => props.groupBuy?.groups, (groups) => {
+      groupState.groups = Array.isArray(groups) ? [...groups] : [];
+    }, { immediate: true });
+
     watch(() => [selectedPeriod.value, couponCode.value, selectedMethod.value, selectedGroupActivity.value], scheduleQuote, { immediate: true });
 
     onBeforeUnmount(() => clearTimeout(quoteTimer));
+
+    function upsertGroup(group) {
+      if (!group?.id) return;
+      const index = groupState.groups.findIndex((item) => Number(item.id) === Number(group.id));
+      if (index >= 0) groupState.groups.splice(index, 1, group);
+      else groupState.groups.unshift(group);
+    }
+
+    async function createGroup({ silent = false } = {}) {
+      if (!selectedGroupActivity.value) return null;
+      local.groupCreating = true;
+      try {
+        const group = await api.post('/user/group-buy/create', { activity_id: selectedGroupActivity.value });
+        upsertGroup(group);
+        selectedGroup.value = String(group.id);
+        if (!silent) toast('拼团已创建');
+        return group;
+      } catch (error) {
+        if (!silent) toast(error.message, 'error');
+        throw error;
+      } finally {
+        local.groupCreating = false;
+      }
+    }
+
+    async function ensureGroupForOrder() {
+      if (!selectedGroupActivity.value) return null;
+      if (selectedGroup.value) return selectedGroup.value;
+      const group = await createGroup({ silent: true });
+      return group?.id ? String(group.id) : null;
+    }
 
     async function buyPlan(event) {
       event.preventDefault();
       if (!selectedPeriod.value) return;
       local.submitting = true;
       try {
+        const groupId = await ensureGroupForOrder();
         const tradeNo = await api.post('/user/order/save', {
           plan_id: props.plan.id,
           period: selectedPeriod.value,
           coupon_code: couponCode.value.trim(),
           subscription_mode: 'append',
           group_buy_activity_id: selectedGroupActivity.value || null,
-          group_buy_group_id: selectedGroup.value || null,
+          group_buy_group_id: groupId,
         });
         toast('订单已创建');
         go('orders', { trade_no: tradeNo, method: selectedMethod.value });
@@ -1636,26 +1675,12 @@ const PlanPurchaseCard = {
       }
     }
 
-    async function createGroup() {
-      if (!selectedGroupActivity.value) return;
-      local.groupCreating = true;
-      try {
-        const group = await api.post('/user/group-buy/create', { activity_id: selectedGroupActivity.value });
-        selectedGroup.value = String(group.id);
-        toast('拼团已创建');
-      } catch (error) {
-        toast(error.message, 'error');
-      } finally {
-        local.groupCreating = false;
-      }
-    }
-
     return () => {
       const activities = (props.groupBuy.activities || []).filter((item) =>
         Number(item.plan_id) === Number(props.plan.id)
         && (!selectedPeriod.value || item.period === selectedPeriod.value)
       );
-      const groups = (props.groupBuy.groups || []).filter((item) =>
+      const groups = groupState.groups.filter((item) =>
         Number(item.plan_id) === Number(props.plan.id)
         && (!selectedGroupActivity.value || Number(item.activity_id) === Number(selectedGroupActivity.value))
       );
@@ -1856,10 +1881,16 @@ const OrderDetailPage = {
         ]),
         statCards([
           { label: '订单金额', value: money(order.total_amount, currencySymbol()) },
+          Number(order.discount_amount) > 0 ? { label: '优惠抵扣', value: `-${money(order.discount_amount, currencySymbol())}` } : null,
+          Number(order.group_buy_discount_amount) > 0 ? {
+            label: '拼团优惠',
+            value: `-${money(order.group_buy_discount_amount, currencySymbol())}`,
+            hint: order.group_buy_group_id ? `团 #${order.group_buy_group_id}` : '',
+          } : null,
           { label: '手续费', value: money(order.handling_amount, currencySymbol()) },
           { label: '余额抵扣', value: money(order.balance_amount, currencySymbol()) },
           { label: '创建时间', value: time(order.created_at) },
-        ]),
+        ].filter(Boolean)),
         Number(order.status) === 0 ? h('div', { class: 'checkout-box', 'data-checkout': props.tradeNo }, [
           h('h3', '支付订单'),
           paymentMethods(local.methods || [], props.method || order.payment_id),
