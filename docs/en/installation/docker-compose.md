@@ -60,6 +60,27 @@ docker compose up -d
 - Default port: 8002
 - Website URL: http://your-server-ip:8002
 
+### Low-memory Docker default
+
+The all-in-one compose samples default to a low-memory profile:
+
+- `RESOURCE_PROFILE=minimal`
+- `ENABLE_HORIZON=false`
+- `ENABLE_QUEUE_WORKER=true`
+- one Octane worker and one lightweight Redis queue worker
+
+This is suitable for small VPS deployments and usually keeps the container
+around a few hundred MiB instead of running the full Horizon supervisor tree.
+If you need Horizon's dashboard and multi-process queue supervisors, edit your
+local `compose.yaml` and set:
+
+```yaml
+environment:
+  - RESOURCE_PROFILE=balanced
+  - ENABLE_HORIZON=true
+  - ENABLE_QUEUE_WORKER=false
+```
+
 ### 3. Version Updates
 
 ```bash

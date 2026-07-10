@@ -19,8 +19,19 @@ services:
       - ./plugins:/www/plugins
       - redis-data:/data
     environment:
-      - RESOURCE_PROFILE=balanced      # minimal | balanced | performance | auto
-      - ENABLE_HORIZON=true
+      - RESOURCE_PROFILE=minimal       # minimal | balanced | performance | auto
+      - ENABLE_HORIZON=false           # low-memory default: use one queue worker instead
+      - ENABLE_QUEUE_WORKER=true
+      - OCTANE_WORKERS=1
+      - OCTANE_TASK_WORKERS=1
+      - OCTANE_MAX_REQUESTS=300
+      - OCTANE_GARBAGE_MB=64
+      - HORIZON_DATA_PIPELINE_MAX=1
+      - HORIZON_BUSINESS_MAX=1
+      - HORIZON_NOTIFICATION_MAX=1
+      - HORIZON_WORKER_MEMORY_MB=128
+      - HORIZON_WORKER_MAX_TIME=3600
+      - HORIZON_WORKER_MAX_JOBS=500
       - docker=true
 
 volumes:

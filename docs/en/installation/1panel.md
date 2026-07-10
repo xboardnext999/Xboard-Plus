@@ -75,6 +75,7 @@ docker compose build --build-arg CACHEBUST=$(date +%s) xboard
 ```
 The file is gitignored so your edits survive `git pull`. See [docker-compose.md](./docker-compose.md) for tuning environment variables (`RESOURCE_PROFILE`, `ENABLE_HORIZON`, `ENABLE_REDIS`, etc.) and the other `compose.*.sample.yaml` alternatives.
 The compose template mounts `./.docker/env` to `/config`; the entrypoint creates `/config/.env` automatically.
+The 1Panel sample defaults to the low-memory Docker profile (`RESOURCE_PROFILE=minimal`, `ENABLE_HORIZON=false`, `ENABLE_QUEUE_WORKER=true`). Set `ENABLE_HORIZON=true` and `ENABLE_QUEUE_WORKER=false` in `compose.yaml` if you need Horizon.
 
 5. Initialize Installation:
 ```bash

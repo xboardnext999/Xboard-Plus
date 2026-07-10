@@ -76,6 +76,7 @@ docker compose build --build-arg CACHEBUST=$(date +%s) xboard
 docker compose run -it --rm xboard php artisan xboard:install
 ```
 > The compose template mounts `./.docker/env` to `/config`; the entrypoint creates `/config/.env` automatically.
+> The aaPanel Docker sample uses a low-memory default (`RESOURCE_PROFILE=minimal`, `ENABLE_HORIZON=false`, `ENABLE_QUEUE_WORKER=true`) so small servers do not run the full Horizon supervisor tree by default. Set `ENABLE_HORIZON=true` and `ENABLE_QUEUE_WORKER=false` in `compose.yaml` if you need Horizon.
 > ⚠️ Please save the admin dashboard URL, username, and password shown after installation
 
 #### 3.3 Start Services
