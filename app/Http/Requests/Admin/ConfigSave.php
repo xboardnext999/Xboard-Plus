@@ -47,6 +47,8 @@ class ConfigSave extends FormRequest
         'show_protocol_to_server_enable' => '',
         'subscribe_unavailable_tip_enable' => 'boolean',
         'subscribe_unavailable_tip_lines' => 'nullable|string',
+        'subscription_transfer_enable' => 'boolean',
+        'subscription_transfer_fee' => 'integer|min:0|max:100000000',
         'subscribe_path' => '',
         // server
         'server_token' => 'nullable|min:16',

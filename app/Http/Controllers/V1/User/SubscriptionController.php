@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\SubscriptionTransfer;
 use App\Models\UserSubscription;
 use App\Services\SubscriptionService;
+use App\Services\SubscriptionTransferService;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 
@@ -14,6 +16,7 @@ class SubscriptionController extends Controller
     {
         $user = $request->user();
         $service = app(SubscriptionService::class);
+        $transferService = app(SubscriptionTransferService::class);
         $subscriptions = $service->subscriptionsForUser($user);
 
         return $this->success([
@@ -22,6 +25,13 @@ class SubscriptionController extends Controller
                 'active_count' => $subscriptions->where('status', UserSubscription::STATUS_ACTIVE)->count(),
                 'frozen_count' => $subscriptions->where('status', UserSubscription::STATUS_FROZEN)->count(),
                 'total_transfer_enable' => (int) $subscriptions->where('status', UserSubscription::STATUS_ACTIVE)->sum('transfer_enable'),
+            ],
+            'transfer' => [
+                'enabled' => $transferService->enabled(),
+                'fee' => $transferService->fee(),
+                'history' => $transferService->history($user)
+                    ->map(fn(SubscriptionTransfer $transfer) => $this->formatTransfer($transfer, (int) $user->id))
+                    ->values(),
             ],
         ]);
     }
@@ -66,6 +76,22 @@ class SubscriptionController extends Controller
         return $this->success($this->formatSubscription($subscription->load('plan')));
     }
 
+    public function transfer(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'email' => 'required|email|max:255',
+        ]);
+
+        $transfer = app(SubscriptionTransferService::class)->transfer(
+            $request->user(),
+            (int) $request->input('id'),
+            (string) $request->input('email')
+        );
+
+        return $this->success($this->formatTransfer($transfer, (int) $request->user()->id));
+    }
+
     private function findSubscription(Request $request): UserSubscription
     {
         return UserSubscription::where('id', $request->input('id'))
@@ -91,6 +117,10 @@ class SubscriptionController extends Controller
             'expired_at' => $subscription->expired_at,
             'status' => $subscription->status,
             'status_text' => $this->statusText($subscription->status),
+            'can_transfer' => (int) $subscription->status === UserSubscription::STATUS_ACTIVE
+                && !$subscription->isExpired()
+                && $subscription->frozen_at === null
+                && $subscription->freeze_ends_at === null,
             'is_primary' => $subscription->is_primary,
             'frozen_at' => $subscription->frozen_at,
             'freeze_ends_at' => $subscription->freeze_ends_at,
@@ -117,5 +147,20 @@ class SubscriptionController extends Controller
             UserSubscription::STATUS_CANCELLED => '已取消',
             default => '未知',
         };
+    }
+
+    private function formatTransfer(SubscriptionTransfer $transfer, int $userId): array
+    {
+        $isOutgoing = (int) $transfer->from_user_id === $userId;
+
+        return [
+            'id' => $transfer->id,
+            'subscription_id' => $transfer->subscription_id,
+            'direction' => $isOutgoing ? 'out' : 'in',
+            'counterparty_email' => $isOutgoing ? $transfer->to_email : $transfer->from_email,
+            'plan_name' => $transfer->plan_name,
+            'fee' => $transfer->fee,
+            'transferred_at' => $transfer->transferred_at,
+        ];
     }
 }

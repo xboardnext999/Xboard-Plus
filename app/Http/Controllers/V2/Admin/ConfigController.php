@@ -133,6 +133,8 @@ class ConfigController extends Controller
                 'subscribe_unavailable_tip_lines' => admin_setting('subscribe_unavailable_tip_lines', "流量已用完或套餐已到期，请及时续费"),
                 'default_remind_expire' => (bool) admin_setting('default_remind_expire', 1),
                 'default_remind_traffic' => (bool) admin_setting('default_remind_traffic', 1),
+                'subscription_transfer_enable' => (bool) admin_setting('subscription_transfer_enable', 0),
+                'subscription_transfer_fee' => (int) admin_setting('subscription_transfer_fee', 0),
                 'subscribe_path' => admin_setting('subscribe_path', 's'),
             ],
             'frontend' => [

@@ -191,6 +191,15 @@ class SubscriptionService
 
         $subscriptionCount = UserSubscription::where('user_id', $user->id)->count();
         if ($subscriptionCount === 0) {
+            $user->plan_id = null;
+            $user->group_id = null;
+            $user->transfer_enable = 0;
+            $user->speed_limit = null;
+            $user->device_limit = null;
+            $user->expired_at = time();
+            if ($save) {
+                $user->save();
+            }
             return $user;
         }
 

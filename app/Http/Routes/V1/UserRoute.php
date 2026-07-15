@@ -54,6 +54,7 @@ class UserRoute
             $router->post('/subscription/freeze', [SubscriptionController::class, 'freeze']);
             $router->post('/subscription/unfreeze', [SubscriptionController::class, 'unfreeze']);
             $router->post('/subscription/primary', [SubscriptionController::class, 'primary']);
+            $router->post('/subscription/transfer', [SubscriptionController::class, 'transfer']);
             // Group Buy
             $router->get('/group-buy/fetch', [GroupBuyController::class, 'fetch']);
             $router->post('/group-buy/create', [GroupBuyController::class, 'create']);

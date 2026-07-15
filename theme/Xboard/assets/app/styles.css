@@ -2040,6 +2040,133 @@ td {
   grid-column: 1 / -1;
 }
 
+.subscription-transfer-history {
+  margin-top: 18px;
+}
+
+.transfer-fee-note {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.subscription-transfer-overlay {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 10, 17, 0.58);
+  backdrop-filter: blur(5px);
+}
+
+.subscription-transfer-dialog {
+  width: min(100%, 480px);
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: 0 24px 70px rgba(5, 8, 16, 0.28);
+  padding: 24px;
+}
+
+.subscription-transfer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.subscription-transfer-head small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.subscription-transfer-head h2 {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 22px;
+}
+
+.transfer-dialog-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--panel-bg);
+  color: var(--muted);
+  font-size: 25px;
+  line-height: 1;
+}
+
+.subscription-transfer-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.subscription-transfer-field input {
+  width: 100%;
+  height: 46px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--panel-bg);
+  padding: 0 14px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 650;
+}
+
+.subscription-transfer-field input:focus {
+  border-color: var(--primary-strong);
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.12);
+}
+
+.subscription-transfer-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  border-radius: 10px;
+  background: var(--panel-bg);
+  padding: 13px 14px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.subscription-transfer-summary strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.subscription-transfer-warning {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.subscription-transfer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.subscription-transfer-actions button:disabled,
+.transfer-dialog-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .access-card {
   grid-row: span 2;
   min-height: 360px;

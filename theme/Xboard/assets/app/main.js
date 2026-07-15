@@ -1412,7 +1412,11 @@ const SubscribePage = {
       page.servers = normalizeCollection(servers.data || servers);
       page.subscriptions = normalizeCollection(subscriptionData.data || subscriptionData);
       page.subscriptionSummary = subscriptionData.summary || {};
+      page.subscriptionTransfer = subscriptionData.transfer || { enabled: false, fee: 0, history: [] };
     });
+    const transferTarget = ref(null);
+    const transferEmail = ref('');
+    const transferSubmitting = ref(false);
 
     async function resetSecurity() {
       if (!confirm('重置后旧订阅链接会失效，确定继续吗？')) return;
@@ -1440,6 +1444,7 @@ const SubscribePage = {
       local.subscribe = subscribe;
       local.subscriptions = normalizeCollection(subscriptionData.data || subscriptionData);
       local.subscriptionSummary = subscriptionData.summary || {};
+      local.subscriptionTransfer = subscriptionData.transfer || { enabled: false, fee: 0, history: [] };
     }
 
     async function freezeSubscription(subscription) {
@@ -1474,10 +1479,43 @@ const SubscribePage = {
       }
     }
 
+    function openTransfer(subscription) {
+      transferTarget.value = subscription;
+      transferEmail.value = '';
+    }
+
+    function closeTransfer() {
+      if (transferSubmitting.value) return;
+      transferTarget.value = null;
+      transferEmail.value = '';
+    }
+
+    async function submitTransfer(event) {
+      event.preventDefault();
+      const subscription = transferTarget.value;
+      const email = transferEmail.value.trim();
+      if (!subscription || !email || transferSubmitting.value) return;
+
+      transferSubmitting.value = true;
+      try {
+        await api.post('/user/subscription/transfer', { id: subscription.id, email });
+        await refreshSubscriptions();
+        transferTarget.value = null;
+        transferEmail.value = '';
+        toast('套餐已转让');
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        transferSubmitting.value = false;
+      }
+    }
+
     return () => {
       const subscribe = local.subscribe || state.subscribe || {};
       const servers = local.servers || [];
       const subscriptions = local.subscriptions || [];
+      const transfer = local.subscriptionTransfer || { enabled: false, fee: 0, history: [] };
+      const transferHistory = normalizeCollection(transfer.history);
       const usage = usageSummary(subscribe);
       const rows = servers.map((node, index) => [
         `#${index + 1}`,
@@ -1503,6 +1541,9 @@ const SubscribePage = {
           ]),
           h('div', { class: 'subscription-item-actions' }, [
             item.status === 1 && !item.is_primary ? miniButton('设为主订阅', { onClick: () => setPrimarySubscription(item) }) : null,
+            transfer.enabled && item.can_transfer
+              ? miniButton('转让套餐', { onClick: () => openTransfer(item) })
+              : null,
             item.status === 1 ? miniButton('冻结', { onClick: () => freezeSubscription(item) }) : null,
             item.status === 2 ? miniButton('解冻', { onClick: () => unfreezeSubscription(item) }) : null,
           ]),
@@ -1543,6 +1584,58 @@ const SubscribePage = {
           h('div', { class: 'section-title' }, [h('p', '实时列表'), h('h2', '可用节点'), miniButton('筛选', { href: '#/nodes' })]),
           h(DataTable, { headers: ['序号', '节点名称', '协议', '倍率', '状态'], rows, empty: '暂无可用节点' }),
         ]),
+        transfer.enabled || transferHistory.length ? h('section', { class: 'panel wide-panel subscription-transfer-history' }, [
+          h('div', { class: 'section-title' }, [
+            h('p', '套餐流转'),
+            h('h2', '转让记录'),
+            h('span', { class: 'transfer-fee-note' }, `单次费用 ${money(transfer.fee, currencySymbol())}`),
+          ]),
+          h(DataTable, {
+            headers: ['方向', '套餐', '对方账号', '费用', '时间'],
+            rows: transferHistory.map((record) => [
+              badge(record.direction === 'out' ? '转出' : '转入', record.direction === 'out' ? 'warn' : 'ok'),
+              record.plan_name || '-',
+              record.counterparty_email || '-',
+              record.direction === 'out' ? money(record.fee, currencySymbol()) : '-',
+              time(record.transferred_at),
+            ]),
+            empty: '暂无转让记录',
+          }),
+        ]) : null,
+        transferTarget.value ? h('div', {
+          class: 'subscription-transfer-overlay',
+          onClick: (event) => {
+            if (event.target === event.currentTarget) closeTransfer();
+          },
+        }, [
+          h('form', { class: 'subscription-transfer-dialog', onSubmit: submitTransfer }, [
+            h('div', { class: 'subscription-transfer-head' }, [
+              h('div', [h('small', '套餐转让'), h('h2', transferTarget.value.plan_name || '当前套餐')]),
+              h('button', { class: 'transfer-dialog-close', type: 'button', disabled: transferSubmitting.value, onClick: closeTransfer, 'aria-label': '关闭' }, '×'),
+            ]),
+            h('label', { class: 'subscription-transfer-field' }, [
+              h('span', '接收方邮箱'),
+              h('input', {
+                type: 'email',
+                required: true,
+                maxlength: '255',
+                autocomplete: 'email',
+                placeholder: '请输入已注册用户的邮箱',
+                value: transferEmail.value,
+                onInput: (event) => { transferEmail.value = event.target.value; },
+              }),
+            ]),
+            h('div', { class: 'subscription-transfer-summary' }, [
+              h('span', '本次转让费用'),
+              h('strong', money(transfer.fee, currencySymbol())),
+            ]),
+            h('p', { class: 'subscription-transfer-warning' }, '转让成功后套餐将立即归接收方所有，费用从你的余额扣除，此操作不可撤销。'),
+            h('div', { class: 'subscription-transfer-actions' }, [
+              h('button', { class: 'secondary-button', type: 'button', disabled: transferSubmitting.value, onClick: closeTransfer }, '取消'),
+              h('button', { class: 'primary-button', type: 'submit', disabled: transferSubmitting.value || !transferEmail.value.trim() }, transferSubmitting.value ? '转让中…' : '确认转让'),
+            ]),
+          ]),
+        ]) : null,
       ]);
     };
   },
