@@ -29,6 +29,8 @@ class SubscriptionController extends Controller
             'transfer' => [
                 'enabled' => $transferService->enabled(),
                 'fee' => $transferService->fee(),
+                'default_fee' => $transferService->fee(),
+                'fee_mode' => 'per_plan',
                 'history' => $transferService->history($user)
                     ->map(fn(SubscriptionTransfer $transfer) => $this->formatTransfer($transfer, (int) $user->id))
                     ->values(),
@@ -121,6 +123,7 @@ class SubscriptionController extends Controller
                 && !$subscription->isExpired()
                 && $subscription->frozen_at === null
                 && $subscription->freeze_ends_at === null,
+            'transfer_fee' => app(SubscriptionTransferService::class)->fee($plan),
             'is_primary' => $subscription->is_primary,
             'frozen_at' => $subscription->frozen_at,
             'freeze_ends_at' => $subscription->freeze_ends_at,
@@ -134,6 +137,7 @@ class SubscriptionController extends Controller
                 'transfer_enable' => $plan->transfer_enable,
                 'speed_limit' => $plan->speed_limit,
                 'device_limit' => $plan->device_limit,
+                'transfer_price' => $plan->transfer_price,
             ] : null,
         ];
     }

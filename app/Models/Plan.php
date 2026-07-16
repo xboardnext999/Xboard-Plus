@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property bool $renew 是否允许续费
  * @property bool $sell 是否允许购买
  * @property array|null $prices 价格配置
+ * @property int|null $transfer_price 套餐转让费用（分），NULL 继承系统默认费用
  * @property array|null $tags 标签
  * @property int $sort 排序
  * @property string|null $content 套餐描述
@@ -83,6 +84,7 @@ class Plan extends Model
         'renew',
         'content',
         'prices',
+        'transfer_price',
         'reset_traffic_method',
         'capacity_limit',
         'sell',
@@ -97,6 +99,7 @@ class Plan extends Model
         'updated_at' => 'timestamp',
         'group_id' => 'integer',
         'prices' => 'array',
+        'transfer_price' => 'integer',
         'tags' => 'array',
         'reset_traffic_method' => 'integer',
     ];

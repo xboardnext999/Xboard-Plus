@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\PlanSave;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\SubscriptionTransferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -66,6 +67,26 @@ class PlanController extends Controller
             return $this->fail([500, '创建失败']);
         }
         return $this->success(true);
+    }
+
+    public function transferPrice(Request $request)
+    {
+        $params = $request->validate([
+            'id' => 'required|integer|exists:v2_plan,id',
+            'transfer_price' => 'nullable|integer|min:0|max:100000000',
+        ]);
+
+        $plan = Plan::findOrFail($params['id']);
+        $plan->transfer_price = $request->input('transfer_price') === null
+            ? null
+            : (int) $params['transfer_price'];
+        $plan->save();
+
+        return $this->success([
+            'id' => (int) $plan->id,
+            'transfer_price' => $plan->transfer_price,
+            'effective_transfer_price' => app(SubscriptionTransferService::class)->fee($plan),
+        ]);
     }
 
     public function drop(Request $request)

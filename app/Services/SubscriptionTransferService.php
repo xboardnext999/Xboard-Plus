@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\ApiException;
 use App\Models\SubscriptionTransfer;
+use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserSubscription;
 use Illuminate\Support\Collection;
@@ -16,8 +17,12 @@ class SubscriptionTransferService
         return (bool) admin_setting('subscription_transfer_enable', false);
     }
 
-    public function fee(): int
+    public function fee(?Plan $plan = null): int
     {
+        if ($plan && $plan->transfer_price !== null) {
+            return max(0, (int) $plan->transfer_price);
+        }
+
         return max(0, (int) admin_setting('subscription_transfer_fee', 0));
     }
 
@@ -73,7 +78,7 @@ class SubscriptionTransferService
                 throw new ApiException('冻结中的套餐不能转让');
             }
 
-            $fee = $this->fee();
+            $fee = $this->fee($subscription->plan);
             if ((int) $sender->balance < $fee) {
                 throw new ApiException('余额不足，请充值后再转让');
             }
@@ -143,6 +148,7 @@ class SubscriptionTransferService
                 'transferred_at' => $transferredAt,
                 'metadata' => [
                     'direct_transfer' => true,
+                    'transfer_fee_source' => $subscription->plan?->transfer_price === null ? 'default' : 'plan',
                     'sender_balance_before' => $senderBalanceBefore,
                     'sender_balance_after' => $senderBalanceBefore - $fee,
                 ],

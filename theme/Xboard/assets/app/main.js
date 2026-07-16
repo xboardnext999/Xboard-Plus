@@ -1515,6 +1515,10 @@ const SubscribePage = {
       const servers = local.servers || [];
       const subscriptions = local.subscriptions || [];
       const transfer = local.subscriptionTransfer || { enabled: false, fee: 0, history: [] };
+      const defaultTransferFee = Number(transfer.default_fee ?? transfer.fee ?? 0);
+      const selectedTransferFee = transferTarget.value
+        ? Number(transferTarget.value.transfer_fee ?? defaultTransferFee)
+        : defaultTransferFee;
       const transferHistory = normalizeCollection(transfer.history);
       const usage = usageSummary(subscribe);
       const rows = servers.map((node, index) => [
@@ -1588,7 +1592,7 @@ const SubscribePage = {
           h('div', { class: 'section-title' }, [
             h('p', '套餐流转'),
             h('h2', '转让记录'),
-            h('span', { class: 'transfer-fee-note' }, `单次费用 ${money(transfer.fee, currencySymbol())}`),
+            h('span', { class: 'transfer-fee-note' }, `默认费用 ${money(defaultTransferFee, currencySymbol())}`),
           ]),
           h(DataTable, {
             headers: ['方向', '套餐', '对方账号', '费用', '时间'],
@@ -1627,7 +1631,7 @@ const SubscribePage = {
             ]),
             h('div', { class: 'subscription-transfer-summary' }, [
               h('span', '本次转让费用'),
-              h('strong', money(transfer.fee, currencySymbol())),
+              h('strong', money(selectedTransferFee, currencySymbol())),
             ]),
             h('p', { class: 'subscription-transfer-warning' }, '转让成功后套餐将立即归接收方所有，费用从你的余额扣除，此操作不可撤销。'),
             h('div', { class: 'subscription-transfer-actions' }, [
