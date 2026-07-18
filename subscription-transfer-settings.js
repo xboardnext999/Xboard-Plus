@@ -5,6 +5,7 @@
   var PANEL_ID = 'xboard-subscription-transfer-settings';
   var PLAN_PANEL_ID = 'xboard-plan-transfer-prices';
   var STYLE_ID = PANEL_ID + '-style';
+  var TOAST_STACK_ID = 'xst-toast-stack';
   var state = { loading: false, loaded: false };
   var planState = { loading: false, signature: '' };
 
@@ -68,9 +69,18 @@
       '.xst-save:disabled{cursor:not-allowed;opacity:.6}',
       '.xst-message{min-height:20px;margin-top:8px;font-size:12px;color:hsl(var(--muted-foreground))}',
       '.xst-message.is-error{color:hsl(var(--destructive))}',
+      '.xst-toast-stack{position:fixed;top:20px;right:20px;z-index:2147483000;display:grid;gap:8px;pointer-events:none}',
+      '.xst-toast{min-width:260px;max-width:360px;border:1px solid hsl(var(--border));border-radius:6px;background:hsl(var(--background));box-shadow:0 12px 32px rgba(15,23,42,.16);padding:12px 14px;font-size:13px;line-height:1.5;color:hsl(var(--foreground));opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease}',
+      '.xst-toast.is-visible{opacity:1;transform:translateY(0)}',
+      '.xst-toast.is-success{border-left:3px solid #16a34a}',
+      '.xst-toast.is-error{border-left:3px solid hsl(var(--destructive))}',
       '#' + PLAN_PANEL_ID + '{margin:16px 0;padding:16px;border:1px solid hsl(var(--border));border-radius:6px;background:hsl(var(--background))}',
       '#' + PLAN_PANEL_ID + ' *{box-sizing:border-box}',
       '.xst-plan-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}',
+      '.xst-plan-title-line{display:flex;align-items:center;flex-wrap:wrap;gap:8px}',
+      '.xst-plan-state{display:inline-flex;align-items:center;min-height:24px;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:500}',
+      '.xst-plan-state.is-on{background:rgba(22,163,74,.1);color:#15803d}',
+      '.xst-plan-state.is-off{background:rgba(220,38,38,.08);color:#b91c1c}',
       '.xst-plan-default{white-space:nowrap;border-radius:4px;background:hsl(var(--muted));padding:5px 8px;font-size:12px;color:hsl(var(--muted-foreground))}',
       '.xst-plan-list{display:grid;gap:0;border-top:1px solid hsl(var(--border))}',
       '.xst-plan-row{display:grid;grid-template-columns:minmax(160px,1fr) minmax(220px,360px) auto;align-items:center;gap:16px;min-height:64px;border-bottom:1px solid hsl(var(--border));padding:10px 0}',
@@ -119,6 +129,31 @@
     message.classList.toggle('is-error', Boolean(isError));
   }
 
+  function showToast(message, type) {
+    ensureStyle();
+    var stack = document.getElementById(TOAST_STACK_ID);
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = TOAST_STACK_ID;
+      stack.className = 'xst-toast-stack';
+      document.body.appendChild(stack);
+    }
+    var toast = document.createElement('div');
+    var toastType = type === 'error' ? 'error' : 'success';
+    toast.className = 'xst-toast is-' + toastType;
+    toast.setAttribute('role', toastType === 'error' ? 'alert' : 'status');
+    toast.textContent = message;
+    stack.appendChild(toast);
+    window.requestAnimationFrame(function () { toast.classList.add('is-visible'); });
+    window.setTimeout(function () {
+      toast.classList.remove('is-visible');
+      window.setTimeout(function () {
+        toast.remove();
+        if (!stack.childElementCount) stack.remove();
+      }, 220);
+    }, 3200);
+  }
+
   function setToggle(button, enabled) {
     button.setAttribute('aria-checked', enabled ? 'true' : 'false');
   }
@@ -148,7 +183,9 @@
     var feeInput = panel.querySelector('.xst-fee');
     var fee = Number(feeInput.value);
     if (!Number.isFinite(fee) || fee < 0) {
-      setMessage(panel, '\u8bf7\u8f93\u5165\u6709\u6548\u7684\u8f6c\u8ba9\u8d39\u7528', true);
+      var invalidMessage = '\u8bf7\u8f93\u5165\u6709\u6548\u7684\u8f6c\u8ba9\u8d39\u7528';
+      setMessage(panel, invalidMessage, true);
+      showToast(invalidMessage, 'error');
       feeInput.focus();
       return;
     }
@@ -169,8 +206,11 @@
       if (!response.ok || json.status === 'fail') throw new Error(json.message || '\u4fdd\u5b58\u5931\u8d25');
       feeInput.value = fee.toFixed(2);
       setMessage(panel, '\u5957\u9910\u8f6c\u8ba9\u8bbe\u7f6e\u5df2\u4fdd\u5b58', false);
+      showToast('\u5957\u9910\u8f6c\u8ba9\u8bbe\u7f6e\u5df2\u4fdd\u5b58', 'success');
     } catch (error) {
-      setMessage(panel, error.message || '\u4fdd\u5b58\u5931\u8d25', true);
+      var errorMessage = error.message || '\u4fdd\u5b58\u5931\u8d25';
+      setMessage(panel, errorMessage, true);
+      showToast(errorMessage, 'error');
     } finally {
       button.disabled = false;
       button.textContent = '\u4fdd\u5b58\u8bbe\u7f6e';
@@ -237,7 +277,7 @@
     return '\u72ec\u7acb\u8d39\u7528 \u00a5' + (Number(rawPrice) / 100).toFixed(2);
   }
 
-  async function savePlanPrice(row, planId, defaultFee) {
+  async function savePlanPrice(row, planId, defaultFee, transferEnabled) {
     var input = row.querySelector('.xst-plan-fee');
     var button = row.querySelector('.xst-plan-save');
     var raw = input.value.trim();
@@ -247,6 +287,7 @@
       if (!Number.isFinite(amount) || amount < 0) {
         input.focus();
         row.querySelector('.xst-plan-meta').textContent = '\u8bf7\u8f93\u5165\u6709\u6548\u7684\u8f6c\u8ba9\u8d39\u7528';
+        showToast('\u8bf7\u8f93\u5165\u6709\u6548\u7684\u8f6c\u8ba9\u8d39\u7528', 'error');
         return;
       }
       cents = Math.round(amount * 100);
@@ -265,15 +306,20 @@
         : cents;
       input.value = saved === null ? '' : (Number(saved) / 100).toFixed(2);
       row.querySelector('.xst-plan-meta').textContent = planPriceText(saved, defaultFee) + ' \u00b7 \u5df2\u4fdd\u5b58';
+      showToast(transferEnabled
+        ? '\u5957\u9910\u8f6c\u8ba9\u4ef7\u683c\u5df2\u4fdd\u5b58'
+        : '\u4ef7\u683c\u5df2\u4fdd\u5b58\uff1b\u5957\u9910\u8f6c\u8ba9\u603b\u5f00\u5173\u4ecd\u672a\u5f00\u542f', 'success');
     } catch (error) {
-      row.querySelector('.xst-plan-meta').textContent = error.message || '\u4fdd\u5b58\u5931\u8d25';
+      var errorMessage = error.message || '\u4fdd\u5b58\u5931\u8d25';
+      row.querySelector('.xst-plan-meta').textContent = errorMessage;
+      showToast(errorMessage, 'error');
     } finally {
       button.disabled = false;
       button.textContent = '\u4fdd\u5b58';
     }
   }
 
-  function buildPlanRow(plan, defaultFee) {
+  function buildPlanRow(plan, defaultFee, transferEnabled) {
     var row = document.createElement('div');
     row.className = 'xst-plan-row';
 
@@ -320,7 +366,7 @@
     save.className = 'xst-plan-save';
     save.type = 'button';
     save.textContent = '\u4fdd\u5b58';
-    save.addEventListener('click', function () { savePlanPrice(row, plan.id, defaultFee); });
+    save.addEventListener('click', function () { savePlanPrice(row, plan.id, defaultFee, transferEnabled); });
     input.addEventListener('keydown', function (event) {
       if (event.key === 'Enter') {
         event.preventDefault();
@@ -334,12 +380,12 @@
     return row;
   }
 
-  function buildPlanPanel(plans, defaultFee) {
+  function buildPlanPanel(plans, defaultFee, transferEnabled) {
     var panel = document.createElement('section');
     panel.id = PLAN_PANEL_ID;
     panel.innerHTML = [
       '<div class="xst-plan-head">',
-      '  <div><div class="xst-title">\u5957\u9910\u8f6c\u8ba9\u4ef7\u683c</div><div class="xst-description">\u4e3a\u6bcf\u4e2a\u5957\u9910\u8bbe\u7f6e\u5355\u6b21\u8f6c\u8ba9\u8d39\u7528\u3002\u7559\u7a7a\u7ee7\u627f\u7cfb\u7edf\u9ed8\u8ba4\uff0c\u586b 0 \u8868\u793a\u514d\u8d39\u8f6c\u8ba9\u3002</div></div>',
+      '  <div><div class="xst-plan-title-line"><div class="xst-title">\u5957\u9910\u8f6c\u8ba9\u4ef7\u683c</div><span class="xst-plan-state ' + (transferEnabled ? 'is-on' : 'is-off') + '">' + (transferEnabled ? '\u5957\u9910\u8f6c\u8ba9\u5df2\u5f00\u542f' : '\u5957\u9910\u8f6c\u8ba9\u672a\u5f00\u542f') + '</span></div><div class="xst-description">' + (transferEnabled ? '\u4e3a\u6bcf\u4e2a\u5957\u9910\u8bbe\u7f6e\u5355\u6b21\u8f6c\u8ba9\u8d39\u7528\u3002\u7559\u7a7a\u7ee7\u627f\u7cfb\u7edf\u9ed8\u8ba4\uff0c\u586b 0 \u8868\u793a\u514d\u8d39\u8f6c\u8ba9\u3002' : '\u5df2\u4fdd\u5b58\u7684\u5957\u9910\u4ef7\u683c\u4f1a\u4fdd\u7559\uff0c\u5f00\u542f\u201c\u7cfb\u7edf\u914d\u7f6e > \u8ba2\u9605\u8bbe\u7f6e > \u5957\u9910\u8f6c\u8ba9\u201d\u540e\u624d\u4f1a\u5728\u524d\u7aef\u751f\u6548\u3002') + '</div></div>',
       '  <div class="xst-plan-default">\u7cfb\u7edf\u9ed8\u8ba4 \u00a5' + (defaultFee / 100).toFixed(2) + '</div>',
       '</div>',
       '<div class="xst-plan-list"></div>'
@@ -351,7 +397,7 @@
       empty.textContent = '\u6682\u65e0\u5957\u9910';
       list.appendChild(empty);
     } else {
-      plans.forEach(function (plan) { list.appendChild(buildPlanRow(plan, defaultFee)); });
+      plans.forEach(function (plan) { list.appendChild(buildPlanRow(plan, defaultFee, transferEnabled)); });
     }
     return panel;
   }
@@ -377,7 +423,8 @@
       var plans = Array.isArray(results[0].data) ? results[0].data : [];
       var subscribe = results[1].data && results[1].data.subscribe ? results[1].data.subscribe : {};
       var defaultFee = Math.max(0, Number(subscribe.subscription_transfer_fee) || 0);
-      var panel = buildPlanPanel(plans, defaultFee);
+      var transferEnabled = Boolean(subscribe.subscription_transfer_enable);
+      var panel = buildPlanPanel(plans, defaultFee, transferEnabled);
       findPlanMount(input).insertAdjacentElement('beforebegin', panel);
     } catch (error) {
       if (!document.getElementById(PLAN_PANEL_ID) && isPlanPage()) {
