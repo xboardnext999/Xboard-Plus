@@ -104,6 +104,7 @@ class SubscriptionController extends Controller
     private function formatSubscription(UserSubscription $subscription): array
     {
         $plan = $subscription->plan;
+        $transferReason = $this->transferBlockReason($subscription);
 
         return [
             'id' => $subscription->id,
@@ -119,10 +120,8 @@ class SubscriptionController extends Controller
             'expired_at' => $subscription->expired_at,
             'status' => $subscription->status,
             'status_text' => $this->statusText($subscription->status),
-            'can_transfer' => (int) $subscription->status === UserSubscription::STATUS_ACTIVE
-                && !$subscription->isExpired()
-                && $subscription->frozen_at === null
-                && $subscription->freeze_ends_at === null,
+            'can_transfer' => $transferReason === null,
+            'transfer_reason' => $transferReason,
             'transfer_fee' => app(SubscriptionTransferService::class)->fee($plan),
             'is_primary' => $subscription->is_primary,
             'frozen_at' => $subscription->frozen_at,
@@ -140,6 +139,29 @@ class SubscriptionController extends Controller
                 'transfer_price' => $plan->transfer_price,
             ] : null,
         ];
+    }
+
+    private function transferBlockReason(UserSubscription $subscription): ?string
+    {
+        if ((int) $subscription->status === UserSubscription::STATUS_FROZEN
+            || $subscription->frozen_at !== null
+            || $subscription->freeze_ends_at !== null) {
+            return '套餐已冻结，请解冻后转让';
+        }
+
+        if ((int) $subscription->status === UserSubscription::STATUS_EXPIRED || $subscription->isExpired()) {
+            return '套餐已过期，无法转让';
+        }
+
+        if ((int) $subscription->status === UserSubscription::STATUS_CANCELLED) {
+            return '套餐已取消，无法转让';
+        }
+
+        if ((int) $subscription->status !== UserSubscription::STATUS_ACTIVE) {
+            return '当前套餐状态不可转让';
+        }
+
+        return null;
     }
 
     private function statusText(int $status): string

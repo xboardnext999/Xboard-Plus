@@ -1370,7 +1370,7 @@ const DashboardPage = {
           dashboardNodeStatusCard(servers.length, servers.length ? onlineCount : 0, offlineCount, nodeRegions),
         ]),
         h('section', { class: 'dashboard-quick-row' }, [
-          dashboardQuickCard({ href: '#/subscribe', icon: 'subscription1.webp', tone: 'subscribe', title: '我的订阅', description: '查看和管理订阅服务' }),
+          dashboardQuickCard({ href: '#/subscribe', icon: 'subscription1.webp', tone: 'subscribe', title: '我的订阅', description: '查看订阅、冻结与套餐转让' }),
           dashboardQuickCard({ href: '#/recharge', icon: 'wallet1.webp', tone: 'recharge', title: '充值余额', description: '快速充值，便捷支付' }),
           dashboardQuickCard({ href: '#/tickets', icon: 'tickets1.webp', tone: 'ticket', title: '工单中心', description: '提交工单，快速响应' }),
           dashboardQuickCard({ href: '#/knowledge', icon: 'knowledge1.webp', tone: 'knowledge', title: '使用教程', description: '新手指南，快速上手' }),
@@ -1523,7 +1523,11 @@ const SubscribePage = {
         ? Number(transferTarget.value.transfer_fee ?? defaultTransferFee)
         : defaultTransferFee;
       const transferHistory = normalizeCollection(transfer.history);
-      const hasTransferableSubscription = subscriptions.some((item) => item.status === 1 && item.can_transfer);
+      const transferableSubscription = subscriptions.find((item) => item.can_transfer);
+      const hasTransferableSubscription = Boolean(transferableSubscription);
+      const transferUnavailableReason = !transfer.enabled
+        ? '管理员暂未开启套餐转让'
+        : (subscriptions[0]?.transfer_reason || '当前没有符合条件的有效套餐');
       const usage = usageSummary(subscribe);
       const rows = servers.map((node, index) => [
         `#${index + 1}`,
@@ -1549,14 +1553,12 @@ const SubscribePage = {
           ]),
           h('div', { class: 'subscription-item-actions' }, [
             item.status === 1 && !item.is_primary ? miniButton('设为主订阅', { onClick: () => setPrimarySubscription(item) }) : null,
-            item.status === 1
-              ? (transfer.enabled && item.can_transfer
-                ? miniButton('转让套餐', { onClick: () => openTransfer(item) })
-                : miniButton('不可转让', {
-                  disabled: true,
-                  title: transfer.enabled ? '当前套餐不符合转让条件' : '管理员暂未开启套餐转让',
-                }))
-              : null,
+            transfer.enabled && item.can_transfer
+              ? miniButton('转让套餐', { onClick: () => openTransfer(item) })
+              : miniButton('不可转让', {
+                disabled: true,
+                title: transfer.enabled ? (item.transfer_reason || '当前套餐不符合转让条件') : '管理员暂未开启套餐转让',
+              }),
             item.status === 1 ? miniButton('冻结', { onClick: () => freezeSubscription(item) }) : null,
             item.status === 2 ? miniButton('解冻', { onClick: () => unfreezeSubscription(item) }) : null,
           ]),
@@ -1602,13 +1604,18 @@ const SubscribePage = {
             h('p', '套餐流转'),
             h('h2', '套餐转让'),
             h('span', { class: 'transfer-fee-note' }, `默认费用 ${money(defaultTransferFee, currencySymbol())}`),
+            miniButton(hasTransferableSubscription ? '立即转让' : '不可转让', {
+              disabled: !transfer.enabled || !hasTransferableSubscription,
+              title: hasTransferableSubscription ? '转让当前套餐' : transferUnavailableReason,
+              onClick: hasTransferableSubscription ? () => openTransfer(transferableSubscription) : undefined,
+            }),
           ]),
           h('div', { class: ['subscription-transfer-status', transfer.enabled ? 'is-enabled' : 'is-disabled'] }, [
             h('strong', transfer.enabled
               ? (hasTransferableSubscription ? '转让功能已开启' : '暂无可转让套餐')
               : '管理员暂未开启套餐转让'),
             h('span', transfer.enabled
-              ? (hasTransferableSubscription ? '请在上方套餐卡片点击“转让套餐”。' : '当前没有符合条件的有效套餐。')
+              ? (hasTransferableSubscription ? '点击“立即转让”或套餐卡片上的入口即可操作。' : transferUnavailableReason)
               : '开启后，符合条件的套餐会在上方显示转让入口。'),
           ]),
           transferHistory.length ? h(DataTable, {
