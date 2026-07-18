@@ -1939,6 +1939,17 @@ td {
   border-color: rgba(255, 255, 255, 0.34);
 }
 
+.mini-button:disabled,
+.mini-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.mini-button:disabled:hover,
+.mini-button[aria-disabled="true"]:hover {
+  border-color: var(--line-strong);
+}
+
 .icon-button {
   width: 36px;
   padding: 0;
@@ -2042,6 +2053,36 @@ td {
 
 .subscription-transfer-history {
   margin-top: 18px;
+}
+
+.subscription-transfer-status {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 16px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(99, 91, 255, 0.08);
+}
+
+.subscription-transfer-status.is-disabled {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.subscription-transfer-status strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.subscription-transfer-status span,
+.subscription-transfer-empty {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.subscription-transfer-empty {
+  padding: 18px 0 4px;
+  text-align: center;
 }
 
 .transfer-fee-note {

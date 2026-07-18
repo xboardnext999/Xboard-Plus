@@ -619,6 +619,9 @@ function miniButton(text, attrs = {}) {
     class: ['mini-button', attrs.class],
     href: attrs.href,
     type: attrs.href ? undefined : (attrs.type || 'button'),
+    disabled: attrs.href ? undefined : attrs.disabled,
+    title: attrs.title,
+    'aria-disabled': attrs.disabled ? 'true' : undefined,
     onClick: attrs.onClick,
   }, text);
 }
@@ -1520,6 +1523,7 @@ const SubscribePage = {
         ? Number(transferTarget.value.transfer_fee ?? defaultTransferFee)
         : defaultTransferFee;
       const transferHistory = normalizeCollection(transfer.history);
+      const hasTransferableSubscription = subscriptions.some((item) => item.status === 1 && item.can_transfer);
       const usage = usageSummary(subscribe);
       const rows = servers.map((node, index) => [
         `#${index + 1}`,
@@ -1545,8 +1549,13 @@ const SubscribePage = {
           ]),
           h('div', { class: 'subscription-item-actions' }, [
             item.status === 1 && !item.is_primary ? miniButton('设为主订阅', { onClick: () => setPrimarySubscription(item) }) : null,
-            transfer.enabled && item.can_transfer
-              ? miniButton('转让套餐', { onClick: () => openTransfer(item) })
+            item.status === 1
+              ? (transfer.enabled && item.can_transfer
+                ? miniButton('转让套餐', { onClick: () => openTransfer(item) })
+                : miniButton('不可转让', {
+                  disabled: true,
+                  title: transfer.enabled ? '当前套餐不符合转让条件' : '管理员暂未开启套餐转让',
+                }))
               : null,
             item.status === 1 ? miniButton('冻结', { onClick: () => freezeSubscription(item) }) : null,
             item.status === 2 ? miniButton('解冻', { onClick: () => unfreezeSubscription(item) }) : null,
@@ -1588,13 +1597,21 @@ const SubscribePage = {
           h('div', { class: 'section-title' }, [h('p', '实时列表'), h('h2', '可用节点'), miniButton('筛选', { href: '#/nodes' })]),
           h(DataTable, { headers: ['序号', '节点名称', '协议', '倍率', '状态'], rows, empty: '暂无可用节点' }),
         ]),
-        transfer.enabled || transferHistory.length ? h('section', { class: 'panel wide-panel subscription-transfer-history' }, [
+        h('section', { class: 'panel wide-panel subscription-transfer-history' }, [
           h('div', { class: 'section-title' }, [
             h('p', '套餐流转'),
-            h('h2', '转让记录'),
+            h('h2', '套餐转让'),
             h('span', { class: 'transfer-fee-note' }, `默认费用 ${money(defaultTransferFee, currencySymbol())}`),
           ]),
-          h(DataTable, {
+          h('div', { class: ['subscription-transfer-status', transfer.enabled ? 'is-enabled' : 'is-disabled'] }, [
+            h('strong', transfer.enabled
+              ? (hasTransferableSubscription ? '转让功能已开启' : '暂无可转让套餐')
+              : '管理员暂未开启套餐转让'),
+            h('span', transfer.enabled
+              ? (hasTransferableSubscription ? '请在上方套餐卡片点击“转让套餐”。' : '当前没有符合条件的有效套餐。')
+              : '开启后，符合条件的套餐会在上方显示转让入口。'),
+          ]),
+          transferHistory.length ? h(DataTable, {
             headers: ['方向', '套餐', '对方账号', '费用', '时间'],
             rows: transferHistory.map((record) => [
               badge(record.direction === 'out' ? '转出' : '转入', record.direction === 'out' ? 'warn' : 'ok'),
@@ -1604,8 +1621,8 @@ const SubscribePage = {
               time(record.transferred_at),
             ]),
             empty: '暂无转让记录',
-          }),
-        ]) : null,
+          }) : h('div', { class: 'subscription-transfer-empty' }, '暂无转让记录'),
+        ]),
         transferTarget.value ? h('div', {
           class: 'subscription-transfer-overlay',
           onClick: (event) => {
