@@ -70,7 +70,8 @@
       '.xst-message{min-height:20px;margin-top:8px;font-size:12px;color:hsl(var(--muted-foreground))}',
       '.xst-message.is-error{color:hsl(var(--destructive))}',
       '.xst-toast-stack{position:fixed;top:20px;right:20px;z-index:2147483000;display:grid;gap:8px;pointer-events:none}',
-      '.xst-toast{min-width:260px;max-width:360px;border:1px solid hsl(var(--border));border-radius:6px;background:hsl(var(--background));box-shadow:0 12px 32px rgba(15,23,42,.16);padding:12px 14px;font-size:13px;line-height:1.5;color:hsl(var(--foreground));opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease}',
+      '.xst-toast{min-width:260px;max-width:360px;border:1px solid #dbe2ea;border-radius:6px;background:#fff;box-shadow:0 12px 32px rgba(15,23,42,.16);padding:12px 14px;font-size:13px;line-height:1.5;color:#0f172a;opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease}',
+      '.dark .xst-toast,[data-theme="dark"] .xst-toast{border-color:#334155;background:#111827;color:#f8fafc}',
       '.xst-toast.is-visible{opacity:1;transform:translateY(0)}',
       '.xst-toast.is-success{border-left:3px solid #16a34a}',
       '.xst-toast.is-error{border-left:3px solid hsl(var(--destructive))}',
@@ -136,20 +137,21 @@
       stack = document.createElement('div');
       stack.id = TOAST_STACK_ID;
       stack.className = 'xst-toast-stack';
-      document.body.appendChild(stack);
+      stack.setAttribute('aria-live', 'polite');
+      stack.setAttribute('aria-atomic', 'true');
+      document.documentElement.appendChild(stack);
     }
     var toast = document.createElement('div');
     var toastType = type === 'error' ? 'error' : 'success';
-    toast.className = 'xst-toast is-' + toastType;
+    toast.className = 'xst-toast is-' + toastType + ' is-visible';
     toast.setAttribute('role', toastType === 'error' ? 'alert' : 'status');
     toast.textContent = message;
     stack.appendChild(toast);
-    window.requestAnimationFrame(function () { toast.classList.add('is-visible'); });
     window.setTimeout(function () {
       toast.classList.remove('is-visible');
       window.setTimeout(function () {
-        toast.remove();
-        if (!stack.childElementCount) stack.remove();
+        if (toast.isConnected) toast.remove();
+        if (stack.isConnected && !stack.childElementCount) stack.remove();
       }, 220);
     }, 3200);
   }
