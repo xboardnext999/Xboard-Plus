@@ -136,20 +136,22 @@ onMounted(load);
         </section>
       </div>
 
+    </div>
+
+    <div class="dashboard-queue-jobs-grid">
       <section class="panel dashboard-queue">
         <div class="panel-head"><div><span class="eyebrow">QUEUE HEALTH</span><h2>队列状态</h2><p>Horizon 进程、吞吐与积压情况。</p></div><span class="queue-state" :class="{off:!queue.status}"><i></i>{{ queueState }}</span></div>
         <div class="queue-metrics"><div><span>工作进程</span><strong>{{ number(queue.processes) }}</strong></div><div><span>每分钟作业</span><strong>{{ number(queue.jobsPerMinute) }}</strong></div><div><span>近期作业</span><strong>{{ number(queue.recentJobs) }}</strong></div><div :class="{danger:Number(queue.failedJobs)>0}"><span>失败作业</span><strong>{{ number(queue.failedJobs) }}</strong></div></div>
         <div class="queue-highlight"><div><span>最大等待</span><strong>{{ queueWait > 0 ? `${queueWait.toFixed(1)} 秒` : '无等待' }}</strong></div><div><span>暂停主进程</span><strong>{{ number(queue.pausedMasters) }}</strong></div></div>
         <div class="workload-list"><div class="workload-title"><strong>队列负载</strong><span>{{ workload.length }} 个队列</span></div><div v-for="item in workload" :key="item.name"><span><strong>{{ item.name }}</strong><small>{{ number(item.processes) }} 个进程</small></span><b>{{ number(item.length) }} 待处理</b><em>{{ Number(item.wait || 0).toFixed(1) }}s</em></div><div v-if="!workload.length" class="queue-empty">暂无队列负载数据</div></div>
       </section>
-    </div>
-
-    <section class="panel dashboard-jobs">
+      <section class="panel dashboard-jobs">
       <div class="panel-head"><div><span class="eyebrow">JOB DETAILS</span><h2>作业详情</h2><p>最近失败作业及异常摘要，点击可查看完整负载与错误信息。</p></div><span class="job-count">{{ failedJobs.length }} 条最近记录</span></div>
       <div v-if="loading" class="dashboard-skeleton jobs"></div>
       <div v-else-if="failedJobs.length" class="job-table"><div class="job-table-head"><span>作业</span><span>连接 / 队列</span><span>失败时间</span><span>异常摘要</span><span></span></div><button v-for="job in failedJobs" :key="job.id" @click="selectedJob=job"><span><strong>{{ jobName(job) }}</strong><small>{{ job.id }}</small></span><span><strong>{{ job.connection || 'redis' }}</strong><small>{{ job.queue || 'default' }}</small></span><span>{{ jobTime(job.failed_at) }}</span><span class="job-error">{{ jobException(job).split('\n')[0] }}</span><AppIcon name="ChevronRight" :size="17" /></button></div>
       <div v-else class="job-success"><AppIcon name="CircleCheckBig" :size="22" /><div><strong>没有失败作业</strong><span>当前队列运行记录正常。</span></div></div>
-    </section>
+      </section>
+    </div>
 
     <div v-if="selectedJob" class="modal-backdrop" @click.self="selectedJob=null"><section class="modal-card dashboard-job-detail"><div class="panel-head"><div><span class="eyebrow">FAILED JOB</span><h2>{{ jobName(selectedJob) }}</h2><p>{{ selectedJob.connection || 'redis' }} / {{ selectedJob.queue || 'default' }} · {{ jobTime(selectedJob.failed_at) }}</p></div><button class="btn btn-ghost" @click="selectedJob=null">关闭</button></div><div class="job-detail-meta"><span>作业 ID<strong>{{ selectedJob.id || '—' }}</strong></span><span>状态<strong>{{ selectedJob.status || '失败' }}</strong></span><span>连接<strong>{{ selectedJob.connection || 'redis' }}</strong></span><span>队列<strong>{{ selectedJob.queue || 'default' }}</strong></span></div><h3>异常信息</h3><pre class="job-exception">{{ jobException(selectedJob) }}</pre><h3>作业负载</h3><pre class="job-payload">{{ jobPayload(selectedJob) }}</pre></section></div>
   </section>
