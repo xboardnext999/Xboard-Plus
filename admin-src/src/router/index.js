@@ -5,10 +5,11 @@ import GroupBuy from '../pages/GroupBuy.vue';
 import ResourcePage from '../pages/ResourcePage.vue';
 import Login from '../pages/Login.vue';
 import SystemConfig from '../pages/SystemConfig.vue';
+import PluginManagement from '../pages/PluginManagement.vue';
 import { flatMenus } from '../config/menu';
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/finance/plan?xgb=group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -32,6 +33,7 @@ const router = createRouter({
           meta: { title: '仪表盘' },
         },
         { path: 'system/config', name: 'SystemConfig', component: SystemConfig, meta: { title: '系统配置', group: '系统管理' } },
+        { path: 'system/plugin', name: 'PluginManagement', component: PluginManagement, meta: { title: '插件管理', group: '系统管理' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',

@@ -114,12 +114,32 @@ textarea {
 .settings-loading { display: grid; place-items: center; min-height: 320px; color: var(--muted); }
 .template-editor { grid-template-columns: 1fr; }
 .template-editor textarea { min-height: 280px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.plugin-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.plugin-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 180px 180px auto; align-items: end; gap: 12px; }
+.compact-field { gap: 6px; }
+.compact-field select { height: 40px; }
+.plugin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.plugin-card { display: flex; flex-direction: column; gap: 15px; }
+.plugin-card-head { display: flex; align-items: flex-start; gap: 12px; }
+.plugin-icon { display: grid; place-items: center; flex: 0 0 auto; width: 43px; height: 43px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); }
+.plugin-identity { min-width: 0; flex: 1; }
+.plugin-identity > div { display: flex; align-items: baseline; gap: 8px; }
+.plugin-identity h2 { overflow: hidden; margin: 0; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.plugin-identity span, .plugin-identity code { color: var(--muted); font-size: 11px; }
+.plugin-description { min-height: 42px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.plugin-meta { display: flex; flex-wrap: wrap; gap: 7px; }
+.plugin-meta span { border-radius: 999px; background: var(--panel-soft); color: var(--muted); padding: 4px 8px; font-size: 11px; }
+.plugin-meta .upgrade-label { background: #fff7d6; color: #a16207; }
+.plugin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 2px; }
+.readme-content { max-height: 60vh; overflow: auto; margin: 0; border-radius: 10px; background: var(--panel-soft); padding: 16px; color: var(--text); font-family: inherit; font-size: 13px; line-height: 1.65; white-space: pre-wrap; }
 
 @media (max-width: 900px) {
   .metric-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .settings-shell { grid-template-columns: 1fr; }
   .settings-nav { position: static; display: flex; overflow-x: auto; }
   .settings-nav button { flex: 0 0 auto; }
+  .plugin-grid { grid-template-columns: 1fr; }
+  .plugin-toolbar { grid-template-columns: 1fr 1fr; }
 }
 
 button {
@@ -652,4 +672,6 @@ td small {
   .modal-card { padding: 16px; }
   .settings-actions { width: 100%; }
   .settings-actions .btn { flex: 1; }
+  .plugin-toolbar { grid-template-columns: 1fr; }
+  .plugin-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
