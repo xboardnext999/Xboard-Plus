@@ -6,6 +6,13 @@ import { get } from '../services/http';
 
 const stats = ref({});
 const orders = ref([]);
+const nodeRank = ref([]);
+const userRank = ref([]);
+const queue = ref({});
+const workload = ref([]);
+const failedJobs = ref([]);
+const rankTab = ref('node');
+const selectedJob = ref(null);
 const loading = ref(true);
 const refreshing = ref(false);
 const error = ref('');
@@ -30,6 +37,18 @@ const chartPoints = computed(() => orders.value.map((item, index) => {
 const total14 = computed(() => orders.value.reduce((sum, item) => sum + Number(item.paid_total || 0), 0));
 const count14 = computed(() => orders.value.reduce((sum, item) => sum + Number(item.paid_count || 0), 0));
 const nodeStatus = computed(() => Number(stats.value.onlineNodes || 0) > 0 ? '运行正常' : '暂无在线节点');
+const activeRank = computed(() => rankTab.value === 'node' ? nodeRank.value : userRank.value);
+const rankMax = computed(() => Math.max(...activeRank.value.map(item => Number(item.value || 0)), 1));
+const queueWait = computed(() => {
+  const values = Object.values(queue.value.wait || {}); return values.length ? Math.max(...values.map(Number)) : 0;
+});
+const queueState = computed(() => queue.value.status ? '运行中' : '未运行');
+const jobName = job => job?.name || job?.payload?.displayName || job?.payload?.job || '未知作业';
+const jobTime = value => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—';
+const jobException = job => String(job?.exception || job?.payload?.exception || '暂无异常详情');
+const jobPayload = job => {
+  const value = job?.payload || {}; try { return JSON.stringify(value, null, 2); } catch { return String(value); }
+};
 
 function range() {
   const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 13);
@@ -39,9 +58,16 @@ function range() {
 async function load() {
   refreshing.value = true; error.value = '';
   try {
-    const [overview, orderData] = await Promise.all([get('/stat/getStats'), get(`/stat/getOrder?${range()}`)]);
+    const [overview, orderData, nodes, users, queueStats, queueWorkload, jobs] = await Promise.all([
+      get('/stat/getStats'), get(`/stat/getOrder?${range()}`),
+      get('/stat/getTrafficRank?type=node'), get('/stat/getTrafficRank?type=user'),
+      get('/system/getQueueStats'), get('/system/getQueueWorkload'),
+      get('/system/getHorizonFailedJobs?current=1&page_size=10'),
+    ]);
     stats.value = overview || {};
     orders.value = orderData?.list || [];
+    nodeRank.value = nodes || []; userRank.value = users || [];
+    queue.value = queueStats || {}; workload.value = queueWorkload || []; failedJobs.value = jobs || [];
     updatedAt.value = new Date();
   } catch (e) { error.value = e.message || '仪表盘数据加载失败'; }
   finally { loading.value = false; refreshing.value = false; }
@@ -95,5 +121,30 @@ onMounted(load);
       <section class="panel dashboard-runtime"><div class="panel-head"><div><span class="eyebrow">REALTIME</span><h2>实时运行</h2></div><span class="live-badge"><i></i>10 分钟内</span></div><div class="runtime-grid"><div><AppIcon name="Radio" :size="17" /><span>在线用户<strong>{{ number(stats.onlineUsers) }}</strong></span></div><div><AppIcon name="MonitorSmartphone" :size="17" /><span>在线设备<strong>{{ number(stats.onlineDevices) }}</strong></span></div><div><AppIcon name="Network" :size="17" /><span>在线节点<strong>{{ number(stats.onlineNodes) }}</strong></span></div><div><AppIcon name="Database" :size="17" /><span>累计流量<strong>{{ traffic(stats.totalTraffic?.total) }}</strong></span></div></div></section>
       <section class="panel dashboard-traffic-split"><div class="panel-head"><div><span class="eyebrow">TRAFFIC</span><h2>本月流量构成</h2></div><strong>{{ traffic(stats.monthTraffic?.total) }}</strong></div><div class="traffic-bar"><i :style="{width:`${Number(stats.monthTraffic?.total) ? Number(stats.monthTraffic?.download || 0) / Number(stats.monthTraffic.total) * 100 : 0}%`}"></i></div><div class="traffic-legend"><span><i class="download"></i>下载<strong>{{ traffic(stats.monthTraffic?.download) }}</strong></span><span><i class="upload"></i>上传<strong>{{ traffic(stats.monthTraffic?.upload) }}</strong></span></div></section>
     </div>
+
+    <div class="dashboard-ops-grid">
+      <section class="panel dashboard-ranking">
+        <div class="panel-head"><div><span class="eyebrow">TRAFFIC RANKING</span><h2>近 7 天流量排行</h2><p>识别高负载节点与高用量用户。</p></div><div class="ranking-tabs"><button :class="{active:rankTab==='node'}" @click="rankTab='node'">节点</button><button :class="{active:rankTab==='user'}" @click="rankTab='user'">用户</button></div></div>
+        <div v-if="loading" class="dashboard-skeleton ranking"></div>
+        <div v-else-if="activeRank.length" class="ranking-list"><div v-for="(item,index) in activeRank" :key="`${rankTab}-${item.id}`"><b :class="{top:index<3}">{{ index + 1 }}</b><div class="ranking-name"><strong>{{ item.name }}</strong><small>#{{ item.id }}</small><i><em :style="{width:`${Number(item.value||0)/rankMax*100}%`}"></em></i></div><div class="ranking-value"><strong>{{ traffic(item.value) }}</strong><small :class="growthClass(item.change)">{{ growth(item.change) }}</small></div></div></div>
+        <div v-else class="settings-loading">近 7 天暂无{{ rankTab==='node'?'节点':'用户' }}流量记录</div>
+      </section>
+
+      <section class="panel dashboard-queue">
+        <div class="panel-head"><div><span class="eyebrow">QUEUE HEALTH</span><h2>队列状态</h2><p>Horizon 进程、吞吐与积压情况。</p></div><span class="queue-state" :class="{off:!queue.status}"><i></i>{{ queueState }}</span></div>
+        <div class="queue-metrics"><div><span>工作进程</span><strong>{{ number(queue.processes) }}</strong></div><div><span>每分钟作业</span><strong>{{ number(queue.jobsPerMinute) }}</strong></div><div><span>近期作业</span><strong>{{ number(queue.recentJobs) }}</strong></div><div :class="{danger:Number(queue.failedJobs)>0}"><span>失败作业</span><strong>{{ number(queue.failedJobs) }}</strong></div></div>
+        <div class="queue-highlight"><div><span>最大等待</span><strong>{{ queueWait > 0 ? `${queueWait.toFixed(1)} 秒` : '无等待' }}</strong></div><div><span>暂停主进程</span><strong>{{ number(queue.pausedMasters) }}</strong></div></div>
+        <div class="workload-list"><div class="workload-title"><strong>队列负载</strong><span>{{ workload.length }} 个队列</span></div><div v-for="item in workload" :key="item.name"><span><strong>{{ item.name }}</strong><small>{{ number(item.processes) }} 个进程</small></span><b>{{ number(item.length) }} 待处理</b><em>{{ Number(item.wait || 0).toFixed(1) }}s</em></div><div v-if="!workload.length" class="queue-empty">暂无队列负载数据</div></div>
+      </section>
+    </div>
+
+    <section class="panel dashboard-jobs">
+      <div class="panel-head"><div><span class="eyebrow">JOB DETAILS</span><h2>作业详情</h2><p>最近失败作业及异常摘要，点击可查看完整负载与错误信息。</p></div><span class="job-count">{{ failedJobs.length }} 条最近记录</span></div>
+      <div v-if="loading" class="dashboard-skeleton jobs"></div>
+      <div v-else-if="failedJobs.length" class="job-table"><div class="job-table-head"><span>作业</span><span>连接 / 队列</span><span>失败时间</span><span>异常摘要</span><span></span></div><button v-for="job in failedJobs" :key="job.id" @click="selectedJob=job"><span><strong>{{ jobName(job) }}</strong><small>{{ job.id }}</small></span><span><strong>{{ job.connection || 'redis' }}</strong><small>{{ job.queue || 'default' }}</small></span><span>{{ jobTime(job.failed_at) }}</span><span class="job-error">{{ jobException(job).split('\n')[0] }}</span><AppIcon name="ChevronRight" :size="17" /></button></div>
+      <div v-else class="job-success"><AppIcon name="CircleCheckBig" :size="22" /><div><strong>没有失败作业</strong><span>当前队列运行记录正常。</span></div></div>
+    </section>
+
+    <div v-if="selectedJob" class="modal-backdrop" @click.self="selectedJob=null"><section class="modal-card dashboard-job-detail"><div class="panel-head"><div><span class="eyebrow">FAILED JOB</span><h2>{{ jobName(selectedJob) }}</h2><p>{{ selectedJob.connection || 'redis' }} / {{ selectedJob.queue || 'default' }} · {{ jobTime(selectedJob.failed_at) }}</p></div><button class="btn btn-ghost" @click="selectedJob=null">关闭</button></div><div class="job-detail-meta"><span>作业 ID<strong>{{ selectedJob.id || '—' }}</strong></span><span>状态<strong>{{ selectedJob.status || '失败' }}</strong></span><span>连接<strong>{{ selectedJob.connection || 'redis' }}</strong></span><span>队列<strong>{{ selectedJob.queue || 'default' }}</strong></span></div><h3>异常信息</h3><pre class="job-exception">{{ jobException(selectedJob) }}</pre><h3>作业负载</h3><pre class="job-payload">{{ jobPayload(selectedJob) }}</pre></section></div>
   </section>
 </template>
