@@ -3,6 +3,8 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { menuGroups } from '../config/menu';
 import AppIcon from './AppIcon.vue';
+defineProps({ collapsed: Boolean });
+defineEmits(['close']);
 
 const route = useRoute();
 
@@ -10,7 +12,7 @@ const activePath = computed(() => route.fullPath);
 </script>
 
 <template>
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" :class="{ collapsed }">
     <RouterLink class="brand" to="/dashboard">
       <span class="brand-mark">X</span>
       <span>Xboard Plus</span>
@@ -27,7 +29,7 @@ const activePath = computed(() => route.fullPath);
           :to="item.path"
         >
           <AppIcon :name="item.icon" :size="18" />
-          <span>{{ item.title }}</span>
+          <span>{{ item.title }}</span><em v-if="collapsed">{{ item.title }}</em>
         </RouterLink>
       </section>
     </nav>

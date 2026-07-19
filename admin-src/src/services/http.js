@@ -74,6 +74,17 @@ export function get(path, params = {}) {
   return request(`${path}${query ? `?${query}` : ''}`);
 }
 
+export async function getEnvelope(path, params = {}) {
+  const query = toQuery(params);
+  const headers = { Accept: 'application/json', 'Content-Language': localStorage.getItem('i18nextLng') || 'zh-CN' };
+  const token = authToken(); if (token) headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+  const response = await fetch(adminApi(`${path}${query ? `?${query}` : ''}`), { credentials: 'include', headers });
+  const json = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403) window.dispatchEvent(new CustomEvent('admin:unauthorized'));
+  if (!response.ok || json.status === 'fail') throw new Error(json.message || '请求失败');
+  return json;
+}
+
 export function post(path, body = {}) {
   return request(path, {
     method: 'POST',

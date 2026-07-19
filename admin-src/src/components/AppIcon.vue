@@ -1,6 +1,8 @@
 <script setup>
 import {
   Activity,
+  AlertTriangle,
+  ArrowRight,
   BadgePercent,
   BookOpen,
   Box,
@@ -43,6 +45,8 @@ const props = defineProps({
 
 const icons = {
   Activity,
+  AlertTriangle,
+  ArrowRight,
   BadgePercent,
   BookOpen,
   Box,
