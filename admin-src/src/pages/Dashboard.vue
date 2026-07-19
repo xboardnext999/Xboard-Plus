@@ -49,6 +49,14 @@ const jobException = job => String(job?.exception || job?.payload?.exception || 
 const jobPayload = job => {
   const value = job?.payload || {}; try { return JSON.stringify(value, null, 2); } catch { return String(value); }
 };
+const queueMeta = {
+  default: ['通用任务', '未指定专属队列的后台任务'], order_handle: ['订单处理', '开通订单与超时取消'],
+  traffic_fetch: ['流量采集', '采集节点上报的用户流量'], stat: ['统计入库', '记录用户与节点流量统计'],
+  user_alive_sync: ['在线同步', '同步用户在线状态'], send_email: ['邮件通知', '验证码、提醒与工单邮件'],
+  send_email_mass: ['群发邮件', '批量用户邮件通知'], send_telegram: ['Telegram', '机器人消息通知'],
+  node_sync: ['节点同步', '同步用户权限与节点配置'],
+};
+const queueInfo = name => queueMeta[name] || [name, '后台异步任务'];
 
 function range() {
   const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 13);
@@ -147,13 +155,13 @@ onMounted(load);
         <div v-if="queue.mode==='worker'" class="queue-metrics"><div><span>工作进程</span><strong>{{ number(queue.processes) }}</strong></div><div><span>待处理</span><strong>{{ number(queue.readyJobs) }}</strong></div><div><span>执行中</span><strong>{{ number(queue.reservedJobs) }}</strong></div><div><span>延迟任务</span><strong>{{ number(queue.delayedJobs) }}</strong></div></div>
         <div v-else class="queue-metrics"><div><span>工作进程</span><strong>{{ number(queue.processes) }}</strong></div><div><span>每分钟作业</span><strong>{{ queueMetric(queue.jobsPerMinute) }}</strong></div><div><span>近期作业</span><strong>{{ queueMetric(queue.recentJobs) }}</strong></div><div :class="{danger:Number(queue.failedJobs)>0}"><span>失败作业</span><strong>{{ number(queue.failedJobs) }}</strong></div></div>
         <div class="queue-highlight"><div><span>{{ queue.waitUnit==='jobs'?'最大队列积压':'最大等待' }}</span><strong>{{ queueWaitText }}</strong></div><div><span>{{ queue.mode==='worker'?'累计失败作业':'暂停主进程' }}</span><strong>{{ queue.mode==='worker'?number(queue.failedJobs):queueMetric(queue.pausedMasters) }}</strong></div></div>
-        <div class="workload-list"><div class="workload-title"><strong>队列负载</strong><span>{{ workload.length }} 个队列</span></div><div v-for="item in workload" :key="item.name"><span><strong>{{ item.name }}</strong><small>{{ number(item.processes) }} 个工作进程</small></span><b>{{ number(item.length) }} 待处理</b><em v-if="queue.mode==='worker'">执行 {{ number(item.reserved) }} · 延迟 {{ number(item.delayed) }}</em><em v-else>{{ Number(item.wait || 0).toFixed(1) }}s</em></div><div v-if="!workload.length" class="queue-empty">暂无队列负载数据</div></div>
+        <div class="workload-list"><div class="workload-title"><strong>业务队列</strong><span>{{ workload.length }} 个队列共享 {{ number(queue.processes) }} 个 Worker</span></div><div v-if="workload.length" class="queue-business-grid"><article v-for="item in workload" :key="item.name" :class="{busy:Number(item.length)+Number(item.reserved)+Number(item.delayed)>0}"><div><strong>{{ queueInfo(item.name)[0] }}</strong><code>{{ item.name }}</code></div><p>{{ queueInfo(item.name)[1] }}</p><span><b>{{ number(item.length) }}</b> 等待</span><span><b>{{ number(item.reserved) }}</b> 执行</span><span><b>{{ number(item.delayed) }}</b> 延迟</span></article></div><div v-else class="queue-empty">暂无队列负载数据</div></div>
       </section>
       <section class="panel dashboard-jobs">
       <div class="panel-head"><div><span class="eyebrow">JOB DETAILS</span><h2>作业详情</h2><p>失败作业会持久保存；点击可查看完整负载与错误信息。</p></div><span class="job-count">{{ failedJobs.length }} 条最近记录</span></div>
       <div v-if="loading" class="dashboard-skeleton jobs"></div>
       <div v-else-if="failedJobs.length" class="job-table"><div class="job-table-head"><span>作业</span><span>连接 / 队列</span><span>失败时间</span><span>异常摘要</span><span></span></div><button v-for="job in failedJobs" :key="job.id" @click="selectedJob=job"><span><strong>{{ jobName(job) }}</strong><small>{{ job.id }}</small></span><span><strong>{{ job.connection || 'redis' }}</strong><small>{{ job.queue || 'default' }}</small></span><span>{{ jobTime(job.failed_at) }}</span><span class="job-error">{{ jobException(job).split('\n')[0] }}</span><AppIcon name="ChevronRight" :size="17" /></button></div>
-      <div v-else class="job-success"><AppIcon name="CircleCheckBig" :size="22" /><div><strong>没有失败作业</strong><span>当前队列运行记录正常。</span></div></div>
+      <div v-else class="job-empty-dashboard"><div class="job-success"><span class="job-success-icon"><AppIcon name="CircleCheckBig" :size="24" /></span><div><strong>队列运行正常</strong><span>当前没有失败或需要人工介入的作业。</span></div></div><div class="job-empty-metrics"><span>运行模式<strong>{{ queue.modeLabel || '任务队列' }}</strong></span><span>失败记录<strong>{{ number(queue.failedJobs) }} 条</strong></span><span>成功作业<strong>完成即释放</strong></span><span>异常记录<strong>持久保存</strong></span></div><div class="job-scope"><strong>当前 Worker主要处理</strong><div><span>订单开通</span><span>流量采集</span><span>统计入库</span><span>节点同步</span><span>邮件通知</span><span>Telegram</span></div><p><AppIcon name="Info" :size="14" />普通 Worker不保存成功作业历史；作业详情用于定位失败任务及异常负载。</p></div></div>
       </section>
     </div>
 
