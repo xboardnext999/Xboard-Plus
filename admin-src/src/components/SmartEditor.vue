@@ -37,7 +37,7 @@ function jsonValue(field) { const current = value(field); return typeof current 
   <div class="smart-form">
     <label v-for="field in entries" :key="field.key" class="field" :class="{ 'field-wide': ['textarea', 'json'].includes(kind(field)) }">
       <span>{{ label(field) }}</span>
-      <select v-if="kind(field) === 'boolean'" :disabled="field.readonly" :value="Number(value(field) || 0)" @change="update(field.key, Number($event.target.value))"><option :value="1">是</option><option :value="0">否</option></select>
+      <ToggleSwitch v-if="kind(field) === 'boolean'" :model-value="Number(value(field) || 0)" :true-value="1" :false-value="0" :disabled="field.readonly" :on-label="field.onLabel || '已开启'" :off-label="field.offLabel || '已关闭'" @update:model-value="update(field.key, $event)" />
       <select v-else-if="kind(field) === 'select'" :disabled="field.readonly" :value="value(field)" @change="update(field.key, field.options.find((option) => String(option.value) === $event.target.value)?.value)"><option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</option></select>
       <textarea v-else-if="kind(field) === 'lines'" :disabled="field.readonly" :value="lineValue(field)" rows="5" @input="update(field.key, $event.target.value.split('\n').map((line) => line.trim()).filter(Boolean))" />
       <textarea v-else-if="kind(field) === 'textarea'" :disabled="field.readonly" :value="value(field) || ''" rows="5" @input="update(field.key, $event.target.value)" />
