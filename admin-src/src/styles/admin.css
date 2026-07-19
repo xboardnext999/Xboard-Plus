@@ -104,9 +104,22 @@ textarea {
 .smart-form textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 .smart-form small { color: var(--muted); font-weight: 400; }
 .code-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.settings-shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 16px; align-items: start; }
+.settings-nav { position: sticky; top: 18px; display: grid; gap: 5px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel-bg); padding: 8px; }
+.settings-nav button { display: flex; align-items: center; gap: 10px; min-height: 40px; border-radius: 9px; background: transparent; color: var(--muted); padding: 0 11px; text-align: left; font-size: 13px; font-weight: 700; }
+.settings-nav button:hover, .settings-nav button.active { background: var(--brand-soft); color: var(--brand); }
+.settings-content { min-height: 560px; }
+.settings-head { margin-bottom: 20px; }
+.settings-actions { display: flex; gap: 9px; }
+.settings-loading { display: grid; place-items: center; min-height: 320px; color: var(--muted); }
+.template-editor { grid-template-columns: 1fr; }
+.template-editor textarea { min-height: 280px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 
 @media (max-width: 900px) {
   .metric-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settings-shell { grid-template-columns: 1fr; }
+  .settings-nav { position: static; display: flex; overflow-x: auto; }
+  .settings-nav button { flex: 0 0 auto; }
 }
 
 button {
@@ -637,4 +650,6 @@ td small {
     flex-direction: column;
   }
   .modal-card { padding: 16px; }
+  .settings-actions { width: 100%; }
+  .settings-actions .btn { flex: 1; }
 }
