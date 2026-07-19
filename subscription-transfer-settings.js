@@ -8,10 +8,15 @@
   var PAGE_ID = 'xboard-plan-settings-page';
   var STYLE_ID = 'xboard-plan-settings-style';
   var TOAST_STACK_ID = 'xst-toast-stack';
+  var CACHE_KEY = 'xboard-plan-settings-cache-v1';
+  var CACHE_TTL = 5 * 60 * 1000;
   var state = {
     active: false,
+    explicitActivation: false,
     activating: false,
     loading: false,
+    cache: null,
+    request: null,
     navContainer: null,
     nativeSubscriptionItem: null,
     contentBranch: null,
@@ -65,6 +70,40 @@
         return json.data;
       });
     });
+  }
+
+  function readCache() {
+    if (state.cache) return state.cache;
+    try {
+      var cached = JSON.parse(window.sessionStorage.getItem(CACHE_KEY) || 'null');
+      if (cached && cached.subscribe && Array.isArray(cached.plans)) state.cache = cached;
+    } catch (error) {
+      state.cache = null;
+    }
+    return state.cache;
+  }
+
+  function writeCache(cache) {
+    state.cache = cache;
+    try {
+      window.sessionStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    } catch (error) {
+      // Keep the in-memory cache when sessionStorage is unavailable.
+    }
+  }
+
+  function cacheIsFresh(cache) {
+    return cache && Number(cache.updatedAt) > Date.now() - CACHE_TTL;
+  }
+
+  function normalizePageData(results) {
+    var configData = results[0] || {};
+    var planPayload = results[1] || [];
+    return {
+      updatedAt: Date.now(),
+      subscribe: configData.subscribe || {},
+      plans: Array.isArray(planPayload) ? planPayload : (planPayload.data || planPayload.items || [])
+    };
   }
 
   function ensureStyle() {
@@ -252,7 +291,10 @@
     state.nativeSubscriptionItem = navigation.item;
     bindNavigationReset(navigation.container);
     var existing = document.getElementById(TAB_ID);
-    if (existing && existing.isConnected) return existing;
+    if (existing && existing.isConnected) {
+      existing.classList.toggle('xst-active', state.active && state.explicitActivation);
+      return existing;
+    }
 
     var template = findInactiveNavigationItem(navigation) || navigation.item;
     var sourceText = String(template.textContent || '').trim();
@@ -277,7 +319,7 @@
     });
     navigation.item.insertAdjacentElement('afterend', tab);
 
-    if (state.active) tab.classList.add('xst-active');
+    if (state.active && state.explicitActivation) tab.classList.add('xst-active');
     return tab;
   }
 
@@ -322,6 +364,7 @@
   function requestOpen() {
     if (!isSystemPage()) return;
     state.active = true;
+    state.explicitActivation = true;
     state.activating = true;
     var navigation = findSystemNavigation();
     if (navigation && navigation.item) navigation.item.click();
@@ -332,7 +375,7 @@
   }
 
   function mountCustomView(attempt) {
-    if (!state.active || !isSystemPage()) return;
+    if (!state.active || !state.explicitActivation || !isSystemPage()) return;
     ensureTab();
     var contentBranch = locateContentBranch();
     if (!contentBranch) {
@@ -352,6 +395,7 @@
 
   function deactivateCustomView() {
     state.active = false;
+    state.explicitActivation = false;
     restoreNativeContent();
     var tab = document.getElementById(TAB_ID);
     if (tab) tab.classList.remove('xst-active');
@@ -413,6 +457,14 @@
       plan.transfer_price = price;
       input.value = price === null ? '' : (price / 100).toFixed(2);
       row.querySelector('.xst-plan-meta').textContent = planPriceText(plan, defaultFee);
+      var cache = readCache();
+      if (cache && Array.isArray(cache.plans)) {
+        cache.plans.forEach(function (cachedPlan) {
+          if (String(cachedPlan.id) === String(plan.id)) cachedPlan.transfer_price = price;
+        });
+        cache.updatedAt = Date.now();
+        writeCache(cache);
+      }
       showToast('\u5957\u9910\u300c' + (plan.name || plan.id) + '\u300d\u7684\u8f6c\u8ba9\u4ef7\u683c\u5df2\u4fdd\u5b58', 'success');
     }).catch(function (error) {
       showToast(error.message || '\u4fdd\u5b58\u5931\u8d25', 'error');
@@ -450,37 +502,53 @@
     return page;
   }
 
+  function renderPageData(page, data) {
+    if (!page || !page.isConnected || !data) return;
+    var subscribe = data.subscribe || {};
+    var defaultFee = Number(subscribe.subscription_transfer_fee) || 0;
+    var enabled = subscribe.subscription_transfer_enable === true ||
+      Number(subscribe.subscription_transfer_enable) === 1;
+    setToggle(page.querySelector('.xst-toggle'), enabled);
+    page.querySelector('.xst-fee').value = (defaultFee / 100).toFixed(2);
+    var plans = Array.isArray(data.plans) ? data.plans : [];
+    var list = page.querySelector('.xst-plan-list');
+    list.innerHTML = '';
+    if (!plans.length) {
+      list.innerHTML = '<div class="xst-plan-empty">\u6682\u65e0\u5957\u9910</div>';
+    } else {
+      plans.forEach(function (plan) { list.appendChild(buildPlanRow(plan, defaultFee)); });
+    }
+    setMessage(page, '', false);
+  }
+
   function loadPage(page) {
-    if (state.loading) return;
-    state.loading = true;
-    setMessage(page, '\u6b63\u5728\u8bfb\u53d6\u8bbe\u7f6e...', false);
-    Promise.all([
-      requestJson(configUrl('fetch') + '?key=subscribe', { headers: headers() }),
-      requestJson(adminUrl('plan', 'fetch'), { headers: headers() })
-    ]).then(function (results) {
-      if (!page.isConnected) return;
-      var configData = results[0] || {};
-      var subscribe = configData.subscribe || {};
-      var defaultFee = Number(subscribe.subscription_transfer_fee) || 0;
-      setToggle(page.querySelector('.xst-toggle'), Boolean(subscribe.subscription_transfer_enable));
-      page.querySelector('.xst-fee').value = (defaultFee / 100).toFixed(2);
-      var planPayload = results[1] || [];
-      var plans = Array.isArray(planPayload) ? planPayload : (planPayload.data || planPayload.items || []);
-      var list = page.querySelector('.xst-plan-list');
-      list.innerHTML = '';
-      if (!plans.length) {
-        list.innerHTML = '<div class="xst-plan-empty">\u6682\u65e0\u5957\u9910</div>';
-      } else {
-        plans.forEach(function (plan) { list.appendChild(buildPlanRow(plan, defaultFee)); });
-      }
-      setMessage(page, '', false);
+    var cached = readCache();
+    if (cached) renderPageData(page, cached);
+    if (cacheIsFresh(cached)) return;
+    if (!cached) setMessage(page, '\u6b63\u5728\u8bfb\u53d6\u8bbe\u7f6e...', false);
+
+    if (!state.request) {
+      state.loading = true;
+      state.request = Promise.all([
+        requestJson(configUrl('fetch') + '?key=subscribe', { headers: headers() }),
+        requestJson(adminUrl('plan', 'fetch'), { headers: headers() })
+      ]).then(function (results) {
+        var data = normalizePageData(results);
+        writeCache(data);
+        return data;
+      }).finally(function () {
+        state.loading = false;
+        state.request = null;
+      });
+    }
+
+    state.request.then(function (data) {
+      if (page.isConnected) renderPageData(page, data);
     }).catch(function (error) {
-      if (!page.isConnected) return;
+      if (!page.isConnected || cached) return;
       setMessage(page, error.message || '\u8bfb\u53d6\u5931\u8d25', true);
       var list = page.querySelector('.xst-plan-list');
       if (list) list.innerHTML = '<div class="xst-plan-empty">\u5957\u9910\u8bfb\u53d6\u5931\u8d25</div>';
-    }).finally(function () {
-      state.loading = false;
     });
   }
 
@@ -488,6 +556,7 @@
     var button = page.querySelector('.xst-primary-save');
     var input = page.querySelector('.xst-fee');
     var fee = Number(input.value);
+    var enabled = page.querySelector('.xst-toggle').getAttribute('aria-checked') === 'true';
     if (!Number.isFinite(fee) || fee < 0) {
       var invalidMessage = '\u8bf7\u8f93\u5165\u6709\u6548\u7684\u9ed8\u8ba4\u8f6c\u8ba9\u8d39\u7528';
       setMessage(page, invalidMessage, true);
@@ -502,11 +571,19 @@
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({
-        subscription_transfer_enable: page.querySelector('.xst-toggle').getAttribute('aria-checked') === 'true' ? 1 : 0,
+        subscription_transfer_enable: enabled ? 1 : 0,
         subscription_transfer_fee: Math.round(fee * 100)
       })
     }).then(function () {
       input.value = fee.toFixed(2);
+      var cache = readCache();
+      if (cache) {
+        cache.subscribe = cache.subscribe || {};
+        cache.subscribe.subscription_transfer_enable = enabled ? 1 : 0;
+        cache.subscribe.subscription_transfer_fee = Math.round(fee * 100);
+        cache.updatedAt = Date.now();
+        writeCache(cache);
+      }
       setMessage(page, '\u5957\u9910\u8bbe\u7f6e\u5df2\u4fdd\u5b58', false);
       showToast('\u5957\u9910\u8bbe\u7f6e\u5df2\u4fdd\u5b58', 'success');
     }).catch(function (error) {
@@ -536,7 +613,7 @@
     }
     ensureStyle();
     ensureTab();
-    if (state.active && !document.getElementById(PAGE_ID)) mountCustomView(0);
+    if (state.active && state.explicitActivation && !document.getElementById(PAGE_ID)) mountCustomView(0);
   }
 
   var scheduled = false;
@@ -550,8 +627,7 @@
   }
 
   window.addEventListener('hashchange', function () {
-    if (state.active && !isSubscriptionPage()) deactivateCustomView();
-    if (!isSystemPage()) deactivateCustomView();
+    if (!state.activating) deactivateCustomView();
     window.setTimeout(scheduleEnhance, 40);
   });
   new MutationObserver(scheduleEnhance).observe(document.documentElement, { childList: true, subtree: true });
