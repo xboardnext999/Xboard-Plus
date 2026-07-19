@@ -165,6 +165,10 @@
     return /^#\/config\/system(?:\/|\?|$)/.test(window.location.hash || '');
   }
 
+  function isSubscriptionPage() {
+    return /^#\/config\/system\/subscribe(?:\/|\?|$)/.test(window.location.hash || '');
+  }
+
   function findSystemNavigation() {
     var item = document.querySelector('a[href="#/config/system/subscribe"]');
     if (!item || !item.parentElement || item.parentElement.tagName !== 'NAV') return null;
@@ -180,25 +184,87 @@
     Array.prototype.forEach.call(node.children, stripCloneState);
   }
 
+  function findInactiveNavigationItem(navigation) {
+    return Array.prototype.slice.call(navigation.container.children).find(function (candidate) {
+      return candidate !== navigation.item &&
+        candidate.nodeType === 1 &&
+        candidate.tagName === navigation.item.tagName &&
+        candidate.id !== TAB_ID &&
+        candidate.getAttribute('aria-current') !== 'page' &&
+        candidate.getAttribute('aria-selected') !== 'true';
+    }) || null;
+  }
+
+  function setTabLabel(tab, sourceText) {
+    var labels = [sourceText, '\u8ba2\u9605\u8bbe\u7f6e'].filter(Boolean);
+    var walker = document.createTreeWalker(tab, NodeFilter.SHOW_TEXT);
+    var fallback = null;
+    while (walker.nextNode()) {
+      var textNode = walker.currentNode;
+      var text = String(textNode.nodeValue || '').trim();
+      if (!text) continue;
+      if (!fallback) fallback = textNode;
+      if (labels.indexOf(text) !== -1) {
+        textNode.nodeValue = textNode.nodeValue.replace(text, '\u5957\u9910\u8bbe\u7f6e');
+        return;
+      }
+    }
+    if (fallback) {
+      var fallbackText = String(fallback.nodeValue || '').trim();
+      fallback.nodeValue = fallback.nodeValue.replace(fallbackText, '\u5957\u9910\u8bbe\u7f6e');
+    }
+  }
+
+  function setPackageIcon(tab) {
+    var icon = tab.querySelector('svg');
+    if (!icon) {
+      icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      tab.insertBefore(icon, tab.firstChild);
+    }
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '2');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    icon.innerHTML = [
+      '<path d="m7.5 4.27 9 5.15"></path>',
+      '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>',
+      '<path d="m3.3 7 8.7 5 8.7-5"></path>',
+      '<path d="M12 22V12"></path>'
+    ].join('');
+  }
+
+  function bindNavigationReset(container) {
+    if (container.__xstNavigationBound) return;
+    container.__xstNavigationBound = true;
+    container.addEventListener('click', function (event) {
+      var customTab = document.getElementById(TAB_ID);
+      if (state.activating || (customTab && customTab.contains(event.target))) return;
+      deactivateCustomView();
+    }, true);
+  }
+
   function ensureTab() {
     var navigation = findSystemNavigation();
     if (!navigation) return null;
     state.navContainer = navigation.container;
     state.nativeSubscriptionItem = navigation.item;
+    bindNavigationReset(navigation.container);
     var existing = document.getElementById(TAB_ID);
     if (existing && existing.isConnected) return existing;
 
-    var tab = navigation.item.cloneNode(true);
+    var template = findInactiveNavigationItem(navigation) || navigation.item;
+    var sourceText = String(template.textContent || '').trim();
+    var tab = template.cloneNode(true);
     stripCloneState(tab);
     tab.id = TAB_ID;
+    tab.removeAttribute('href');
     tab.setAttribute('role', 'button');
     tab.setAttribute('tabindex', '0');
     tab.setAttribute('aria-label', '\u5957\u9910\u8bbe\u7f6e');
-    var clonedLabel = Array.prototype.slice.call(tab.querySelectorAll('*')).find(function (node) {
-      return node.childElementCount === 0 && String(node.textContent || '').trim() === '\u8ba2\u9605\u8bbe\u7f6e';
-    });
-    if (clonedLabel) clonedLabel.textContent = '\u5957\u9910\u8bbe\u7f6e';
-    else tab.textContent = '\u5957\u9910\u8bbe\u7f6e';
+    setTabLabel(tab, sourceText);
+    setPackageIcon(tab);
 
     function openFromEvent(event) {
       event.preventDefault();
@@ -211,14 +277,6 @@
     });
     navigation.item.insertAdjacentElement('afterend', tab);
 
-    if (!navigation.container.__xstNavigationBound) {
-      navigation.container.__xstNavigationBound = true;
-      navigation.container.addEventListener('click', function (event) {
-        var customTab = document.getElementById(TAB_ID);
-        if (state.activating || (customTab && customTab.contains(event.target))) return;
-        if (state.active) deactivateCustomView();
-      }, true);
-    }
     if (state.active) tab.classList.add('xst-active');
     return tab;
   }
@@ -492,6 +550,7 @@
   }
 
   window.addEventListener('hashchange', function () {
+    if (state.active && !isSubscriptionPage()) deactivateCustomView();
     if (!isSystemPage()) deactivateCustomView();
     window.setTimeout(scheduleEnhance, 40);
   });
