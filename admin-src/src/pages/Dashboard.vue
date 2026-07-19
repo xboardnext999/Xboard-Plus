@@ -11,7 +11,6 @@ const userRank = ref([]);
 const queue = ref({});
 const workload = ref([]);
 const failedJobs = ref([]);
-const rankTab = ref('node');
 const selectedJob = ref(null);
 const loading = ref(true);
 const refreshing = ref(false);
@@ -37,8 +36,7 @@ const chartPoints = computed(() => orders.value.map((item, index) => {
 const total14 = computed(() => orders.value.reduce((sum, item) => sum + Number(item.paid_total || 0), 0));
 const count14 = computed(() => orders.value.reduce((sum, item) => sum + Number(item.paid_count || 0), 0));
 const nodeStatus = computed(() => Number(stats.value.onlineNodes || 0) > 0 ? '运行正常' : '暂无在线节点');
-const activeRank = computed(() => rankTab.value === 'node' ? nodeRank.value : userRank.value);
-const rankMax = computed(() => Math.max(...activeRank.value.map(item => Number(item.value || 0)), 1));
+const rankMax = items => Math.max(...items.map(item => Number(item.value || 0)), 1);
 const queueWait = computed(() => {
   const values = Object.values(queue.value.wait || {}); return values.length ? Math.max(...values.map(Number)) : 0;
 });
@@ -123,12 +121,20 @@ onMounted(load);
     </div>
 
     <div class="dashboard-ops-grid">
-      <section class="panel dashboard-ranking">
-        <div class="panel-head"><div><span class="eyebrow">TRAFFIC RANKING</span><h2>近 7 天流量排行</h2><p>识别高负载节点与高用量用户。</p></div><div class="ranking-tabs"><button :class="{active:rankTab==='node'}" @click="rankTab='node'">节点</button><button :class="{active:rankTab==='user'}" @click="rankTab='user'">用户</button></div></div>
-        <div v-if="loading" class="dashboard-skeleton ranking"></div>
-        <div v-else-if="activeRank.length" class="ranking-list"><div v-for="(item,index) in activeRank" :key="`${rankTab}-${item.id}`"><b :class="{top:index<3}">{{ index + 1 }}</b><div class="ranking-name"><strong>{{ item.name }}</strong><small>#{{ item.id }}</small><i><em :style="{width:`${Number(item.value||0)/rankMax*100}%`}"></em></i></div><div class="ranking-value"><strong>{{ traffic(item.value) }}</strong><small :class="growthClass(item.change)">{{ growth(item.change) }}</small></div></div></div>
-        <div v-else class="settings-loading">近 7 天暂无{{ rankTab==='node'?'节点':'用户' }}流量记录</div>
-      </section>
+      <div class="dashboard-rank-pair">
+        <section class="panel dashboard-ranking">
+          <div class="panel-head"><div><span class="eyebrow">NODE TRAFFIC</span><h2>节点流量排行</h2><p>近 7 天高负载节点。</p></div><RouterLink to="/node/list" class="ranking-link">节点管理 <AppIcon name="ChevronRight" :size="14" /></RouterLink></div>
+          <div v-if="loading" class="dashboard-skeleton ranking"></div>
+          <div v-else-if="nodeRank.length" class="ranking-list"><div v-for="(item,index) in nodeRank" :key="`node-${item.id}`"><b :class="{top:index<3}">{{ index + 1 }}</b><div class="ranking-name"><strong>{{ item.name }}</strong><small>#{{ item.id }}</small><i><em :style="{width:`${Number(item.value||0)/rankMax(nodeRank)*100}%`}"></em></i></div><div class="ranking-value"><strong>{{ traffic(item.value) }}</strong><small :class="growthClass(item.change)">{{ growth(item.change) }}</small></div></div></div>
+          <div v-else class="settings-loading">近 7 天暂无节点流量记录</div>
+        </section>
+        <section class="panel dashboard-ranking user-ranking">
+          <div class="panel-head"><div><span class="eyebrow">USER TRAFFIC</span><h2>用户流量排行</h2><p>近 7 天高用量用户。</p></div><RouterLink to="/user/list" class="ranking-link">用户管理 <AppIcon name="ChevronRight" :size="14" /></RouterLink></div>
+          <div v-if="loading" class="dashboard-skeleton ranking"></div>
+          <div v-else-if="userRank.length" class="ranking-list"><div v-for="(item,index) in userRank" :key="`user-${item.id}`"><b :class="{top:index<3}">{{ index + 1 }}</b><div class="ranking-name"><strong>{{ item.name }}</strong><small>#{{ item.id }}</small><i><em :style="{width:`${Number(item.value||0)/rankMax(userRank)*100}%`}"></em></i></div><div class="ranking-value"><strong>{{ traffic(item.value) }}</strong><small :class="growthClass(item.change)">{{ growth(item.change) }}</small></div></div></div>
+          <div v-else class="settings-loading">近 7 天暂无用户流量记录</div>
+        </section>
+      </div>
 
       <section class="panel dashboard-queue">
         <div class="panel-head"><div><span class="eyebrow">QUEUE HEALTH</span><h2>队列状态</h2><p>Horizon 进程、吞吐与积压情况。</p></div><span class="queue-state" :class="{off:!queue.status}"><i></i>{{ queueState }}</span></div>
