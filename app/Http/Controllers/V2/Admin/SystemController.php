@@ -7,6 +7,9 @@ use App\Models\AdminAuditLog;
 use App\Utils\CacheKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Horizon\Contracts\JobRepository;
 use Laravel\Horizon\Contracts\MasterSupervisorRepository;
 use Laravel\Horizon\Contracts\MetricsRepository;
@@ -29,8 +32,8 @@ class SystemController extends Controller
 
     public function getQueueWorkload()
     {
-        if (!$this->horizonAvailable()) {
-            return $this->success([]);
+        if (!$this->getHorizonStatus()) {
+            return $this->success($this->getWorkerQueueWorkload());
         }
 
         try {
@@ -67,8 +70,8 @@ class SystemController extends Controller
 
     public function getQueueStats()
     {
-        if (!$this->horizonAvailable()) {
-            return $this->success($this->emptyQueueStats());
+        if (!$this->getHorizonStatus()) {
+            return $this->success($this->getWorkerQueueStats());
         }
 
         try {
@@ -85,6 +88,10 @@ class SystemController extends Controller
                 'queueWithMaxThroughput' => app(MetricsRepository::class)->queueWithMaximumThroughput(),
                 'recentJobs' => app(JobRepository::class)->countRecent(),
                 'status' => $this->getHorizonStatus(),
+                'mode' => 'horizon',
+                'modeLabel' => 'Laravel Horizon',
+                'metricsAvailable' => true,
+                'waitUnit' => 'seconds',
                 'wait' => collect(app(WaitTimeCalculator::class)->calculate())->take(1),
             ];
             return $this->success($data);
@@ -167,13 +174,8 @@ class SystemController extends Controller
         $pageSize = max(10, (int) $request->input('page_size', 20));
         $offset = ($current - 1) * $pageSize;
 
-        if (!$this->horizonAvailable()) {
-            return response()->json([
-                'data' => [],
-                'total' => 0,
-                'current' => $current,
-                'page_size' => $pageSize,
-            ]);
+        if (!$this->getHorizonStatus()) {
+            return $this->getWorkerFailedJobs($current, $pageSize);
         }
 
         try {
@@ -222,6 +224,108 @@ class SystemController extends Controller
             'status' => false,
             'wait' => collect(),
         ];
+    }
+
+    private function queueNames(): array
+    {
+        return ['default', 'order_handle', 'traffic_fetch', 'stat', 'user_alive_sync', 'send_email', 'send_email_mass', 'send_telegram', 'node_sync'];
+    }
+
+    private function queueWorkerProcessCount(): int
+    {
+        $count = 0;
+        foreach (glob('/proc/[0-9]*/cmdline') ?: [] as $file) {
+            $command = @file_get_contents($file);
+            if ($command !== false && str_contains(str_replace("\0", ' ', $command), 'artisan queue:work')) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    private function redisQueueCounts(string $name): array
+    {
+        try {
+            $redis = Redis::connection(config('queue.connections.redis.connection', 'default'));
+            return [
+                'ready' => (int) $redis->llen("queues:{$name}"),
+                'reserved' => (int) $redis->zcard("queues:{$name}:reserved"),
+                'delayed' => (int) $redis->zcard("queues:{$name}:delayed"),
+            ];
+        } catch (\Throwable) {
+            return ['ready' => 0, 'reserved' => 0, 'delayed' => 0];
+        }
+    }
+
+    private function getWorkerQueueWorkload(): array
+    {
+        $processes = $this->queueWorkerProcessCount();
+        return collect($this->queueNames())->map(function (string $name) use ($processes) {
+            $counts = $this->redisQueueCounts($name);
+            return [
+                'name' => $name,
+                'length' => $counts['ready'],
+                'ready' => $counts['ready'],
+                'reserved' => $counts['reserved'],
+                'delayed' => $counts['delayed'],
+                'processes' => $processes,
+                'wait' => 0,
+            ];
+        })->values()->all();
+    }
+
+    private function getWorkerQueueStats(): array
+    {
+        $workload = collect($this->getWorkerQueueWorkload());
+        $processes = $this->queueWorkerProcessCount();
+        $failed = Schema::hasTable(config('queue.failed.table', 'failed_jobs'))
+            ? DB::table(config('queue.failed.table', 'failed_jobs'))->count()
+            : 0;
+
+        return [
+            'failedJobs' => $failed,
+            'jobsPerMinute' => null,
+            'pausedMasters' => null,
+            'processes' => $processes,
+            'recentJobs' => null,
+            'status' => $processes > 0,
+            'mode' => 'worker',
+            'modeLabel' => 'Redis Queue Worker',
+            'metricsAvailable' => false,
+            'waitUnit' => 'jobs',
+            'wait' => $workload->pluck('length', 'name')->all(),
+            'readyJobs' => $workload->sum('ready'),
+            'reservedJobs' => $workload->sum('reserved'),
+            'delayedJobs' => $workload->sum('delayed'),
+            'queueWithMaxRuntime' => null,
+            'queueWithMaxThroughput' => null,
+        ];
+    }
+
+    private function getWorkerFailedJobs(int $current, int $pageSize)
+    {
+        $table = config('queue.failed.table', 'failed_jobs');
+        if (!Schema::hasTable($table)) {
+            return response()->json(['data' => [], 'total' => 0, 'current' => $current, 'page_size' => $pageSize]);
+        }
+
+        $query = DB::table($table)->orderByDesc('id');
+        $total = (clone $query)->count();
+        $jobs = $query->forPage($current, $pageSize)->get()->map(function ($job) {
+            $payload = json_decode($job->payload ?? '{}', true);
+            return [
+                'id' => $job->uuid ?? $job->id,
+                'name' => $payload['displayName'] ?? $payload['job'] ?? '未知作业',
+                'connection' => $job->connection ?? config('queue.default'),
+                'queue' => $job->queue ?? 'default',
+                'payload' => is_array($payload) ? $payload : [],
+                'exception' => $job->exception ?? '',
+                'failed_at' => $job->failed_at ?? null,
+                'status' => 'failed',
+            ];
+        })->values();
+
+        return response()->json(['data' => $jobs, 'total' => $total, 'current' => $current, 'page_size' => $pageSize]);
     }
 
 }

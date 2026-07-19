@@ -41,6 +41,8 @@ const queueWait = computed(() => {
   const values = Object.values(queue.value.wait || {}); return values.length ? Math.max(...values.map(Number)) : 0;
 });
 const queueState = computed(() => queue.value.status ? '运行中' : '未运行');
+const queueMetric = value => value === null || value === undefined ? '不适用' : number(value);
+const queueWaitText = computed(() => queue.value.waitUnit === 'jobs' ? `${number(queueWait.value)} 个任务` : queueWait.value > 0 ? `${queueWait.value.toFixed(1)} 秒` : '无等待');
 const jobName = job => job?.name || job?.payload?.displayName || job?.payload?.job || '未知作业';
 const jobTime = value => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—';
 const jobException = job => String(job?.exception || job?.payload?.exception || '暂无异常详情');
@@ -140,13 +142,15 @@ onMounted(load);
 
     <div class="dashboard-queue-jobs-grid">
       <section class="panel dashboard-queue">
-        <div class="panel-head"><div><span class="eyebrow">QUEUE HEALTH</span><h2>队列状态</h2><p>Horizon 进程、吞吐与积压情况。</p></div><span class="queue-state" :class="{off:!queue.status}"><i></i>{{ queueState }}</span></div>
-        <div class="queue-metrics"><div><span>工作进程</span><strong>{{ number(queue.processes) }}</strong></div><div><span>每分钟作业</span><strong>{{ number(queue.jobsPerMinute) }}</strong></div><div><span>近期作业</span><strong>{{ number(queue.recentJobs) }}</strong></div><div :class="{danger:Number(queue.failedJobs)>0}"><span>失败作业</span><strong>{{ number(queue.failedJobs) }}</strong></div></div>
-        <div class="queue-highlight"><div><span>最大等待</span><strong>{{ queueWait > 0 ? `${queueWait.toFixed(1)} 秒` : '无等待' }}</strong></div><div><span>暂停主进程</span><strong>{{ number(queue.pausedMasters) }}</strong></div></div>
-        <div class="workload-list"><div class="workload-title"><strong>队列负载</strong><span>{{ workload.length }} 个队列</span></div><div v-for="item in workload" :key="item.name"><span><strong>{{ item.name }}</strong><small>{{ number(item.processes) }} 个进程</small></span><b>{{ number(item.length) }} 待处理</b><em>{{ Number(item.wait || 0).toFixed(1) }}s</em></div><div v-if="!workload.length" class="queue-empty">暂无队列负载数据</div></div>
+        <div class="panel-head"><div><span class="eyebrow">QUEUE HEALTH</span><h2>队列状态</h2><p>{{ queue.modeLabel || '任务队列' }} · 实时进程与积压情况。</p></div><span class="queue-state" :class="{off:!queue.status}"><i></i>{{ queueState }}</span></div>
+        <div v-if="queue.mode==='worker'" class="queue-mode-note"><AppIcon name="Info" :size="15" /><span>当前使用普通 Redis Worker；已完成作业不会保留历史，吞吐指标仅 Horizon 模式支持。</span></div>
+        <div v-if="queue.mode==='worker'" class="queue-metrics"><div><span>工作进程</span><strong>{{ number(queue.processes) }}</strong></div><div><span>待处理</span><strong>{{ number(queue.readyJobs) }}</strong></div><div><span>执行中</span><strong>{{ number(queue.reservedJobs) }}</strong></div><div><span>延迟任务</span><strong>{{ number(queue.delayedJobs) }}</strong></div></div>
+        <div v-else class="queue-metrics"><div><span>工作进程</span><strong>{{ number(queue.processes) }}</strong></div><div><span>每分钟作业</span><strong>{{ queueMetric(queue.jobsPerMinute) }}</strong></div><div><span>近期作业</span><strong>{{ queueMetric(queue.recentJobs) }}</strong></div><div :class="{danger:Number(queue.failedJobs)>0}"><span>失败作业</span><strong>{{ number(queue.failedJobs) }}</strong></div></div>
+        <div class="queue-highlight"><div><span>{{ queue.waitUnit==='jobs'?'最大队列积压':'最大等待' }}</span><strong>{{ queueWaitText }}</strong></div><div><span>{{ queue.mode==='worker'?'累计失败作业':'暂停主进程' }}</span><strong>{{ queue.mode==='worker'?number(queue.failedJobs):queueMetric(queue.pausedMasters) }}</strong></div></div>
+        <div class="workload-list"><div class="workload-title"><strong>队列负载</strong><span>{{ workload.length }} 个队列</span></div><div v-for="item in workload" :key="item.name"><span><strong>{{ item.name }}</strong><small>{{ number(item.processes) }} 个工作进程</small></span><b>{{ number(item.length) }} 待处理</b><em v-if="queue.mode==='worker'">执行 {{ number(item.reserved) }} · 延迟 {{ number(item.delayed) }}</em><em v-else>{{ Number(item.wait || 0).toFixed(1) }}s</em></div><div v-if="!workload.length" class="queue-empty">暂无队列负载数据</div></div>
       </section>
       <section class="panel dashboard-jobs">
-      <div class="panel-head"><div><span class="eyebrow">JOB DETAILS</span><h2>作业详情</h2><p>最近失败作业及异常摘要，点击可查看完整负载与错误信息。</p></div><span class="job-count">{{ failedJobs.length }} 条最近记录</span></div>
+      <div class="panel-head"><div><span class="eyebrow">JOB DETAILS</span><h2>作业详情</h2><p>失败作业会持久保存；点击可查看完整负载与错误信息。</p></div><span class="job-count">{{ failedJobs.length }} 条最近记录</span></div>
       <div v-if="loading" class="dashboard-skeleton jobs"></div>
       <div v-else-if="failedJobs.length" class="job-table"><div class="job-table-head"><span>作业</span><span>连接 / 队列</span><span>失败时间</span><span>异常摘要</span><span></span></div><button v-for="job in failedJobs" :key="job.id" @click="selectedJob=job"><span><strong>{{ jobName(job) }}</strong><small>{{ job.id }}</small></span><span><strong>{{ job.connection || 'redis' }}</strong><small>{{ job.queue || 'default' }}</small></span><span>{{ jobTime(job.failed_at) }}</span><span class="job-error">{{ jobException(job).split('\n')[0] }}</span><AppIcon name="ChevronRight" :size="17" /></button></div>
       <div v-else class="job-success"><AppIcon name="CircleCheckBig" :size="22" /><div><strong>没有失败作业</strong><span>当前队列运行记录正常。</span></div></div>
