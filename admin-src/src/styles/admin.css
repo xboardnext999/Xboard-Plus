@@ -677,6 +677,20 @@ td small {
   background: var(--danger);
 }
 
+.group-buy-preview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.group-buy-preview > div { border-radius: 11px; background: var(--admin-bg); padding: 12px; }
+.group-buy-preview span { display: block; color: var(--muted); font-size: 11px; }
+.group-buy-preview strong { display: block; margin-top: 5px; font-size: 18px; }
+.group-buy-preview .highlight { background: var(--brand-soft); color: var(--brand); }
+.group-buy-group-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.group-buy-group-toolbar select { min-width: 160px; height: 40px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel-bg); color: var(--text); padding: 0 10px; }
+.group-buy-group-toolbar span { color: var(--muted); font-size: 12px; }
+.group-buy-progress { min-width: 120px; }
+.group-buy-progress span { font-size: 12px; }
+.group-buy-progress i { display: block; width: 100%; height: 5px; margin-top: 5px; border-radius: 99px; background: var(--admin-bg); overflow: hidden; }
+.group-buy-progress em { display: block; height: 100%; border-radius: inherit; background: var(--brand); }
+.status-pill.waiting { background: #fff7dd; color: #b45309; }
+
 @media (max-width: 1180px) {
   .admin-shell {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -727,6 +741,7 @@ td small {
   .notice-image { min-height: 150px; max-height: 220px; }
   .payment-toolbar { grid-template-columns: 1fr; }
   .payment-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .group-buy-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .machine-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 180px auto; gap: 12px; align-items: end; }.machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(390px, 1fr)); gap: 16px; }.machine-card { display: flex; flex-direction: column; gap: 14px; }.machine-head { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; }.machine-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); }.machine-head h2 { margin: 0 0 4px; font-size: 17px; }.machine-head span, .machine-meta { color: var(--muted); font-size: 12px; }.machine-state { display: flex; align-items: center; gap: 6px; font-size: 12px; }.machine-state i { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); }.machine-state i.online { background: var(--success); box-shadow: 0 0 0 4px var(--success-soft); }.machine-notes { min-height: 20px; margin: 0; color: var(--muted); font-size: 13px; }

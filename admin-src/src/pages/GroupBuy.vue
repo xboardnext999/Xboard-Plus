@@ -28,6 +28,9 @@ const periods = ref({});
 const activities = ref([]);
 const groups = ref([]);
 const selectedActivity = ref(null);
+const busyId = ref(null);
+const groupStatus = ref('all');
+const groupPagination = reactive({ current_page: 1, total: 0, last_page: 1 });
 
 const filters = reactive({
   keyword: '',
@@ -78,6 +81,15 @@ const periodOptions = computed(() => {
       label: periods.value?.[period]?.name || PERIOD_LABELS[period] || period,
       price: Math.round(Number(plan.prices[period] || 0) * 100),
     }));
+});
+const selectedPeriod = computed(() => periodOptions.value.find((item) => item.value === form.period));
+const previewPrice = computed(() => {
+  const original = Number(selectedPeriod.value?.price || 0);
+  if (!original) return { original: 0, discount: 0, final: 0 };
+  const discount = Number(form.discount_type) === 1
+    ? Math.round(Number(form.discount_value_yuan || 0) * 100)
+    : Math.round(original * Number(form.discount_value_percent || 0) / 100);
+  return { original, discount: Math.min(original, Math.max(0, discount)), final: Math.max(0, original - discount) };
 });
 
 const summary = computed(() => ({
@@ -180,9 +192,32 @@ function editActivity(activity) {
   showForm.value = true;
 }
 
+function copyActivity(activity) {
+  editActivity(activity);
+  form.id = null;
+  form.title = `${activity.title} - 副本`;
+  form.status = 0;
+}
+
 async function saveActivity() {
   if (!form.plan_id || !form.period) {
     notify('请选择套餐和周期', 'error');
+    return;
+  }
+  if (Number(form.group_size) < 2 || Number(form.group_size) > 100) {
+    notify('成团人数必须在 2–100 人之间', 'error');
+    return;
+  }
+  if (Number(form.discount_type) === 1 && previewPrice.value.discount >= previewPrice.value.original) {
+    notify('固定优惠必须小于套餐原价', 'error');
+    return;
+  }
+  if (Number(form.discount_type) === 2 && (Number(form.discount_value_percent) <= 0 || Number(form.discount_value_percent) >= 100)) {
+    notify('折扣比例必须大于 0 且小于 100%', 'error');
+    return;
+  }
+  if (form.started_at && form.ended_at && new Date(form.ended_at) <= new Date(form.started_at)) {
+    notify('结束时间必须晚于开始时间', 'error');
     return;
   }
   saving.value = true;
@@ -213,6 +248,7 @@ async function saveActivity() {
 }
 
 async function toggleActivity(activity) {
+  busyId.value = activity.id;
   try {
     await updateGroupBuyActivity({
       id: activity.id,
@@ -222,31 +258,44 @@ async function toggleActivity(activity) {
     await fetchActivities(pagination.current_page);
   } catch (error) {
     notify(error.message || '更新失败', 'error');
+  } finally {
+    busyId.value = null;
   }
 }
 
 async function deleteActivity(activity) {
+  if (Number(activity.groups_count || 0) > 0) {
+    notify('该活动已有拼团队伍，不能删除，请停用活动', 'error');
+    return;
+  }
   if (!window.confirm(`确定删除「${activity.title}」？`)) return;
+  busyId.value = activity.id;
   try {
     await dropGroupBuyActivity(activity.id);
     notify('已删除活动');
     await fetchActivities(pagination.current_page);
   } catch (error) {
     notify(error.message || '删除失败', 'error');
+  } finally {
+    busyId.value = null;
   }
 }
 
-async function openGroups(activity) {
+async function openGroups(activity, page = 1) {
   selectedActivity.value = activity;
-  groups.value = [];
+  if (page === 1) groups.value = [];
   groupLoading.value = true;
   try {
     const data = await fetchGroupBuyGroups({
       activity_id: activity.id,
-      current: 1,
-      pageSize: 50,
+      status: groupStatus.value,
+      current: page,
+      pageSize: 20,
     });
     groups.value = data.items || [];
+    groupPagination.current_page = data.current_page || page;
+    groupPagination.total = data.total || 0;
+    groupPagination.last_page = data.last_page || 1;
   } catch (error) {
     notify(error.message || '加载队伍失败', 'error');
   } finally {
@@ -261,6 +310,25 @@ function formatMoney(cents) {
 function formatTime(timestamp) {
   if (!timestamp) return '不限';
   return new Date(Number(timestamp) * 1000).toLocaleString('zh-CN', { hour12: false });
+}
+
+function activityPhase(activity) {
+  if (Number(activity.status) !== 1) return { text: '已停用', class: 'off' };
+  const now = Math.floor(Date.now() / 1000);
+  if (activity.started_at && Number(activity.started_at) > now) return { text: '未开始', class: 'waiting' };
+  if (activity.ended_at && Number(activity.ended_at) < now) return { text: '已结束', class: 'off' };
+  return { text: '进行中', class: '' };
+}
+
+function groupProgress(group) {
+  return Math.min(100, Math.round(Number(group.current_count || 0) / Math.max(1, Number(group.required_count || 1)) * 100));
+}
+
+function durationLabel(minutes) {
+  const value = Number(minutes || 0);
+  if (value % 1440 === 0) return `${value / 1440} 天`;
+  if (value % 60 === 0) return `${value / 60} 小时`;
+  return `${value} 分钟`;
 }
 
 onMounted(() => {
@@ -367,6 +435,13 @@ onMounted(() => {
         </label>
       </div>
 
+      <div v-if="selectedPeriod" class="group-buy-preview">
+        <div><span>套餐原价</span><strong>{{ formatMoney(previewPrice.original) }}</strong></div>
+        <div><span>拼团优惠</span><strong>- {{ formatMoney(previewPrice.discount) }}</strong></div>
+        <div class="highlight"><span>预计实付</span><strong>{{ formatMoney(previewPrice.final) }}</strong></div>
+        <div><span>队伍有效期</span><strong>{{ durationLabel(form.expire_minutes) }}</strong></div>
+      </div>
+
       <div class="form-actions">
         <button class="btn btn-ghost" type="button" @click="cancelForm">取消</button>
         <button class="btn btn-primary" type="button" :disabled="saving" @click="saveActivity">
@@ -427,28 +502,31 @@ onMounted(() => {
               </td>
               <td>
                 {{ activity.period_label }}
-                <small>{{ formatMoney(activity.period_price) }}</small>
+                <small>原价 {{ formatMoney(activity.period_price) }}</small>
+                <small>实付 {{ formatMoney(activity.discount_type === 1 ? Math.max(0, activity.period_price - activity.discount_value) : Math.round(activity.period_price * (100 - activity.discount_value) / 100)) }}</small>
               </td>
               <td>{{ activity.group_size }} 人</td>
               <td>{{ activity.discount_label }}</td>
               <td>
                 <small>开始：{{ formatTime(activity.started_at) }}</small>
                 <small>结束：{{ formatTime(activity.ended_at) }}</small>
+                <small>队伍有效：{{ durationLabel(activity.expire_minutes) }}</small>
               </td>
               <td>
                 <button class="link-btn" type="button" @click="openGroups(activity)">
-                  {{ activity.open_groups_count }} 进行中 / {{ activity.completed_groups_count }} 已成团
+                  {{ activity.open_groups_count }} 进行中 / {{ activity.completed_groups_count }} 已成团 / {{ activity.expired_groups_count }} 过期
                 </button>
               </td>
               <td>
-                <span class="status-pill" :class="{ off: activity.status !== 1 }">{{ activity.status_label }}</span>
+                <span class="status-pill" :class="activityPhase(activity).class">{{ activityPhase(activity).text }}</span>
               </td>
               <td class="actions">
                 <button class="btn btn-ghost btn-sm" type="button" @click="editActivity(activity)">编辑</button>
-                <button class="btn btn-ghost btn-sm" type="button" @click="toggleActivity(activity)">
+                <button class="btn btn-ghost btn-sm" type="button" @click="copyActivity(activity)">复制</button>
+                <button class="btn btn-ghost btn-sm" type="button" :disabled="busyId === activity.id" @click="toggleActivity(activity)">
                   {{ activity.status === 1 ? '停用' : '启用' }}
                 </button>
-                <button class="btn btn-danger btn-sm" type="button" @click="deleteActivity(activity)">删除</button>
+                <button class="btn btn-danger btn-sm" type="button" :disabled="activity.groups_count > 0 || busyId === activity.id" :title="activity.groups_count > 0 ? '已有队伍的活动不能删除' : ''" @click="deleteActivity(activity)">删除</button>
               </td>
             </tr>
           </tbody>
@@ -470,6 +548,15 @@ onMounted(() => {
           <p>{{ selectedActivity.title }} 的拼团队伍状态。</p>
         </div>
         <button class="btn btn-ghost" type="button" @click="selectedActivity = null">关闭</button>
+      </div>
+      <div class="group-buy-group-toolbar">
+        <select v-model="groupStatus" @change="openGroups(selectedActivity, 1)">
+          <option value="all">全部队伍</option>
+          <option value="1">进行中</option>
+          <option value="2">已成团</option>
+          <option value="3">已过期</option>
+        </select>
+        <span>共 {{ groupPagination.total }} 支队伍</span>
       </div>
       <div class="table-wrap">
         <table>
@@ -493,8 +580,8 @@ onMounted(() => {
             <tr v-for="group in groups" :key="group.id">
               <td>#{{ group.id }}</td>
               <td>{{ group.leader_email }}</td>
-              <td>{{ group.current_count }} / {{ group.required_count }}</td>
-              <td>{{ group.status_label }}</td>
+              <td><div class="group-buy-progress"><span>{{ group.current_count }} / {{ group.required_count }}</span><i><em :style="{ width: `${groupProgress(group)}%` }" /></i></div></td>
+              <td><span class="status-pill" :class="{ off: group.status === 3, waiting: group.status === 1 }">{{ group.status_label }}</span></td>
               <td>{{ formatTime(group.expired_at) }}</td>
               <td>
                 <div class="member-list">
@@ -506,6 +593,11 @@ onMounted(() => {
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="pagination">
+        <span>第 {{ groupPagination.current_page }} / {{ groupPagination.last_page || 1 }} 页</span>
+        <button class="btn btn-ghost btn-sm" :disabled="groupPagination.current_page <= 1 || groupLoading" @click="openGroups(selectedActivity, groupPagination.current_page - 1)">上一页</button>
+        <button class="btn btn-ghost btn-sm" :disabled="groupPagination.current_page >= groupPagination.last_page || groupLoading" @click="openGroups(selectedActivity, groupPagination.current_page + 1)">下一页</button>
       </div>
     </section>
 
