@@ -64,8 +64,8 @@ export const configSections = [
     { key: 'password_limit_enable', label: '限制密码尝试', type: 'boolean' }, { key: 'password_limit_count', label: '允许尝试次数', type: 'number' }, { key: 'password_limit_expire', label: '账户锁定时长（分钟）', type: 'number' },
   ] },
   { key: 'subscribe_template', title: '订阅模板', icon: 'FileCode2', description: '各客户端的原始订阅配置模板。', wide: true, fields: [
-    { key: 'subscribe_template_singbox', label: 'Sing-box 模板', type: 'textarea' }, { key: 'subscribe_template_clash', label: 'Clash 模板', type: 'textarea' },
-    { key: 'subscribe_template_clashmeta', label: 'Clash Meta 模板', type: 'textarea' }, { key: 'subscribe_template_stash', label: 'Stash 模板', type: 'textarea' },
-    { key: 'subscribe_template_surge', label: 'Surge 模板', type: 'textarea' }, { key: 'subscribe_template_surfboard', label: 'Surfboard 模板', type: 'textarea' },
+    { key: 'subscribe_template_singbox', label: 'Sing-box 订阅模板', tabLabel: 'Sing-box', language: 'json' }, { key: 'subscribe_template_clash', label: 'Clash 订阅模板', tabLabel: 'Clash', language: 'yaml' },
+    { key: 'subscribe_template_clashmeta', label: 'Clash Meta 订阅模板', tabLabel: 'Clash Meta', language: 'yaml' }, { key: 'subscribe_template_stash', label: 'Stash 订阅模板', tabLabel: 'Stash', language: 'yaml' },
+    { key: 'subscribe_template_surge', label: 'Surge 订阅模板', tabLabel: 'Surge', language: 'ini' }, { key: 'subscribe_template_surfboard', label: 'Surfboard 订阅模板', tabLabel: 'Surfboard', language: 'ini' },
   ] },
 ];

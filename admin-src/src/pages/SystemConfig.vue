@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import AppIcon from '../components/AppIcon.vue';
 import SmartEditor from '../components/SmartEditor.vue';
+import TemplateCodeEditor from '../components/TemplateCodeEditor.vue';
 import { configSections } from '../config/systemConfig';
 import { get, post } from '../services/http';
 
@@ -38,7 +39,8 @@ onMounted(load);
       <section class="panel settings-content">
         <div class="panel-head settings-head"><div><h2>{{ active.title }}</h2><p>{{ active.description }}</p></div><div class="settings-actions"><button v-if="active.action" class="btn btn-ghost" :disabled="acting || loading" @click="runAction">{{ acting ? '执行中…' : active.action === 'mail' ? '发送测试邮件' : '设置 Webhook' }}</button><button class="btn btn-primary" :disabled="saving || loading" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button></div></div>
         <div v-if="loading" class="settings-loading">正在加载配置…</div>
-        <SmartEditor v-else v-model="model" :fields="active.fields" :class="{ 'template-editor': active.wide }" />
+        <TemplateCodeEditor v-else-if="active.wide" v-model="model" :fields="active.fields" />
+        <SmartEditor v-else v-model="model" :fields="active.fields" />
       </section>
     </div>
     <div v-if="message.text" class="toast" :class="{ error: message.type === 'error' }">{{ message.text }}</div>
