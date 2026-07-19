@@ -97,6 +97,13 @@ textarea {
 .json-editor { width: 100%; min-height: 420px; resize: vertical; border: 1px solid var(--border); border-radius: 10px; outline: none; background: var(--panel-soft); color: var(--text); padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.55; }
 .json-editor:focus { border-color: var(--brand); }
 .modal-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+.split-actions { justify-content: space-between; }
+.smart-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.smart-form .field-wide { grid-column: 1 / -1; }
+.smart-form textarea { width: 100%; resize: vertical; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-bg); color: var(--text); padding: 10px 12px; outline: none; }
+.smart-form textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.smart-form small { color: var(--muted); font-weight: 400; }
+.code-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 @media (max-width: 900px) {
   .metric-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -610,8 +617,7 @@ td small {
   }
 
   .admin-sidebar {
-    position: static;
-    height: auto;
+    position: static; height: auto; max-height: 42vh;
   }
 
   .admin-main {
@@ -620,6 +626,7 @@ td small {
 
   .stat-grid,
   .form-grid,
+  .smart-form,
   .filters {
     grid-template-columns: 1fr;
   }
@@ -629,4 +636,5 @@ td small {
     align-items: flex-start;
     flex-direction: column;
   }
+  .modal-card { padding: 16px; }
 }

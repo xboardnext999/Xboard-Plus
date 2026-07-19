@@ -58,5 +58,6 @@ export const flatMenus = menuGroups.flatMap((group) => group.items.map((item) =>
 })));
 
 export function titleByPath(path) {
-  return flatMenus.find((item) => item.path === path)?.title || '仪表盘';
+  const cleanPath = String(path).split('?')[0];
+  return flatMenus.find((item) => item.path.split('?')[0] === cleanPath)?.title || '仪表盘';
 }
