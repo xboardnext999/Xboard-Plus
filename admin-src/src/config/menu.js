@@ -44,12 +44,6 @@ export const menuGroups = [
       { title: '流量重置日志', path: '/user/traffic-reset-log', icon: 'RefreshCw' },
     ],
   },
-  {
-    title: '插件应用',
-    items: [
-      { title: '插件应用', path: '/plugin-apps', icon: 'Puzzle' },
-    ],
-  },
 ];
 
 export const flatMenus = menuGroups.flatMap((group) => group.items.map((item) => ({

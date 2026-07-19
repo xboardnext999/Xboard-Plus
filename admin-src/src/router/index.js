@@ -41,6 +41,7 @@ const router = createRouter({
       component: AdminLayout,
       redirect: '/dashboard',
       children: [
+        { path: 'plugin-apps', redirect: '/system/plugin' },
         {
           path: 'dashboard',
           name: 'Dashboard',
