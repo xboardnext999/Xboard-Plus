@@ -12,10 +12,11 @@ import PaymentManagement from '../pages/PaymentManagement.vue';
 import KnowledgeManagement from '../pages/KnowledgeManagement.vue';
 import ServerManagement from '../pages/ServerManagement.vue';
 import NodeManagement from '../pages/NodeManagement.vue';
+import GroupManagement from '../pages/GroupManagement.vue';
 import { flatMenus } from '../config/menu';
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/finance/plan?xgb=group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -46,6 +47,7 @@ const router = createRouter({
         { path: 'system/knowledge', name: 'KnowledgeManagement', component: KnowledgeManagement, meta: { title: '知识库管理', group: '系统管理' } },
         { path: 'node/server', name: 'ServerManagement', component: ServerManagement, meta: { title: '服务器管理', group: '节点管理' } },
         { path: 'node/list', name: 'NodeManagement', component: NodeManagement, meta: { title: '节点管理', group: '节点管理' } },
+        { path: 'node/group', name: 'GroupManagement', component: GroupManagement, meta: { title: '权限组管理', group: '节点管理' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',
