@@ -79,7 +79,7 @@
   @endif
   <script src="/assets/admin/logo-upload.js?v={{ rawurlencode($version) }}" defer></script>
   <script src="/assets/admin/group-buy-entry.js?v={{ rawurlencode($version) }}" defer></script>
-  <script src="/assets/admin/subscription-transfer-settings.js?v={{ rawurlencode($version) }}-plan-settings-nav-v2" defer></script>
+  <script src="/assets/admin/subscription-transfer-settings.js?v={{ rawurlencode($version) }}-package-cache-v1" defer></script>
 </head>
 
 <body>
