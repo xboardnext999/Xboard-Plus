@@ -6,7 +6,7 @@ import AppIcon from './AppIcon.vue';
 
 const route = useRoute();
 
-const activePath = computed(() => `/${route.path.replace(/^\/+/, '')}`);
+const activePath = computed(() => route.fullPath);
 </script>
 
 <template>

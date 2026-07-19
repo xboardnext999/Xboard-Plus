@@ -365,13 +365,14 @@ onMounted(() => {
       </article>
     </div>
 
-    <section v-if="showForm" class="panel">
+    <div v-if="showForm" class="modal-backdrop" @click.self="cancelForm">
+    <section class="modal-card group-buy-modal">
       <div class="panel-head">
         <div>
           <h2>{{ form.id ? '编辑拼团活动' : '新建拼团活动' }}</h2>
           <p>固定优惠按元填写，保存后自动转换为订单金额单位。</p>
         </div>
-        <button class="btn btn-ghost" type="button" @click="cancelForm">收起</button>
+        <button class="btn btn-ghost" type="button" @click="cancelForm">关闭</button>
       </div>
 
       <div class="form-grid">
@@ -449,6 +450,7 @@ onMounted(() => {
         </button>
       </div>
     </section>
+    </div>
 
     <section class="panel">
       <div class="panel-head">
