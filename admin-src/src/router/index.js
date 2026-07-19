@@ -14,10 +14,11 @@ import ServerManagement from '../pages/ServerManagement.vue';
 import NodeManagement from '../pages/NodeManagement.vue';
 import GroupManagement from '../pages/GroupManagement.vue';
 import RouteManagement from '../pages/RouteManagement.vue';
+import NodeDiagnostics from '../pages/NodeDiagnostics.vue';
 import { flatMenus } from '../config/menu';
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/finance/plan?xgb=group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -50,6 +51,7 @@ const router = createRouter({
         { path: 'node/list', name: 'NodeManagement', component: NodeManagement, meta: { title: '节点管理', group: '节点管理' } },
         { path: 'node/group', name: 'GroupManagement', component: GroupManagement, meta: { title: '权限组管理', group: '节点管理' } },
         { path: 'node/route', name: 'RouteManagement', component: RouteManagement, meta: { title: '路由管理', group: '节点管理' } },
+        { path: 'node/diagnostic', name: 'NodeDiagnostics', component: NodeDiagnostics, meta: { title: '节点数据分析', group: '节点管理' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',
