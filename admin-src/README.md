@@ -9,7 +9,9 @@
 - `src/components/AdminTopbar.vue`：顶部栏。
 - `src/config/menu.js`：菜单和路由映射。
 - `src/services/http.js`：后台接口请求封装。
-- `src/pages/GroupBuy.vue`：拼团管理页面源码。
+- `src/pages/GroupBuy.vue`：拼团管理专用页面源码。
+- `src/pages/ResourcePage.vue`：后台业务模块的统一列表、分页和编辑页面。
+- `src/config/resources.js`：所有后台模块与 Laravel API 的映射。
 
 ## 开发
 
@@ -32,4 +34,8 @@ npm run build
 public/assets/admin-vue
 ```
 
-当前工程不会覆盖线上正在使用的 `public/assets/admin`。如需正式切换，需要确认菜单、路由和未迁移页面后再调整部署入口。
+构建同时生成 source map，部署后仍可定位回 `.vue` 源文件。默认不会覆盖线上正在使用的 `public/assets/admin`；完成验收后可将 Blade 模板的资源目录切换到 `admin-vue`。
+
+## 接口约定
+
+页面从 `window.settings.secure_path` 读取后台安全路径，请求 `/api/v2/{secure_path}`。登录令牌从 `XBOARD_ACCESS_TOKEN`、`token` 或 `access_token` 读取，并统一使用 Bearer Authorization。

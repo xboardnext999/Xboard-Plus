@@ -7,6 +7,7 @@ export default defineConfig({
   build: {
     outDir: '../public/assets/admin-vue',
     emptyOutDir: true,
-    sourcemap: false,
+    manifest: 'manifest.json',
+    sourcemap: true,
   },
 });

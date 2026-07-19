@@ -15,7 +15,10 @@
     };
   </script>
   @php
-    $manifestPath = public_path('assets/admin/manifest.json');
+    $vueManifestPath = public_path('assets/admin-vue/manifest.json');
+    $useVueAdmin = file_exists($vueManifestPath);
+    $assetDirectory = $useVueAdmin ? 'admin-vue' : 'admin';
+    $manifestPath = $useVueAdmin ? $vueManifestPath : public_path('assets/admin/manifest.json');
     $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null;
     $entry = is_array($manifest) ? ($manifest['index.html'] ?? null) : null;
     $scripts = [];
@@ -60,13 +63,15 @@
 
   @if($entry && count($scripts) > 0)
     @foreach($styles as $css)
-      <link rel="stylesheet" crossorigin href="/assets/admin/{{ $css }}" />
+      <link rel="stylesheet" crossorigin href="/assets/{{ $assetDirectory }}/{{ $css }}" />
     @endforeach
-    @foreach($locales as $locale)
-      <script src="/assets/admin/{{ $locale }}"></script>
-    @endforeach
+    @unless($useVueAdmin)
+      @foreach($locales as $locale)
+        <script src="/assets/admin/{{ $locale }}"></script>
+      @endforeach
+    @endunless
     @foreach($scripts as $js)
-      <script type="module" crossorigin src="/assets/admin/{{ $js }}"></script>
+      <script type="module" crossorigin src="/assets/{{ $assetDirectory }}/{{ $js }}"></script>
     @endforeach
   @else
     {{-- Fallback: hardcoded paths for backward compatibility --}}
@@ -77,13 +82,15 @@
     <script src="/assets/admin/locales/zh-CN.js"></script>
     <script src="/assets/admin/locales/ko-KR.js"></script>
   @endif
-  <script src="/assets/admin/logo-upload.js?v={{ rawurlencode($version) }}" defer></script>
-  <script src="/assets/admin/group-buy-entry.js?v={{ rawurlencode($version) }}" defer></script>
-  <script src="/assets/admin/subscription-transfer-settings.js?v={{ rawurlencode($version) }}-package-cache-v1" defer></script>
+  @unless($useVueAdmin)
+    <script src="/assets/admin/logo-upload.js?v={{ rawurlencode($version) }}" defer></script>
+    <script src="/assets/admin/group-buy-entry.js?v={{ rawurlencode($version) }}" defer></script>
+    <script src="/assets/admin/subscription-transfer-settings.js?v={{ rawurlencode($version) }}-package-cache-v1" defer></script>
+  @endunless
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="{{ $useVueAdmin ? 'app' : 'root' }}"></div>
 </body>
 
 </html>

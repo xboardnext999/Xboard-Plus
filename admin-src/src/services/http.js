@@ -49,7 +49,7 @@ export async function request(path, options = {}) {
 
   const token = authToken();
   if (token) {
-    headers.Authorization = token;
+    headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
   }
 
   const response = await fetch(adminApi(path), {
@@ -59,11 +59,26 @@ export async function request(path, options = {}) {
   });
 
   const json = await response.json().catch(() => ({}));
-  if (!response.ok || json.status === 'fail') {
+  if (response.status === 401 || response.status === 403) {
+    window.dispatchEvent(new CustomEvent('admin:unauthorized'));
+  }
+  if (!response.ok || json.status === 'fail' || (json.code && Number(json.code) !== 0)) {
     throw new Error(json.message || '请求失败');
   }
 
   return json.data ?? json;
+}
+
+export function get(path, params = {}) {
+  const query = toQuery(params);
+  return request(`${path}${query ? `?${query}` : ''}`);
+}
+
+export function post(path, body = {}) {
+  return request(path, {
+    method: 'POST',
+    body: body instanceof FormData ? body : JSON.stringify(body),
+  });
 }
 
 export function toQuery(params = {}) {
