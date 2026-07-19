@@ -725,4 +725,30 @@ td small {
   .notice-toolbar { grid-template-columns: 1fr; }
   .notice-card { grid-template-columns: 1fr; }
   .notice-image { min-height: 150px; max-height: 220px; }
+  .payment-toolbar { grid-template-columns: 1fr; }
+  .payment-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.payment-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 180px auto auto; gap: 12px; align-items: end; }
+.payment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px; }
+.payment-card { position: relative; display: flex; flex-direction: column; gap: 16px; }
+.payment-card-head { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.payment-card-head h2 { margin: 0 0 4px; font-size: 17px; }
+.payment-card-head code { color: var(--muted); font-size: 12px; }
+.payment-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); font-size: 22px; overflow: hidden; }
+.payment-fees { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.payment-fees span { border-radius: 10px; background: var(--admin-bg); padding: 10px 12px; color: var(--muted); font-size: 12px; }
+.payment-fees strong { display: block; margin-top: 5px; color: var(--text); font-size: 15px; }
+.payment-callback { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; width: 100%; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--muted); padding: 10px 12px; text-align: left; }
+.payment-callback span { grid-column: 1 / -1; font-size: 12px; }.payment-callback code { overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.payment-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
+.payment-tip { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+.payment-modal { width: min(840px, calc(100vw - 32px)); }.gateway-config { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 18px; }.gateway-config h3 { margin: 0 0 14px; font-size: 15px; }
+
+@media (max-width: 760px) {
+  .payment-toolbar { grid-template-columns: 1fr; }
+  .payment-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .payment-grid { grid-template-columns: 1fr; }
+  .payment-card-head { grid-template-columns: 46px minmax(0, 1fr); }
+  .payment-card-head .status-pill { grid-column: 1 / -1; width: fit-content; }
 }

@@ -8,10 +8,11 @@ import SystemConfig from '../pages/SystemConfig.vue';
 import PluginManagement from '../pages/PluginManagement.vue';
 import ThemeManagement from '../pages/ThemeManagement.vue';
 import NoticeManagement from '../pages/NoticeManagement.vue';
+import PaymentManagement from '../pages/PaymentManagement.vue';
 import { flatMenus } from '../config/menu';
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/finance/plan?xgb=group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -38,6 +39,7 @@ const router = createRouter({
         { path: 'system/plugin', name: 'PluginManagement', component: PluginManagement, meta: { title: '插件管理', group: '系统管理' } },
         { path: 'system/theme', name: 'ThemeManagement', component: ThemeManagement, meta: { title: '主题配置', group: '系统管理' } },
         { path: 'system/notice', name: 'NoticeManagement', component: NoticeManagement, meta: { title: '公告管理', group: '系统管理' } },
+        { path: 'system/payment', name: 'PaymentManagement', component: PaymentManagement, meta: { title: '支付配置', group: '系统管理' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',
