@@ -16,10 +16,11 @@ import GroupManagement from '../pages/GroupManagement.vue';
 import RouteManagement from '../pages/RouteManagement.vue';
 import NodeDiagnostics from '../pages/NodeDiagnostics.vue';
 import PlanManagement from '../pages/PlanManagement.vue';
+import OrderManagement from '../pages/OrderManagement.vue';
 import { flatMenus } from '../config/menu';
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/finance/plan?xgb=group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -54,6 +55,7 @@ const router = createRouter({
         { path: 'node/route', name: 'RouteManagement', component: RouteManagement, meta: { title: '路由管理', group: '节点管理' } },
         { path: 'node/diagnostic', name: 'NodeDiagnostics', component: NodeDiagnostics, meta: { title: '节点数据分析', group: '节点管理' } },
         { path: 'subscription/plan', name: 'PlanManagement', component: PlanManagement, meta: { title: '套餐管理', group: '订阅管理' } },
+        { path: 'subscription/order', name: 'OrderManagement', component: OrderManagement, meta: { title: '订单管理', group: '订阅管理' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',

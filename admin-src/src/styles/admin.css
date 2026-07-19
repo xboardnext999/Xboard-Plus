@@ -691,6 +691,15 @@ td small {
 .group-buy-progress i { display: block; width: 100%; height: 5px; margin-top: 5px; border-radius: 99px; background: var(--admin-bg); overflow: hidden; }
 .group-buy-progress em { display: block; height: 100%; border-radius: inherit; background: var(--brand); }
 .status-pill.waiting { background: #fff7dd; color: #b45309; }
+.order-toolbar { display: grid; grid-template-columns: minmax(230px,1fr) 140px 140px 170px auto auto; gap: 10px; align-items: end; margin-bottom: 16px; }
+.order-table table { min-width: 1260px; }
+.order-table td > small, .order-table td > strong { display: block; margin-top: 3px; }
+.order-table td > small { color: var(--muted); font-size: 10px; }
+.order-detail { width: min(920px,calc(100vw - 32px)); }
+.order-detail-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1px; margin-top: 18px; border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: var(--border); }
+.order-detail-grid > span { min-width: 0; background: var(--panel-bg); color: var(--muted); padding: 11px; font-size: 11px; }
+.order-detail-grid strong { display: block; margin-top: 4px; overflow-wrap: anywhere; color: var(--text); font-size: 13px; }
+.order-assign { width: min(700px,calc(100vw - 32px)); }
 
 @media (max-width: 1180px) {
   .admin-shell {
@@ -743,6 +752,9 @@ td small {
   .payment-toolbar { grid-template-columns: 1fr; }
   .payment-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .group-buy-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .order-toolbar { grid-template-columns: 1fr; }
+  .order-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .order-detail-grid { grid-template-columns: 1fr; }
 }
 
 .machine-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 180px auto; gap: 12px; align-items: end; }.machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(390px, 1fr)); gap: 16px; }.machine-card { display: flex; flex-direction: column; gap: 14px; }.machine-head { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; }.machine-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); }.machine-head h2 { margin: 0 0 4px; font-size: 17px; }.machine-head span, .machine-meta { color: var(--muted); font-size: 12px; }.machine-state { display: flex; align-items: center; gap: 6px; font-size: 12px; }.machine-state i { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); }.machine-state i.online { background: var(--success); box-shadow: 0 0 0 4px var(--success-soft); }.machine-notes { min-height: 20px; margin: 0; color: var(--muted); font-size: 13px; }
