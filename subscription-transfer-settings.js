@@ -113,7 +113,9 @@
     style.textContent = [
       '#' + TAB_ID + '{cursor:pointer}',
       '#' + TAB_ID + '.xst-active{background:hsl(var(--muted))!important;color:hsl(var(--foreground))!important;font-weight:500}',
-      '.xst-native-suppressed{background:transparent!important;color:hsl(var(--foreground))!important;font-weight:400!important}',
+      '#' + TAB_ID + ':not(.xst-active){background:transparent!important;color:hsl(var(--foreground))!important;font-weight:400!important;box-shadow:none!important}',
+      '#' + TAB_ID + ':not(.xst-active) *{background:transparent!important;box-shadow:none!important}',
+      '.xst-native-suppressed,.xst-native-suppressed *{background:transparent!important;color:hsl(var(--foreground))!important;font-weight:400!important;box-shadow:none!important}',
       '#' + PAGE_ID + '{width:100%;min-width:0;padding:2px 0 24px;color:hsl(var(--foreground))}',
       '#' + PAGE_ID + ' *{box-sizing:border-box}',
       '.xst-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding-bottom:20px;border-bottom:1px solid hsl(var(--border))}',
@@ -277,11 +279,26 @@
   function bindNavigationReset(container) {
     if (container.__xstNavigationBound) return;
     container.__xstNavigationBound = true;
-    container.addEventListener('click', function (event) {
+    function resetForNativeItem(event) {
       var customTab = document.getElementById(TAB_ID);
       if (state.activating || (customTab && customTab.contains(event.target))) return;
       deactivateCustomView();
-    }, true);
+    }
+    container.addEventListener('pointerdown', resetForNativeItem, true);
+    container.addEventListener('click', resetForNativeItem, true);
+  }
+
+  function syncTabVisualState(tab) {
+    if (!tab) return;
+    var active = state.active && state.explicitActivation;
+    tab.classList.toggle('xst-active', active);
+    if (active) {
+      tab.setAttribute('aria-current', 'page');
+      return;
+    }
+    tab.removeAttribute('aria-current');
+    tab.removeAttribute('aria-selected');
+    tab.removeAttribute('data-state');
   }
 
   function ensureTab() {
@@ -292,7 +309,7 @@
     bindNavigationReset(navigation.container);
     var existing = document.getElementById(TAB_ID);
     if (existing && existing.isConnected) {
-      existing.classList.toggle('xst-active', state.active && state.explicitActivation);
+      syncTabVisualState(existing);
       return existing;
     }
 
@@ -319,7 +336,7 @@
     });
     navigation.item.insertAdjacentElement('afterend', tab);
 
-    if (state.active && state.explicitActivation) tab.classList.add('xst-active');
+    syncTabVisualState(tab);
     return tab;
   }
 
@@ -388,7 +405,7 @@
     var page = buildPage();
     contentBranch.appendChild(page);
     var tab = document.getElementById(TAB_ID);
-    if (tab) tab.classList.add('xst-active');
+    syncTabVisualState(tab);
     if (state.nativeSubscriptionItem) state.nativeSubscriptionItem.classList.add('xst-native-suppressed');
     loadPage(page);
   }
@@ -398,8 +415,10 @@
     state.explicitActivation = false;
     restoreNativeContent();
     var tab = document.getElementById(TAB_ID);
-    if (tab) tab.classList.remove('xst-active');
-    if (state.nativeSubscriptionItem) state.nativeSubscriptionItem.classList.remove('xst-native-suppressed');
+    syncTabVisualState(tab);
+    Array.prototype.forEach.call(document.querySelectorAll('.xst-native-suppressed'), function (item) {
+      item.classList.remove('xst-native-suppressed');
+    });
   }
 
   function planPriceText(plan, defaultFee) {
