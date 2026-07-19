@@ -746,6 +746,11 @@ td small {
 .gift-condition-grid { display:flex;align-items:center;flex-wrap:wrap;gap:9px;border-radius:11px;background:var(--admin-bg);padding:12px; }
 .gift-condition-grid label { display:flex;align-items:center;gap:6px;font-size:12px; }.gift-condition-grid input[type=number] { width:70px;height:32px;border:1px solid var(--border);border-radius:7px;background:var(--panel-bg);color:var(--text);padding:0 7px; }
 .gift-plan-limit { margin-top:10px; }.gift-plan-limit select { min-height:85px; }
+.user-toolbar { display:grid;grid-template-columns:minmax(240px,1fr) 180px 170px auto auto;gap:10px;align-items:end; }
+.user-table table { min-width:1420px; }.user-table td>small,.user-table td>strong { display:block;margin-top:3px; }.user-table td>small { color:var(--muted);font-size:10px; }
+.user-traffic { min-width:155px; }.user-traffic span { font-size:11px; }.user-traffic i { display:block;height:5px;margin-top:5px;border-radius:99px;background:var(--admin-bg);overflow:hidden; }.user-traffic em { display:block;height:100%;border-radius:inherit;background:var(--brand); }.user-traffic em.danger { background:var(--danger); }.user-traffic small { color:var(--muted);font-size:9px; }
+.user-actions { min-width:220px; }.user-actions details { position:relative; }.user-actions summary { display:grid;place-items:center;height:32px;border:1px solid var(--border);border-radius:8px;padding:0 9px;cursor:pointer;list-style:none; }.user-actions details>div { position:absolute;right:0;z-index:8;display:flex;flex-direction:column;width:150px;border:1px solid var(--border);border-radius:10px;background:var(--panel-bg);box-shadow:var(--shadow);padding:5px; }.user-actions details button { border:0;background:transparent;color:var(--text);padding:8px;text-align:left; }.user-actions details button.danger { color:var(--danger); }
+.user-modal { width:min(980px,calc(100vw - 32px)); }.user-detail { width:min(900px,calc(100vw - 32px)); }
 
 @media (max-width: 1180px) {
   .admin-shell {
@@ -806,6 +811,7 @@ td small {
   .coupon-grid { grid-template-columns:1fr; }
   .coupon-meta { grid-template-columns:1fr; }
   .gift-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }.gift-template-grid { grid-template-columns:1fr; }.gift-toolbar,.gift-toolbar.usage { grid-template-columns:1fr; }.gift-json-grid { grid-template-columns:1fr; }.gift-template-head { grid-template-columns:44px minmax(0,1fr); }.gift-template-head>.status-pill { grid-column:1/-1;width:fit-content; }
+  .user-toolbar { grid-template-columns:1fr; }.user-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
 .machine-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 180px auto; gap: 12px; align-items: end; }.machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(390px, 1fr)); gap: 16px; }.machine-card { display: flex; flex-direction: column; gap: 14px; }.machine-head { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; }.machine-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); }.machine-head h2 { margin: 0 0 4px; font-size: 17px; }.machine-head span, .machine-meta { color: var(--muted); font-size: 12px; }.machine-state { display: flex; align-items: center; gap: 6px; font-size: 12px; }.machine-state i { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); }.machine-state i.online { background: var(--success); box-shadow: 0 0 0 4px var(--success-soft); }.machine-notes { min-height: 20px; margin: 0; color: var(--muted); font-size: 13px; }
