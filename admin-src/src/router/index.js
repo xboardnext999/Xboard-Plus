@@ -18,10 +18,11 @@ import NodeDiagnostics from '../pages/NodeDiagnostics.vue';
 import PlanManagement from '../pages/PlanManagement.vue';
 import OrderManagement from '../pages/OrderManagement.vue';
 import CouponManagement from '../pages/CouponManagement.vue';
+import GiftCardManagement from '../pages/GiftCardManagement.vue';
 import { flatMenus } from '../config/menu';
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/finance/plan?xgb=group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -58,6 +59,7 @@ const router = createRouter({
         { path: 'subscription/plan', name: 'PlanManagement', component: PlanManagement, meta: { title: '套餐管理', group: '订阅管理' } },
         { path: 'subscription/order', name: 'OrderManagement', component: OrderManagement, meta: { title: '订单管理', group: '订阅管理' } },
         { path: 'subscription/coupon', name: 'CouponManagement', component: CouponManagement, meta: { title: '优惠券管理', group: '订阅管理' } },
+        { path: 'subscription/gift-card', name: 'GiftCardManagement', component: GiftCardManagement, meta: { title: '礼品卡管理', group: '订阅管理' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',

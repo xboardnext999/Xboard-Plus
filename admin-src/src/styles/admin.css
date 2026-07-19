@@ -719,6 +719,23 @@ td small {
 .coupon-batch-toggle span { display:flex;flex-direction:column; }.coupon-batch-toggle small { margin-top:3px; }
 .coupon-periods { display:flex;flex-wrap:wrap;gap:8px; }
 .coupon-periods label { display:flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:12px; }
+.gift-stats { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.gift-tabs { display:flex;gap:7px;border-bottom:1px solid var(--border); }
+.gift-tabs button { border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);padding:11px 14px;font-weight:700; }
+.gift-tabs button.active { border-color:var(--brand);color:var(--brand); }
+.gift-template-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:16px; }
+.gift-template-card { position:relative;display:flex;flex-direction:column;gap:14px;overflow:hidden; }
+.gift-template-card::before { position:absolute;inset:0 auto 0 0;width:4px;background:var(--gift-color);content:""; }
+.gift-template-head { display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:11px; }
+.gift-template-head h2 { margin:3px 0 0;font-size:17px; }.gift-template-head small,.gift-template-card p,.gift-template-meta { color:var(--muted);font-size:11px; }
+.gift-icon { display:grid;place-items:center;width:44px;height:44px;border-radius:11px;background:var(--brand-soft);font-size:20px; }
+.gift-template-card p { min-height:18px;margin:0; }.gift-reward { border-radius:9px;background:var(--admin-bg);padding:10px; }.gift-reward small { display:block;margin-bottom:5px;color:var(--muted); }.gift-reward code { overflow-wrap:anywhere;font-size:11px; }
+.gift-template-meta { display:flex;justify-content:space-between;gap:10px; }
+.gift-toolbar { display:grid;grid-template-columns:180px 150px minmax(220px,1fr) auto auto;gap:10px;align-items:end; }.gift-toolbar.usage { grid-template-columns:180px minmax(220px,1fr) auto; }
+.gift-table table { min-width:1050px; }.gift-table td small { display:block;margin-top:3px;color:var(--muted);font-size:10px; }
+.gift-modal { width:min(1000px,calc(100vw - 32px)); }.generate-modal { width:min(700px,calc(100vw - 32px)); }
+.gift-json-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px; }.gift-json-grid label>span { display:block;margin-bottom:6px;font-size:12px;font-weight:700; }.gift-json-grid textarea { width:100%;min-height:140px;border:1px solid var(--border);border-radius:9px;background:var(--admin-bg);color:var(--text);padding:10px;font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.gift-download { display:flex;align-items:center;gap:7px;font-size:12px; }
 
 @media (max-width: 1180px) {
   .admin-shell {
@@ -778,6 +795,7 @@ td small {
   .coupon-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .coupon-grid { grid-template-columns:1fr; }
   .coupon-meta { grid-template-columns:1fr; }
+  .gift-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }.gift-template-grid { grid-template-columns:1fr; }.gift-toolbar,.gift-toolbar.usage { grid-template-columns:1fr; }.gift-json-grid { grid-template-columns:1fr; }.gift-template-head { grid-template-columns:44px minmax(0,1fr); }.gift-template-head>.status-pill { grid-column:1/-1;width:fit-content; }
 }
 
 .machine-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 180px auto; gap: 12px; align-items: end; }.machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(390px, 1fr)); gap: 16px; }.machine-card { display: flex; flex-direction: column; gap: 14px; }.machine-head { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 12px; }.machine-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); }.machine-head h2 { margin: 0 0 4px; font-size: 17px; }.machine-head span, .machine-meta { color: var(--muted); font-size: 12px; }.machine-state { display: flex; align-items: center; gap: 6px; font-size: 12px; }.machine-state i { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); }.machine-state i.online { background: var(--success); box-shadow: 0 0 0 4px var(--success-soft); }.machine-notes { min-height: 20px; margin: 0; color: var(--muted); font-size: 13px; }
