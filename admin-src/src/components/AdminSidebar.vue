@@ -29,7 +29,7 @@ const visibleGroups = computed(() => menuGroups.map((group) => ({ ...group, item
           :class="{ active: activePath === item.path }"
           :to="item.path"
         >
-          <AppIcon :name="item.icon" :size="18" />
+          <AppIcon :name="item.icon" :size="16" />
           <span>{{ item.title }}</span><em v-if="collapsed">{{ item.title }}</em>
         </RouterLink>
       </section>
