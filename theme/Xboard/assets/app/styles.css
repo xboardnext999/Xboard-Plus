@@ -2384,6 +2384,32 @@ td {
   margin: 0;
 }
 
+.balance-payment-method {
+  min-height: 54px;
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--line));
+  background: color-mix(in srgb, var(--primary) 5%, var(--card-bg));
+}
+
+.payment-method-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.payment-method-copy b {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.payment-method-copy small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.balance-payment-warning {
+  margin: 10px 0 0;
+}
+
 .digital-product-checkout {
   margin-top: 2px;
   border-radius: 12px;

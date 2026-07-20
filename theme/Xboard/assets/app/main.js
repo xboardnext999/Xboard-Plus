@@ -2198,8 +2198,9 @@ const DigitalProductDetailPage = {
 
 const DigitalCheckoutPage = {
   setup() {
+    const balanceMethodId = 'local-balance';
     const couponCode = ref('');
-    const selectedMethod = ref('');
+    const selectedMethod = ref(balanceMethodId);
     const cartMode = state.route.query.cart === '1';
     const local = useAsyncPage(async (page) => {
       const [planData, methods] = await Promise.all([
@@ -2215,7 +2216,7 @@ const DigitalCheckoutPage = {
       page.plan = page.items[0]?.plan;
       page.methods = methods || [];
       page.package = page.items[0]?.package;
-      selectedMethod.value = page.methods[0]?.id ? String(page.methods[0].id) : '';
+      selectedMethod.value = balanceMethodId;
       page.quote = null;
       page.submitting = false;
     });
@@ -2223,9 +2224,10 @@ const DigitalCheckoutPage = {
     async function refreshQuote() {
       if (!local.items?.length || !selectedMethod.value) return;
       try {
+        const method = selectedMethod.value === balanceMethodId ? null : selectedMethod.value;
         local.quote = cartMode
-          ? await api.post('/user/order/digital-cart/quote', { items: local.items.map((item) => ({ plan_id: item.plan_id, package_id: item.package_id, quantity: item.quantity })), method: selectedMethod.value })
-          : await api.post('/user/order/quote', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), method: selectedMethod.value, subscription_mode: 'append' });
+          ? await api.post('/user/order/digital-cart/quote', { items: local.items.map((item) => ({ plan_id: item.plan_id, package_id: item.package_id, quantity: item.quantity })), method })
+          : await api.post('/user/order/quote', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), method, subscription_mode: 'append' });
         local.quoteError = '';
       } catch (error) {
         local.quoteError = error.message;
@@ -2235,14 +2237,25 @@ const DigitalCheckoutPage = {
     onBeforeUnmount(() => clearTimeout(quoteTimer));
     async function submit() {
       if (!local.items?.length || !selectedMethod.value) return;
+      if (selectedMethod.value === balanceMethodId && Number(local.quote?.pay_amount ?? local.quote?.total_amount ?? 0) > 0) {
+        toast('账户余额不足，请选择其他支付方式或先充值', 'error');
+        return;
+      }
       local.submitting = true;
       try {
         const tradeNo = cartMode
           ? await api.post('/user/order/digital-cart/save', { items: local.items.map((item) => ({ plan_id: item.plan_id, package_id: item.package_id, quantity: item.quantity })) })
           : await api.post('/user/order/save', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), subscription_mode: 'append' });
         if (cartMode) { digitalCart.value = []; storeDigitalCart(); }
-        toast('订单已创建，请完成支付');
-        go('orders', { trade_no: tradeNo, method: selectedMethod.value });
+        if (selectedMethod.value === balanceMethodId) {
+          await api.post('/user/order/checkout', { trade_no: tradeNo });
+          await refreshUser().catch(() => null);
+          toast('余额支付成功');
+          go('orders', { trade_no: tradeNo });
+        } else {
+          toast('订单已创建，请完成支付');
+          go('orders', { trade_no: tradeNo, method: selectedMethod.value });
+        }
       } catch (error) {
         toast(error.message, 'error');
       } finally {
@@ -2255,6 +2268,12 @@ const DigitalCheckoutPage = {
       const quote = local.quote || {};
       const original = quote.original_amount ?? (local.items || []).reduce((sum, item) => sum + (item.package?.price || 0) * item.quantity, 0);
       const pay = quote.pay_amount ?? quote.total_amount ?? original;
+      const balanceSelected = selectedMethod.value === balanceMethodId;
+      const balanceInsufficient = balanceSelected && Number(pay) > 0;
+      const paymentOptions = [
+        { id: balanceMethodId, name: '本地余额支付', balance: Number(state.user?.balance || 0) },
+        ...(local.methods || []),
+      ];
       return h('div', { class: 'store-checkout-page' }, [
         pageError(local.error),
         h('div', { class: 'store-checkout-title' }, [h('h1', '订单结算'), h('p', '确认订单信息并提交')]),
@@ -2263,7 +2282,6 @@ const DigitalCheckoutPage = {
           h('main', [
             h('section', { class: 'store-checkout-panel' }, [h('h2', '订单商品'), h('div', { class: 'store-checkout-products' }, (local.items || []).map((item) => h('div', { class: 'store-checkout-product', key: item.key }, [h('div', { class: 'store-checkout-thumb', style: item.plan.product_config?.image_url ? { backgroundImage: `url("${item.plan.product_config.image_url}")` } : {} }, item.plan.product_config?.image_url ? [] : [h('span', String(item.plan.name || 'D').slice(0, 1))]), h('div', [h('h3', item.plan.name || '数字商品'), h('p', `数量：${item.quantity}`), h('p', `规格：${item.package?.name || '-'}`), h('strong', money((item.package?.price || 0) * item.quantity, currencySymbol()))])])))]),
             !cartMode ? h('section', { class: 'store-checkout-panel' }, [h('h2', '优惠券'), h('input', { value: couponCode.value, placeholder: '输入优惠券代码（可选）', onInput: (event) => { couponCode.value = event.target.value; } })]) : null,
-            h('section', { class: 'store-checkout-panel' }, [h('h2', '购买方式'), h('div', { class: 'store-buy-mode' }, [h('span', { class: 'active' }, '登录会员购买')])]),
           ]),
           h('aside', { class: 'store-checkout-panel store-checkout-summary' }, [
             h('h2', '提交订单'),
@@ -2271,9 +2289,14 @@ const DigitalCheckoutPage = {
             h('div', [quoteLine('商品数量', String((local.items || []).reduce((sum, item) => sum + item.quantity, 0))), quoteLine('原始金额', money(original, currencySymbol())), quoteLine('优惠券', money(quote.discount_amount || 0, currencySymbol())), quoteLine('余额抵扣', money(quote.balance_amount || 0, currencySymbol()))]),
             h('div', { class: 'store-checkout-total' }, [h('span', '应付金额（预估）'), h('strong', money(pay, currencySymbol()))]),
             h('h3', '支付方式'),
-            local.methods?.length ? h('div', { class: 'payment-methods digital-payment-methods' }, local.methods.map((method, index) => h('label', { class: 'payment-method' }, [h('input', { type: 'radio', name: 'checkout-method', value: method.id, checked: String(selectedMethod.value || local.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0), onChange: (event) => { selectedMethod.value = event.target.value; } }), method.icon ? h('img', { src: method.icon, alt: '' }) : h('span', { class: 'pay-icon' }, '¥'), h('span', method.name || method.payment)]))) : emptyBlock('暂无可用支付方式'),
+            h('div', { class: 'payment-methods digital-payment-methods' }, paymentOptions.map((method) => h('label', { class: ['payment-method', String(method.id) === balanceMethodId ? 'balance-payment-method' : ''] }, [
+              h('input', { type: 'radio', name: 'checkout-method', value: method.id, checked: String(selectedMethod.value) === String(method.id), onChange: (event) => { selectedMethod.value = event.target.value; } }),
+              method.icon ? h('img', { src: method.icon, alt: '' }) : h('span', { class: 'pay-icon' }, String(method.id) === balanceMethodId ? '¥' : '付'),
+              h('span', { class: 'payment-method-copy' }, [h('b', method.name || method.payment), String(method.id) === balanceMethodId ? h('small', `可用余额 ${money(method.balance, currencySymbol())}`) : null]),
+            ]))),
+            balanceInsufficient ? h('p', { class: 'quote-error balance-payment-warning' }, `余额不足，还差 ${money(pay, currencySymbol())}，请选择其他支付方式或先充值。`) : null,
             local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
-            h('button', { class: 'primary-button', type: 'button', disabled: local.submitting || !selectedMethod.value || Boolean(local.quoteError), onClick: submit }, local.submitting ? '提交中…' : '提交订单并支付'),
+            h('button', { class: 'primary-button', type: 'button', disabled: local.submitting || !selectedMethod.value || Boolean(local.quoteError) || balanceInsufficient, onClick: submit }, local.submitting ? '提交中…' : (balanceSelected ? '使用余额支付' : '提交订单并支付')),
           ]),
         ]),
       ]);
