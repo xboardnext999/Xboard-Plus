@@ -2218,25 +2218,41 @@ const DigitalCheckoutPage = {
       page.package = page.items[0]?.package;
       selectedMethod.value = balanceMethodId;
       page.quote = null;
+      page.quoteLoading = true;
+      page.quoteError = '';
       page.submitting = false;
+      setTimeout(refreshQuote, 0);
     });
     let quoteTimer = null;
+    let quoteRequestId = 0;
     async function refreshQuote() {
       if (!local.items?.length || !selectedMethod.value) return;
+      const requestId = ++quoteRequestId;
+      local.quoteLoading = true;
       try {
         const method = selectedMethod.value === balanceMethodId ? null : selectedMethod.value;
-        local.quote = cartMode
+        const quote = cartMode
           ? await api.post('/user/order/digital-cart/quote', { items: local.items.map((item) => ({ plan_id: item.plan_id, package_id: item.package_id, quantity: item.quantity })), method })
           : await api.post('/user/order/quote', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), method, subscription_mode: 'append' });
+        if (requestId !== quoteRequestId) return;
+        local.quote = quote;
         local.quoteError = '';
       } catch (error) {
+        if (requestId !== quoteRequestId) return;
         local.quoteError = error.message;
+      } finally {
+        if (requestId === quoteRequestId) local.quoteLoading = false;
       }
     }
-    watch(() => [couponCode.value, selectedMethod.value, local.items?.length], () => { clearTimeout(quoteTimer); quoteTimer = setTimeout(refreshQuote, 220); });
+    watch(() => [couponCode.value, selectedMethod.value, local.items?.length], () => {
+      clearTimeout(quoteTimer);
+      local.quoteLoading = true;
+      quoteTimer = setTimeout(refreshQuote, 220);
+    });
     onBeforeUnmount(() => clearTimeout(quoteTimer));
     async function submit() {
       if (!local.items?.length || !selectedMethod.value) return;
+      if (local.quoteLoading || !local.quote) return;
       if (selectedMethod.value === balanceMethodId && Number(local.quote?.pay_amount ?? local.quote?.total_amount ?? 0) > 0) {
         toast('账户余额不足，请选择其他支付方式或先充值', 'error');
         return;
@@ -2269,7 +2285,7 @@ const DigitalCheckoutPage = {
       const original = quote.original_amount ?? (local.items || []).reduce((sum, item) => sum + (item.package?.price || 0) * item.quantity, 0);
       const pay = quote.pay_amount ?? quote.total_amount ?? original;
       const balanceSelected = selectedMethod.value === balanceMethodId;
-      const balanceInsufficient = balanceSelected && Number(pay) > 0;
+      const balanceInsufficient = balanceSelected && Boolean(local.quote) && !local.quoteLoading && Number(pay) > 0;
       const paymentOptions = [
         { id: balanceMethodId, name: '本地余额支付', balance: Number(state.user?.balance || 0) },
         ...(local.methods || []),
@@ -2287,7 +2303,7 @@ const DigitalCheckoutPage = {
             h('h2', '提交订单'),
             h('p', '订单金额以服务端计算为准'),
             h('div', [quoteLine('商品数量', String((local.items || []).reduce((sum, item) => sum + item.quantity, 0))), quoteLine('原始金额', money(original, currencySymbol())), quoteLine('优惠券', money(quote.discount_amount || 0, currencySymbol())), quoteLine('余额抵扣', money(quote.balance_amount || 0, currencySymbol()))]),
-            h('div', { class: 'store-checkout-total' }, [h('span', '应付金额（预估）'), h('strong', money(pay, currencySymbol()))]),
+            h('div', { class: 'store-checkout-total' }, [h('span', '应付金额（预估）'), h('strong', local.quoteLoading ? '计算中…' : money(pay, currencySymbol()))]),
             h('h3', '支付方式'),
             h('div', { class: 'payment-methods digital-payment-methods' }, paymentOptions.map((method) => h('label', { class: ['payment-method', String(method.id) === balanceMethodId ? 'balance-payment-method' : ''] }, [
               h('input', { type: 'radio', name: 'checkout-method', value: method.id, checked: String(selectedMethod.value) === String(method.id), onChange: (event) => { selectedMethod.value = event.target.value; } }),
@@ -2296,7 +2312,7 @@ const DigitalCheckoutPage = {
             ]))),
             balanceInsufficient ? h('p', { class: 'quote-error balance-payment-warning' }, `余额不足，还差 ${money(pay, currencySymbol())}，请选择其他支付方式或先充值。`) : null,
             local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
-            h('button', { class: 'primary-button', type: 'button', disabled: local.submitting || !selectedMethod.value || Boolean(local.quoteError) || balanceInsufficient, onClick: submit }, local.submitting ? '提交中…' : (balanceSelected ? '使用余额支付' : '提交订单并支付')),
+            h('button', { class: 'primary-button', type: 'button', disabled: local.submitting || local.quoteLoading || !local.quote || !selectedMethod.value || Boolean(local.quoteError) || balanceInsufficient, onClick: submit }, local.submitting ? '提交中…' : (local.quoteLoading ? '正在计算金额…' : (balanceSelected ? '使用余额支付' : '提交订单并支付'))),
           ]),
         ]),
       ]);
