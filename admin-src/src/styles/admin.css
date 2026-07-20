@@ -339,6 +339,16 @@ button:disabled {
   padding: 22px 28px 48px;
 }
 
+.route-progress { position: fixed; z-index: 120; inset: 0 0 auto 0; height: 2px; overflow: hidden; pointer-events: none; background: transparent; }
+.route-progress i { display: block; width: 38%; height: 100%; border-radius: 0 999px 999px 0; background: linear-gradient(90deg, #6366f1, #8b5cf6, #22d3ee); animation: route-progress 1.1s ease-in-out infinite; }
+@keyframes route-progress { 0% { transform: translateX(-110%); } 100% { transform: translateX(285%); } }
+.admin-route-enter-active, .admin-route-leave-active { transition: opacity .12s ease, transform .12s ease; }
+.admin-route-enter-from { opacity: 0; transform: translateY(3px); }
+.admin-route-leave-to { opacity: 0; }
+.route-loading { min-height: 260px; display: grid; place-items: center; align-content: center; gap: 10px; color: var(--muted); font-size: 13px; }
+.route-loading span { width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: route-spin .7s linear infinite; }
+@keyframes route-spin { to { transform: rotate(360deg); } }
+
 .admin-topbar {
   display: flex;
   align-items: center;

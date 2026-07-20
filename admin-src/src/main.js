@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import App from './App.vue';
-import router from './router';
+import router, { prefetchCommonPages } from './router';
 import ToggleSwitch from './components/ToggleSwitch.vue';
 import './styles/admin.css';
 
@@ -11,3 +11,4 @@ window.addEventListener('admin:unauthorized', () => {
 });
 
 createApp(App).component('ToggleSwitch', ToggleSwitch).use(router).mount('#app');
+prefetchCommonPages();

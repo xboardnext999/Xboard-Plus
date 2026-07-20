@@ -2,7 +2,12 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import AdminLayout from '../layout/AdminLayout.vue';
 import { flatMenus } from '../config/menu';
 
-const page = (name) => () => import(`../pages/${name}.vue`);
+const pageLoaders = new Map();
+const page = (name) => {
+  const loader = () => import(`../pages/${name}.vue`);
+  pageLoaders.set(name, loader);
+  return loader;
+};
 const Dashboard = page('Dashboard'), GroupBuy = page('GroupBuy'), ResourcePage = page('ResourcePage'), Login = page('Login');
 const SystemConfig = page('SystemConfig'), AdminLockSettings = page('AdminLockSettings'), PluginManagement = page('PluginManagement'), ThemeManagement = page('ThemeManagement'), NoticeManagement = page('NoticeManagement'), PaymentManagement = page('PaymentManagement'), KnowledgeManagement = page('KnowledgeManagement');
 const TemporaryAccess = page('TemporaryAccess'), AuditManagement = page('AuditManagement'), BackupManagement = page('BackupManagement');
@@ -78,5 +83,19 @@ router.beforeEach((to) => {
   const token = localStorage.getItem('XBOARD_ACCESS_TOKEN') || localStorage.getItem('token') || localStorage.getItem('access_token');
   return token ? true : { name: 'Login' };
 });
+
+// 在浏览器空闲时预加载最常访问的页面，首次点击无需再等待 chunk 下载。
+// 只预加载小而高频的页面，避免占用移动端带宽。
+export function prefetchCommonPages() {
+  const run = () => ['NodeManagement', 'UserManagement', 'OrderManagement'].forEach((name) => {
+    const loader = pageLoaders.get(name);
+    if (loader) loader().catch(() => {});
+  });
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    window.requestIdleCallback(run, { timeout: 1800 });
+  } else if (typeof window !== 'undefined') {
+    window.setTimeout(run, 1200);
+  }
+}
 
 export default router;

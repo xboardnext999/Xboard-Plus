@@ -2,6 +2,10 @@ function cleanSlash(value) {
   return String(value || '').replace(/^\/|\/$/g, '');
 }
 
+// 页面快速切换时，多个组件可能在同一瞬间请求同一个资源。
+// 只合并进行中的 GET 请求，不缓存结果，避免后台数据变陈旧。
+const inflightGets = new Map();
+
 export function appBaseUrl() {
   const base = (window.settings && window.settings.base_url) || '/';
   return String(base).replace(/\/$/, '');
@@ -72,7 +76,11 @@ export async function request(path, options = {}) {
 
 export function get(path, params = {}) {
   const query = toQuery(params);
-  return request(`${path}${query ? `?${query}` : ''}`);
+  const resource = `${path}${query ? `?${query}` : ''}`;
+  if (inflightGets.has(resource)) return inflightGets.get(resource);
+  const pending = request(resource).finally(() => inflightGets.delete(resource));
+  inflightGets.set(resource, pending);
+  return pending;
 }
 
 export async function getEnvelope(path, params = {}) {
