@@ -1,4 +1,5 @@
 <script setup>
+import AppIcon from './AppIcon.vue';
 defineProps({ rows: { type: Array, default: () => [] }, columns: { type: Array, default: () => [] }, loading: Boolean, editable: Boolean, deletable: Boolean });
 defineEmits(['edit', 'drop']);
 
@@ -27,8 +28,8 @@ function cell(row, column) {
     <table class="data-table">
       <thead><tr><th v-for="column in columns" :key="column">{{ heading(column) }}</th><th v-if="editable || deletable">操作</th></tr></thead>
       <tbody>
-        <tr v-if="loading"><td :colspan="columns.length + (editable || deletable ? 1 : 0)" class="empty-cell">正在加载…</td></tr>
-        <tr v-else-if="!rows.length"><td :colspan="columns.length + (editable || deletable ? 1 : 0)" class="empty-cell">暂无数据</td></tr>
+        <tr v-if="loading"><td :colspan="columns.length + (editable || deletable ? 1 : 0)" class="empty-cell"><span class="table-state loading"><AppIcon name="LoaderCircle" :size="20" /><strong>正在加载</strong><small>正在获取最新数据…</small></span></td></tr>
+        <tr v-else-if="!rows.length"><td :colspan="columns.length + (editable || deletable ? 1 : 0)" class="empty-cell"><span class="table-state"><AppIcon name="Inbox" :size="22" /><strong>暂无数据</strong><small>当前条件下没有可显示的记录</small></span></td></tr>
         <tr v-for="(row, index) in rows" v-else :key="row.id || row.trade_no || index">
           <td v-for="column in columns" :key="column" :title="cell(row, column)"><span v-if="BOOL_KEYS.has(column)" class="status-pill" :class="{ off: !Number(row[column]) }">{{ cell(row, column) }}</span><span v-else class="cell-value">{{ cell(row, column) }}</span></td>
           <td v-if="editable || deletable" class="table-actions"><button v-if="editable" class="text-button" @click="$emit('edit', row)">编辑</button><button v-if="deletable" class="text-button danger" @click="$emit('drop', row)">删除</button></td>
