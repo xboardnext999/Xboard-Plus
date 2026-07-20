@@ -1,0 +1,59 @@
+name: Forwarding Core Release
+
+on:
+  push:
+    tags:
+      - "forwarding-core-v*"
+      - "2.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag
+        required: true
+        default: 2.0.7-beta
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: forwarding/core/go.mod
+          cache-dependency-path: |
+            forwarding/core/go.sum
+            forwarding/core/x/go.sum
+      - name: Build Linux binary
+        working-directory: forwarding/core
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+        run: go build -trimpath -ldflags="-s -w" -o "../../gost-${GOARCH}" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gost-${{ matrix.arch }}
+          path: gost-${{ matrix.arch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes "Xboard Plus forwarding node core."
+          gh release upload "$RELEASE_TAG" dist/* forwarding/install.sh --clobber
