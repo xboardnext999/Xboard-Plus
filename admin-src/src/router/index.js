@@ -13,7 +13,7 @@ const SystemConfig = page('SystemConfig'), AdminLockSettings = page('AdminLockSe
 const TemporaryAccess = page('TemporaryAccess'), AuditManagement = page('AuditManagement'), BackupManagement = page('BackupManagement');
 const ServerManagement = page('ServerManagement'), NodeManagement = page('NodeManagement'), GroupManagement = page('GroupManagement'), RouteManagement = page('RouteManagement'), NodeDiagnostics = page('NodeDiagnostics');
 const PlanManagement = page('PlanManagement'), ForwardingPlanManagement = page('ForwardingPlanManagement'), OrderManagement = page('OrderManagement'), CouponManagement = page('CouponManagement'), GiftCardManagement = page('GiftCardManagement'), UserManagement = page('UserManagement'), TicketManagement = page('TicketManagement'), TrafficResetManagement = page('TrafficResetManagement');
-const FluxManagement = page('FluxManagement'), DigitalProductManagement = page('DigitalProductManagement');
+const FluxManagement = page('FluxManagement'), DigitalProductManagement = page('DigitalProductManagement'), DigitalInventoryManagement = page('DigitalInventoryManagement');
 
 const menuRoutes = flatMenus
   .filter((item) => !['/dashboard', '/system/config', '/system/admin-lock', '/system/temporary-access', '/system/audit', '/system/backup', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy', '/forwarding/dashboard', '/forwarding/plans', '/forwarding/forwards', '/forwarding/tunnels', '/forwarding/nodes', '/forwarding/limits', '/forwarding/access', '/digital/products', '/digital/inventory', '/digital/orders', '/digital/delivery'].includes(item.path))
@@ -60,7 +60,7 @@ const router = createRouter({
         { path: 'subscription/coupon', name: 'CouponManagement', component: CouponManagement, meta: { title: '优惠券管理', group: '订阅管理' } },
         { path: 'subscription/gift-card', name: 'GiftCardManagement', component: GiftCardManagement, meta: { title: '礼品卡管理', group: '订阅管理' } },
         { path: 'digital/products', name: 'DigitalProductManagement', component: DigitalProductManagement, meta: { title: '数字商品', group: '数字商品' } },
-        { path: 'digital/inventory', name: 'DigitalInventoryManagement', component: DigitalProductManagement, meta: { title: '库存管理', group: '数字商品' } },
+        { path: 'digital/inventory', name: 'DigitalInventoryManagement', component: DigitalInventoryManagement, meta: { title: '库存管理', group: '数字商品' } },
         { path: 'digital/orders', name: 'DigitalOrderManagement', component: OrderManagement, meta: { title: '订单记录', group: '数字商品' } },
         { path: 'digital/delivery', name: 'DigitalDeliveryManagement', component: OrderManagement, meta: { title: '交付记录', group: '数字商品' } },
         { path: 'forwarding/plans', name: 'ForwardingPlanManagement', component: ForwardingPlanManagement, meta: { title: '转发套餐', group: '流量转发' } },
