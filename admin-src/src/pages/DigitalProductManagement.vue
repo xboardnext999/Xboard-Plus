@@ -18,6 +18,7 @@ const keyword = ref(""),
     statusFilter = ref("all"),
     categoryFilter = ref("all");
 const draggingId = ref(null),
+    dragOverId = ref(null),
     sorting = ref(false);
 let dragSnapshot = [];
 const toast = reactive({ text: "", type: "" });
@@ -109,9 +110,19 @@ function lowestPrice(row) {
 }
 function startDrag(event, row) {
     draggingId.value = row.id;
+    dragOverId.value = null;
     dragSnapshot = rows.value.map((item) => item.id);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(row.id));
+}
+function dragOverRow(row) {
+    if (draggingId.value && draggingId.value !== row.id) {
+        dragOverId.value = row.id;
+    }
+}
+function finishDrag() {
+    draggingId.value = null;
+    dragOverId.value = null;
 }
 async function dropRow(target) {
     const sourceIndex = rows.value.findIndex(
@@ -137,7 +148,7 @@ async function dropRow(target) {
         notify(e.message, "error");
     } finally {
         sorting.value = false;
-        draggingId.value = null;
+        finishDrag();
     }
 }
 async function toggleSelling(row, enabled) {
@@ -458,22 +469,19 @@ onMounted(load);
                             <tr
                                 v-for="row in filteredRows"
                                 :key="row.id"
+                                draggable="true"
                                 :class="{
                                     'is-dragging': draggingId === row.id,
+                                    'is-drag-over': dragOverId === row.id,
                                 }"
-                                @dragover.prevent
+                                @dragstart="startDrag($event, row)"
+                                @dragend="finishDrag"
+                                @dragover.prevent="dragOverRow(row)"
                                 @drop.prevent="dropRow(row)"
                             >
                                 <td class="digital-sale-column">
                                     <div class="digital-row-controls">
-                                        <span
-                                            class="digital-drag-handle"
-                                            draggable="true"
-                                            title="拖动排序"
-                                            @dragstart="startDrag($event, row)"
-                                            @dragend="draggingId = null"
-                                            >⋮⋮</span
-                                        ><ToggleSwitch
+                                        <ToggleSwitch
                                             :model-value="
                                                 Boolean(row.show && row.sell)
                                             "
