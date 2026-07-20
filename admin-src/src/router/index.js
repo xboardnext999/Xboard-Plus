@@ -8,9 +8,10 @@ const SystemConfig = page('SystemConfig'), AdminLockSettings = page('AdminLockSe
 const TemporaryAccess = page('TemporaryAccess'), AuditManagement = page('AuditManagement'), BackupManagement = page('BackupManagement');
 const ServerManagement = page('ServerManagement'), NodeManagement = page('NodeManagement'), GroupManagement = page('GroupManagement'), RouteManagement = page('RouteManagement'), NodeDiagnostics = page('NodeDiagnostics');
 const PlanManagement = page('PlanManagement'), OrderManagement = page('OrderManagement'), CouponManagement = page('CouponManagement'), GiftCardManagement = page('GiftCardManagement'), UserManagement = page('UserManagement'), TicketManagement = page('TicketManagement'), TrafficResetManagement = page('TrafficResetManagement');
+const FluxManagement = page('FluxManagement');
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/admin-lock', '/system/temporary-access', '/system/audit', '/system/backup', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/admin-lock', '/system/temporary-access', '/system/audit', '/system/backup', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy', '/flux/dashboard', '/flux/forwards', '/flux/tunnels', '/flux/nodes', '/flux/limits', '/flux/access'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -56,6 +57,7 @@ const router = createRouter({
         { path: 'user/list', name: 'UserManagement', component: UserManagement, meta: { title: '用户管理', group: '用户管理' } },
         { path: 'user/ticket', name: 'TicketManagement', component: TicketManagement, meta: { title: '工单管理', group: '用户管理' } },
         { path: 'user/traffic-reset-log', name: 'TrafficResetManagement', component: TrafficResetManagement, meta: { title: '流量重置日志', group: '用户管理' } },
+        { path: 'flux/:resource', name: 'FluxManagement', component: FluxManagement, meta: { title: '流量转发', group: '流量转发' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',

@@ -25,6 +25,7 @@ use App\Http\Controllers\V2\Admin\NodeSyncDiagnosticController;
 use App\Http\Controllers\V2\Admin\AdminLockController;
 use App\Http\Controllers\V2\Admin\AdminAccessController;
 use App\Http\Controllers\V2\Admin\BackupController;
+use App\Http\Controllers\V2\Admin\FluxController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class AdminRoute
@@ -54,6 +55,13 @@ class AdminRoute
                 $router->get('/fetch', [BackupController::class, 'index']);
                 $router->post('/create', [BackupController::class, 'create']);
                 $router->post('/settings', [BackupController::class, 'saveSettings']);
+            });
+            $router->group(['prefix' => 'flux'], function ($router) {
+                $router->get('/summary', [FluxController::class, 'summary']);
+                $router->get('/options', [FluxController::class, 'options']);
+                $router->get('/{resource}', [FluxController::class, 'index']);
+                $router->post('/{resource}/save', [FluxController::class, 'save']);
+                $router->post('/{resource}/drop', [FluxController::class, 'destroy']);
             });
             // Config
             $router->group([
