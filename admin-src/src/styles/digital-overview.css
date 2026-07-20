@@ -50,10 +50,31 @@
 
 .digital-faq-section-grid {
   display: grid;
-  grid-template-columns: minmax(320px, .72fr) minmax(0, 1.28fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 16px;
   scroll-margin-top: 24px;
+}
+
+.digital-faq-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.digital-faq-editor-modal {
+  width: min(540px, calc(100vw - 32px));
+}
+
+.digital-faq-editor-modal .digital-faq-form {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-soft);
+  padding: 16px;
+}
+
+.digital-faq-editor-modal > .modal-actions {
+  margin-top: 18px;
 }
 
 .digital-faq-panel-head {
@@ -248,4 +269,5 @@
   .digital-faq-layout { padding: 14px; }
   .digital-faq-count { white-space: nowrap; }
   .digital-faq-form-row { align-items: stretch; }
+  .digital-faq-head-actions { align-items: flex-end; flex-direction: column; }
 }

@@ -12,7 +12,8 @@ const rows = ref([]),
     showForm = ref(false),
     showBannerForm = ref(false),
     showCategoryEditor = ref(false),
-    showCategoryManager = ref(false);
+    showCategoryManager = ref(false),
+    showFaqEditor = ref(false);
 const managedCategories = ref([]),
     categorySaving = ref(false);
 const categoryForm = reactive({ id: null, name: "", enabled: true });
@@ -267,12 +268,7 @@ function openFaq(item = null) {
         enabled: item?.enabled ?? true,
         sort: item?.sort ?? managedFaqs.value.length + 1,
     });
-    requestAnimationFrame(() => {
-        document.getElementById("digital-faq-panel")?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-        });
-    });
+    showFaqEditor.value = true;
 }
 async function saveFaq() {
     if (!faqForm.title.trim()) return notify("请输入问题标题", "error");
@@ -282,6 +278,7 @@ async function saveFaq() {
         await post("/digital-products/faqs/save", faqForm);
         managedFaqs.value = await get("/digital-products/faqs");
         Object.assign(faqForm, { id: null, title: "", content: "", enabled: true, sort: managedFaqs.value.length + 1 });
+        showFaqEditor.value = false;
         notify("常见问题已保存");
     } catch (e) {
         notify(e.message, "error");
@@ -878,32 +875,16 @@ onMounted(load);
         </div>
 
         <section id="digital-faq-panel" class="digital-faq-section-grid">
-            <article class="panel digital-faq-panel digital-faq-create-card">
-                <div class="digital-faq-panel-head">
-                    <div>
-                        <span class="digital-faq-panel-icon"><AppIcon name="Plus" :size="18" /></span>
-                        <div><h2>{{ faqForm.id ? "编辑问题" : "添加问题" }}</h2><p>{{ faqForm.id ? `正在编辑 #${faqForm.id}` : "创建新的帮助内容" }}</p></div>
-                    </div>
-                </div>
-                <div class="digital-faq-form">
-                    <label class="field"><span>问题标题 *</span><input v-model.trim="faqForm.title" maxlength="150" placeholder="例如：购买后如何交付？" /></label>
-                    <label class="field"><span>问题内容 *</span><textarea v-model.trim="faqForm.content" rows="6" maxlength="5000" placeholder="输入清晰、简洁的答案内容"></textarea></label>
-                    <div class="digital-faq-form-row">
-                        <label class="field"><span>前台显示</span><ToggleSwitch v-model="faqForm.enabled" on-label="显示" off-label="隐藏" /></label>
-                    </div>
-                    <div class="modal-actions">
-                        <button v-if="faqForm.id" class="btn btn-ghost" @click="openFaq()">取消编辑</button>
-                        <button class="btn btn-primary" :disabled="faqSaving" @click="saveFaq">{{ faqSaving ? "保存中…" : faqForm.id ? "保存修改" : "添加问题" }}</button>
-                    </div>
-                </div>
-            </article>
             <article class="panel digital-faq-panel digital-faq-sort-card">
                 <div class="digital-faq-panel-head">
                     <div>
                         <span class="digital-faq-panel-icon"><AppIcon name="GripVertical" :size="18" /></span>
-                        <div><h2>问题排序</h2><p>拖动整行调整前台展示顺序。</p></div>
+                        <div><h2>常见问题</h2><p>拖动整行调整前台展示顺序。</p></div>
                     </div>
-                    <span class="digital-faq-count">{{ faqSorting ? "保存中…" : `${managedFaqs.length} 个问题` }}</span>
+                    <div class="digital-faq-head-actions">
+                        <span class="digital-faq-count">{{ faqSorting ? "保存中…" : `${managedFaqs.length} 个问题` }}</span>
+                        <button class="btn btn-primary btn-sm" @click="openFaq()"><AppIcon name="Plus" :size="14" />添加问题</button>
+                    </div>
                 </div>
                 <div class="digital-faq-manage-list">
                     <article
@@ -925,6 +906,26 @@ onMounted(load);
                 </div>
             </article>
         </section>
+
+        <div v-if="showFaqEditor" class="modal-backdrop" @click.self="showFaqEditor = false">
+            <section class="modal-card digital-faq-editor-modal">
+                <div class="panel-head">
+                    <div><h2>{{ faqForm.id ? "编辑问题" : "添加问题" }}</h2><p>{{ faqForm.id ? "修改问题内容和显示状态。" : "创建新的常见问题内容。" }}</p></div>
+                    <button class="btn btn-ghost" @click="showFaqEditor = false">关闭</button>
+                </div>
+                <div class="digital-faq-form">
+                    <label class="field"><span>问题标题 *</span><input v-model.trim="faqForm.title" maxlength="150" placeholder="例如：购买后如何交付？" /></label>
+                    <label class="field"><span>问题内容 *</span><textarea v-model.trim="faqForm.content" rows="6" maxlength="5000" placeholder="输入清晰、简洁的答案内容"></textarea></label>
+                    <div class="digital-faq-form-row">
+                        <label class="field"><span>前台显示</span><ToggleSwitch v-model="faqForm.enabled" on-label="显示" off-label="隐藏" /></label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" @click="showFaqEditor = false">取消</button>
+                    <button class="btn btn-primary" :disabled="faqSaving" @click="saveFaq">{{ faqSaving ? "保存中…" : faqForm.id ? "保存修改" : "添加问题" }}</button>
+                </div>
+            </section>
+        </div>
 
         <div
             v-if="showBannerForm"
