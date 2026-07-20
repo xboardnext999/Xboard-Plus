@@ -1,13 +1,13 @@
 {
-  "_SmartEditor-saiqcXwo.js": {
-    "file": "assets/SmartEditor-saiqcXwo.js",
+  "_SmartEditor-D0Um0BfD.js": {
+    "file": "assets/SmartEditor-D0Um0BfD.js",
     "name": "SmartEditor",
     "imports": [
       "index.html"
     ]
   },
   "index.html": {
-    "file": "assets/index-tBFvdBbH.js",
+    "file": "assets/index-CewbkV29.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -17,6 +17,7 @@
       "src/pages/BackupManagement.vue",
       "src/pages/CouponManagement.vue",
       "src/pages/Dashboard.vue",
+      "src/pages/DigitalDeliveryManagement.vue",
       "src/pages/DigitalInventoryManagement.vue",
       "src/pages/DigitalProductManagement.vue",
       "src/pages/FluxManagement.vue",
@@ -44,11 +45,11 @@
       "src/pages/UserManagement.vue"
     ],
     "css": [
-      "assets/index-BAm5NK6o.css"
+      "assets/index-Bxs4GmDT.css"
     ]
   },
   "src/pages/AdminLockSettings.vue": {
-    "file": "assets/AdminLockSettings-DaCm_Vip.js",
+    "file": "assets/AdminLockSettings-DPqo0ilM.js",
     "name": "AdminLockSettings",
     "src": "src/pages/AdminLockSettings.vue",
     "isDynamicEntry": true,
@@ -57,7 +58,7 @@
     ]
   },
   "src/pages/AuditManagement.vue": {
-    "file": "assets/AuditManagement-BRyqrv-L.js",
+    "file": "assets/AuditManagement-e3olkcHJ.js",
     "name": "AuditManagement",
     "src": "src/pages/AuditManagement.vue",
     "isDynamicEntry": true,
@@ -66,7 +67,7 @@
     ]
   },
   "src/pages/BackupManagement.vue": {
-    "file": "assets/BackupManagement-DzCTSUCY.js",
+    "file": "assets/BackupManagement-Ce8qT5Ol.js",
     "name": "BackupManagement",
     "src": "src/pages/BackupManagement.vue",
     "isDynamicEntry": true,
@@ -75,7 +76,7 @@
     ]
   },
   "src/pages/CouponManagement.vue": {
-    "file": "assets/CouponManagement-BTrL4cT8.js",
+    "file": "assets/CouponManagement-BhSBzVWg.js",
     "name": "CouponManagement",
     "src": "src/pages/CouponManagement.vue",
     "isDynamicEntry": true,
@@ -84,7 +85,7 @@
     ]
   },
   "src/pages/Dashboard.vue": {
-    "file": "assets/Dashboard-B3MJLGFG.js",
+    "file": "assets/Dashboard-Dw94z0EL.js",
     "name": "Dashboard",
     "src": "src/pages/Dashboard.vue",
     "isDynamicEntry": true,
@@ -92,8 +93,17 @@
       "index.html"
     ]
   },
+  "src/pages/DigitalDeliveryManagement.vue": {
+    "file": "assets/DigitalDeliveryManagement-s5eyd4Tw.js",
+    "name": "DigitalDeliveryManagement",
+    "src": "src/pages/DigitalDeliveryManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
   "src/pages/DigitalInventoryManagement.vue": {
-    "file": "assets/DigitalInventoryManagement-BA6rq6Xg.js",
+    "file": "assets/DigitalInventoryManagement-C6ve9b-H.js",
     "name": "DigitalInventoryManagement",
     "src": "src/pages/DigitalInventoryManagement.vue",
     "isDynamicEntry": true,
@@ -102,7 +112,7 @@
     ]
   },
   "src/pages/DigitalProductManagement.vue": {
-    "file": "assets/DigitalProductManagement-hZmAFUbN.js",
+    "file": "assets/DigitalProductManagement-zyAucNiH.js",
     "name": "DigitalProductManagement",
     "src": "src/pages/DigitalProductManagement.vue",
     "isDynamicEntry": true,
@@ -111,7 +121,7 @@
     ]
   },
   "src/pages/FluxManagement.vue": {
-    "file": "assets/FluxManagement-DOsZTQKe.js",
+    "file": "assets/FluxManagement-kT1gZXOF.js",
     "name": "FluxManagement",
     "src": "src/pages/FluxManagement.vue",
     "isDynamicEntry": true,
@@ -120,7 +130,7 @@
     ]
   },
   "src/pages/ForwardingPlanManagement.vue": {
-    "file": "assets/ForwardingPlanManagement-Cc4tXiPF.js",
+    "file": "assets/ForwardingPlanManagement-TfwZ1qUe.js",
     "name": "ForwardingPlanManagement",
     "src": "src/pages/ForwardingPlanManagement.vue",
     "isDynamicEntry": true,
@@ -129,7 +139,7 @@
     ]
   },
   "src/pages/GiftCardManagement.vue": {
-    "file": "assets/GiftCardManagement-BE1l4hJ-.js",
+    "file": "assets/GiftCardManagement-CWsKfhBB.js",
     "name": "GiftCardManagement",
     "src": "src/pages/GiftCardManagement.vue",
     "isDynamicEntry": true,
@@ -138,7 +148,7 @@
     ]
   },
   "src/pages/GroupBuy.vue": {
-    "file": "assets/GroupBuy-VsHbVZu7.js",
+    "file": "assets/GroupBuy-DzDvsErd.js",
     "name": "GroupBuy",
     "src": "src/pages/GroupBuy.vue",
     "isDynamicEntry": true,
@@ -147,7 +157,7 @@
     ]
   },
   "src/pages/GroupManagement.vue": {
-    "file": "assets/GroupManagement-DaemxPXy.js",
+    "file": "assets/GroupManagement-CuqtuS0-.js",
     "name": "GroupManagement",
     "src": "src/pages/GroupManagement.vue",
     "isDynamicEntry": true,
@@ -156,7 +166,7 @@
     ]
   },
   "src/pages/KnowledgeManagement.vue": {
-    "file": "assets/KnowledgeManagement-CylGIo1l.js",
+    "file": "assets/KnowledgeManagement-BapdUOJ-.js",
     "name": "KnowledgeManagement",
     "src": "src/pages/KnowledgeManagement.vue",
     "isDynamicEntry": true,
@@ -165,7 +175,7 @@
     ]
   },
   "src/pages/Login.vue": {
-    "file": "assets/Login-D-lvXnEf.js",
+    "file": "assets/Login-CCfje_tV.js",
     "name": "Login",
     "src": "src/pages/Login.vue",
     "isDynamicEntry": true,
@@ -174,7 +184,7 @@
     ]
   },
   "src/pages/NodeDiagnostics.vue": {
-    "file": "assets/NodeDiagnostics-7fYflF3N.js",
+    "file": "assets/NodeDiagnostics-BZ6079F9.js",
     "name": "NodeDiagnostics",
     "src": "src/pages/NodeDiagnostics.vue",
     "isDynamicEntry": true,
@@ -183,7 +193,7 @@
     ]
   },
   "src/pages/NodeManagement.vue": {
-    "file": "assets/NodeManagement-BHEge3b8.js",
+    "file": "assets/NodeManagement-CmCKSvjI.js",
     "name": "NodeManagement",
     "src": "src/pages/NodeManagement.vue",
     "isDynamicEntry": true,
@@ -192,7 +202,7 @@
     ]
   },
   "src/pages/NoticeManagement.vue": {
-    "file": "assets/NoticeManagement-CxwFiTS5.js",
+    "file": "assets/NoticeManagement-DWlJIs4x.js",
     "name": "NoticeManagement",
     "src": "src/pages/NoticeManagement.vue",
     "isDynamicEntry": true,
@@ -201,7 +211,7 @@
     ]
   },
   "src/pages/OrderManagement.vue": {
-    "file": "assets/OrderManagement-CjXclEXw.js",
+    "file": "assets/OrderManagement-DilMN97E.js",
     "name": "OrderManagement",
     "src": "src/pages/OrderManagement.vue",
     "isDynamicEntry": true,
@@ -210,17 +220,17 @@
     ]
   },
   "src/pages/PaymentManagement.vue": {
-    "file": "assets/PaymentManagement-D1JaNzMf.js",
+    "file": "assets/PaymentManagement-CHgtxaFo.js",
     "name": "PaymentManagement",
     "src": "src/pages/PaymentManagement.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_SmartEditor-saiqcXwo.js"
+      "_SmartEditor-D0Um0BfD.js"
     ]
   },
   "src/pages/PlanManagement.vue": {
-    "file": "assets/PlanManagement-Di4wBXFq.js",
+    "file": "assets/PlanManagement-BH2FeC8V.js",
     "name": "PlanManagement",
     "src": "src/pages/PlanManagement.vue",
     "isDynamicEntry": true,
@@ -229,27 +239,27 @@
     ]
   },
   "src/pages/PluginManagement.vue": {
-    "file": "assets/PluginManagement-B3L9MBtI.js",
+    "file": "assets/PluginManagement-D1EwHzFa.js",
     "name": "PluginManagement",
     "src": "src/pages/PluginManagement.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_SmartEditor-saiqcXwo.js"
+      "_SmartEditor-D0Um0BfD.js"
     ]
   },
   "src/pages/ResourcePage.vue": {
-    "file": "assets/ResourcePage-DfnbuhT8.js",
+    "file": "assets/ResourcePage-DMY_qtwm.js",
     "name": "ResourcePage",
     "src": "src/pages/ResourcePage.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_SmartEditor-saiqcXwo.js"
+      "_SmartEditor-D0Um0BfD.js"
     ]
   },
   "src/pages/RouteManagement.vue": {
-    "file": "assets/RouteManagement-BQLIB2sE.js",
+    "file": "assets/RouteManagement-BQdhr0Ud.js",
     "name": "RouteManagement",
     "src": "src/pages/RouteManagement.vue",
     "isDynamicEntry": true,
@@ -258,7 +268,7 @@
     ]
   },
   "src/pages/ServerManagement.vue": {
-    "file": "assets/ServerManagement-B81haf9w.js",
+    "file": "assets/ServerManagement-Bk_feNbh.js",
     "name": "ServerManagement",
     "src": "src/pages/ServerManagement.vue",
     "isDynamicEntry": true,
@@ -267,17 +277,17 @@
     ]
   },
   "src/pages/SystemConfig.vue": {
-    "file": "assets/SystemConfig-BdF4zzwi.js",
+    "file": "assets/SystemConfig-u6oSwsfr.js",
     "name": "SystemConfig",
     "src": "src/pages/SystemConfig.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_SmartEditor-saiqcXwo.js"
+      "_SmartEditor-D0Um0BfD.js"
     ]
   },
   "src/pages/TemporaryAccess.vue": {
-    "file": "assets/TemporaryAccess-BjcqL059.js",
+    "file": "assets/TemporaryAccess-DcR92i8Z.js",
     "name": "TemporaryAccess",
     "src": "src/pages/TemporaryAccess.vue",
     "isDynamicEntry": true,
@@ -286,17 +296,17 @@
     ]
   },
   "src/pages/ThemeManagement.vue": {
-    "file": "assets/ThemeManagement-DKFLqTMz.js",
+    "file": "assets/ThemeManagement-C9DwkUFB.js",
     "name": "ThemeManagement",
     "src": "src/pages/ThemeManagement.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_SmartEditor-saiqcXwo.js"
+      "_SmartEditor-D0Um0BfD.js"
     ]
   },
   "src/pages/TicketManagement.vue": {
-    "file": "assets/TicketManagement-DblnB1cn.js",
+    "file": "assets/TicketManagement-Dc-RRqX-.js",
     "name": "TicketManagement",
     "src": "src/pages/TicketManagement.vue",
     "isDynamicEntry": true,
@@ -305,7 +315,7 @@
     ]
   },
   "src/pages/TrafficResetManagement.vue": {
-    "file": "assets/TrafficResetManagement-Dzlug1F2.js",
+    "file": "assets/TrafficResetManagement-Bt-xfJmB.js",
     "name": "TrafficResetManagement",
     "src": "src/pages/TrafficResetManagement.vue",
     "isDynamicEntry": true,
@@ -314,7 +324,7 @@
     ]
   },
   "src/pages/UserManagement.vue": {
-    "file": "assets/UserManagement-BIcQ3Mh4.js",
+    "file": "assets/UserManagement-CMErF-E2.js",
     "name": "UserManagement",
     "src": "src/pages/UserManagement.vue",
     "isDynamicEntry": true,

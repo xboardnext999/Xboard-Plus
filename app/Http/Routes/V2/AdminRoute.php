@@ -68,6 +68,7 @@ class AdminRoute
                 $router->get('/fetch', [DigitalProductController::class, 'fetch']);
                 $router->post('/save', [DigitalProductController::class, 'save']);
                 $router->get('/stock', [DigitalProductController::class, 'stock']);
+                $router->get('/deliveries', [DigitalProductController::class, 'deliveries']);
                 $router->post('/stock/import', [DigitalProductController::class, 'importStock']);
                 $router->post('/stock/drop', [DigitalProductController::class, 'deleteStock']);
             });

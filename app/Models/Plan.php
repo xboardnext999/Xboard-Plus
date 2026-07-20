@@ -323,6 +323,11 @@ class Plan extends Model
         return $this->hasMany(Order::class);
     }
 
+    public function digitalItems(): HasMany
+    {
+        return $this->hasMany(DigitalProductItem::class, 'plan_id');
+    }
+
     /**
      * 设置流量重置方式
      *

@@ -36,6 +36,8 @@ class AdminPermission
         if ($relative === 'system/getAuditLog') return '/system/audit';
         if (in_array($relative, ['forwarding/summary', 'forwarding/options'], true)) return '/forwarding/dashboard';
         if (str_starts_with($relative, 'forwarding/plans')) return '/forwarding/plans';
+        if (str_starts_with($relative, 'digital-products/stock')) return '/digital/inventory';
+        if (str_starts_with($relative, 'digital-products/deliveries')) return '/digital/delivery';
         if (str_starts_with($relative, 'digital-products')) return '/digital/products';
         if (preg_match('#^forwarding/(forwards|tunnels|nodes|limits|access)(?:/|$)#', $relative, $matches)) {
             return '/forwarding/' . $matches[1];

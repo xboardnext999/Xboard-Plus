@@ -12,11 +12,11 @@ class DigitalProductController extends Controller
 {
     public function fetch(Request $request)
     {
-        $plans = Plan::where('product_type', 'digital')->orderBy('sort')->get();
-        $plans->each(function (Plan $plan): void {
-            $plan->setAttribute('stock_count', DigitalProductItem::where('plan_id', $plan->id)->where('status', DigitalProductItem::AVAILABLE)->count());
-            $plan->setAttribute('sold_count', DigitalProductItem::where('plan_id', $plan->id)->where('status', DigitalProductItem::SOLD)->count());
-        });
+        $plans = Plan::where('product_type', 'digital')
+            ->withCount([
+                'digitalItems as stock_count' => fn($query) => $query->where('status', DigitalProductItem::AVAILABLE),
+                'digitalItems as sold_count' => fn($query) => $query->where('status', DigitalProductItem::SOLD),
+            ])->orderBy('sort')->get();
         return $this->success($plans);
     }
 
@@ -61,7 +61,35 @@ class DigitalProductController extends Controller
     public function stock(Request $request)
     {
         $request->validate(['plan_id' => 'required|integer|exists:v2_plan,id']);
-        return $this->success(DigitalProductItem::where('plan_id', $request->integer('plan_id'))->latest('id')->get());
+        $query = DigitalProductItem::where('plan_id', $request->integer('plan_id'))->latest('id');
+        if ($request->filled('status')) $query->where('status', $request->input('status'));
+        if ($request->filled('keyword')) $query->where('content', 'like', '%' . trim((string) $request->input('keyword')) . '%');
+        return $this->paginate($query->paginate(
+            perPage: min(100, max(10, $request->integer('pageSize', 20))),
+            page: max(1, $request->integer('current', 1))
+        ));
+    }
+
+    public function deliveries(Request $request)
+    {
+        $query = DigitalProductItem::with([
+            'plan:id,name,product_config',
+            'user:id,email',
+            'order:id,trade_no,total_amount',
+        ])->where('status', DigitalProductItem::SOLD)->latest('sold_at');
+        if ($request->filled('plan_id')) $query->where('plan_id', $request->integer('plan_id'));
+        if ($request->filled('keyword')) {
+            $keyword = trim((string) $request->input('keyword'));
+            $query->where(function ($query) use ($keyword) {
+                $query->where('content', 'like', "%{$keyword}%")
+                    ->orWhereHas('user', fn($user) => $user->where('email', 'like', "%{$keyword}%"))
+                    ->orWhereHas('order', fn($order) => $order->where('trade_no', 'like', "%{$keyword}%"));
+            });
+        }
+        return $this->paginate($query->paginate(
+            perPage: min(100, max(10, $request->integer('pageSize', 20))),
+            page: max(1, $request->integer('current', 1))
+        ));
     }
 
     public function importStock(Request $request)
