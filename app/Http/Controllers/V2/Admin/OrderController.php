@@ -22,7 +22,7 @@ class OrderController extends Controller
 
     public function detail(Request $request)
     {
-        $order = Order::with(['user', 'plan', 'commission_log', 'invite_user'])->find($request->input('id'));
+        $order = Order::with(['user', 'plan', 'commission_log', 'invite_user', 'digitalItems'])->find($request->input('id'));
         if (!$order)
             return $this->fail([400202, '订单不存在']);
         if ($order->surplus_order_ids) {
@@ -36,7 +36,7 @@ class OrderController extends Controller
     {
         $current = $request->input('current', 1);
         $pageSize = $request->input('pageSize', 10);
-        $orderModel = Order::with('plan:id,name');
+        $orderModel = Order::with('plan:id,name,product_type,product_config');
 
         if ($request->boolean('is_commission')) {
             $orderModel->whereNotNull('invite_user_id')
@@ -78,6 +78,11 @@ class OrderController extends Controller
         collect($request->input('filter'))->each(function ($filter) use ($builder) {
             $field = $filter['id'];
             $value = $filter['value'];
+
+            if ($field === 'product_type') {
+                $builder->whereHas('plan', fn ($query) => $query->where('product_type', $value));
+                return;
+            }
 
             $builder->where(function ($query) use ($field, $value) {
                 $this->buildFilterQuery($query, $field, $value);

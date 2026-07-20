@@ -31,13 +31,23 @@ class DigitalProductController extends Controller
             'show' => 'boolean', 'sell' => 'boolean', 'sort' => 'integer|min:0',
             'product_config' => 'nullable|array',
             'product_config.delivery_type' => 'nullable|string|in:text,code,link,account',
+            'product_config.packages' => 'nullable|array|max:50',
+            'product_config.packages.*.id' => 'required|string|max:64',
+            'product_config.packages.*.name' => 'required|string|max:100',
+            'product_config.packages.*.price' => 'required|numeric|min:0',
         ]);
         $data['product_type'] = 'digital';
         $data['transfer_enable'] = 0;
         $data['reset_traffic_method'] = Plan::RESET_TRAFFIC_NEVER;
         $data['group_id'] = null;
         $data['capacity_limit'] = null;
-        $data['product_config'] = array_merge(['delivery_type' => 'text'], $data['product_config'] ?? []);
+        $config = array_merge(['delivery_type' => 'text', 'packages' => []], $data['product_config'] ?? []);
+        $config['packages'] = collect($config['packages'])->map(fn($package) => [
+            'id' => preg_replace('/[^A-Za-z0-9_-]/', '-', (string) $package['id']),
+            'name' => trim($package['name']),
+            'price' => (float) $package['price'],
+        ])->filter(fn($package) => $package['price'] > 0)->values()->all();
+        $data['product_config'] = $config;
         $plan = !empty($data['id']) ? Plan::findOrFail($data['id']) : new Plan();
         unset($data['id']);
         $plan->fill($data);
@@ -55,15 +65,18 @@ class DigitalProductController extends Controller
     {
         $data = $request->validate([
             'plan_id' => 'required|integer|exists:v2_plan,id',
+            'package_id' => 'nullable|string|max:64',
             'content' => 'required|string|max:5000000',
         ]);
         $plan = Plan::where('id', $data['plan_id'])->where('product_type', 'digital')->firstOrFail();
         $lines = collect(preg_split('/\r\n|\r|\n/', $data['content']))->map(fn($line) => trim($line))->filter()->values();
+        $packageId = $data['package_id'] ?? null;
+        if ($packageId && !collect((array) data_get($plan->product_config, 'packages', []))->firstWhere('id', $packageId)) return $this->fail([422, '套餐不存在']);
         if ($lines->isEmpty()) return $this->fail([422, '没有可导入的库存内容']);
         $now = time();
-        DB::transaction(function () use ($lines, $plan, $now): void {
+        DB::transaction(function () use ($lines, $plan, $now, $packageId): void {
             $lines->chunk(500)->each(function ($chunk) use ($plan, $now): void {
-                $rows = $chunk->map(fn($content) => ['plan_id' => $plan->id, 'content' => $content, 'status' => DigitalProductItem::AVAILABLE, 'created_at' => $now, 'updated_at' => $now])->all();
+                $rows = $chunk->map(fn($content) => ['plan_id' => $plan->id, 'package_id' => $packageId, 'content' => $content, 'status' => DigitalProductItem::AVAILABLE, 'created_at' => $now, 'updated_at' => $now])->all();
                 DigitalProductItem::insert($rows);
             });
         });

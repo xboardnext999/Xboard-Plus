@@ -117,14 +117,31 @@ class PlanService
     protected function validateDigitalPurchase(string $period): void
     {
         $periodKey = self::getPeriodKey($period);
-        $prices = $this->plan->prices ?? [];
-        if (!isset($prices[$periodKey]) || (float) $prices[$periodKey] <= 0) {
+        if (self::priceForPeriod($this->plan, $periodKey) === null) {
             throw new ApiException(__('This payment period cannot be purchased, please choose another period'));
         }
         if (!$this->plan->show || !$this->plan->sell) throw new ApiException('该数字商品暂不可购买');
-        if (!\App\Models\DigitalProductItem::where('plan_id', $this->plan->id)->where('status', \App\Models\DigitalProductItem::AVAILABLE)->exists()) {
+        $selectedPackage = collect((array) data_get($this->plan->product_config, 'packages', []))->firstWhere('id', $periodKey);
+        if (!\App\Models\DigitalProductItem::where('plan_id', $this->plan->id)->where('status', \App\Models\DigitalProductItem::AVAILABLE)
+            ->when($selectedPackage, fn($query) => $query->where('package_id', $selectedPackage['id']))
+            ->exists()) {
             throw new ApiException('该数字商品库存不足');
         }
+    }
+
+    public static function priceForPeriod(Plan $plan, string $period): ?float
+    {
+        $key = self::getPeriodKey($period);
+        $price = ($plan->prices ?? [])[$key] ?? null;
+        if ($price !== null && (float) $price > 0) return (float) $price;
+        if ($plan->isDigital()) {
+            foreach ((array) data_get($plan->product_config, 'packages', []) as $package) {
+                if ((string) ($package['id'] ?? '') === (string) $period || (string) ($package['slug'] ?? '') === (string) $period) {
+                    return (float) ($package['price'] ?? 0) > 0 ? (float) $package['price'] : null;
+                }
+            }
+        }
+        return null;
     }
 
     /**

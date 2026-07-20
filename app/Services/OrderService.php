@@ -89,7 +89,7 @@ class OrderService
                 'plan_id' => $plan->id,
                 'period' => $newPeriod,
                 'trade_no' => Helper::generateOrderNo(),
-                'total_amount' => (int) (optional($plan->prices)[$newPeriod] * 100),
+                'total_amount' => (int) round((PlanService::priceForPeriod($plan, $newPeriod) ?? 0) * 100),
                 'group_buy_activity_id' => $groupBuyActivityId,
                 'group_buy_group_id' => $groupBuyGroupId,
             ]);
@@ -146,7 +146,7 @@ class OrderService
             'plan_id' => $plan->id,
             'period' => $newPeriod,
             'trade_no' => Helper::generateOrderNo(),
-            'total_amount' => (int) (optional($plan->prices)[$newPeriod] * 100),
+            'total_amount' => (int) round((PlanService::priceForPeriod($plan, $newPeriod) ?? 0) * 100),
             'group_buy_activity_id' => $groupBuyActivityId,
         ]);
 
@@ -582,7 +582,10 @@ class OrderService
 
     private function buyDigitalProduct(Order $order, Plan $plan): void
     {
+        $selectedPackage = collect((array) data_get($plan->product_config, 'packages', []))->firstWhere('id', $order->period);
+        $packageId = $selectedPackage['id'] ?? null;
         $item = \App\Models\DigitalProductItem::where('plan_id', $plan->id)
+            ->when($packageId, fn($query) => $query->where('package_id', $packageId))
             ->where('status', \App\Models\DigitalProductItem::AVAILABLE)
             ->lockForUpdate()->first();
         if (!$item) throw new ApiException('该数字商品库存不足');
