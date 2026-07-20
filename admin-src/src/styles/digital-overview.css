@@ -12,7 +12,7 @@
 
 @media (min-width: 1401px) {
   .digital-overview-grid {
-    grid-template-columns: minmax(640px, 2.28fr) repeat(2, minmax(280px, .72fr));
+    grid-template-columns: minmax(640px, 2.23fr) repeat(2, minmax(280px, .72fr));
   }
 
   .digital-banner-summary,
