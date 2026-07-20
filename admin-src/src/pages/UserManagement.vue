@@ -12,7 +12,10 @@ const users = ref([]),
     showEdit = ref(false),
     showDetail = ref(false),
     showCreate = ref(false),
-    createdUsers = ref([]);
+    createdUsers = ref([]),
+    selectedIds = ref([]),
+    exporting = ref(false),
+    bulkBusy = ref(false);
 const filters = reactive({ keyword: "", plan_id: "", state: "all" }),
     page = reactive({ current: 1, size: 20, total: 0, last: 1 }),
     toast = reactive({ text: "", type: "success" }),
@@ -63,10 +66,10 @@ function addFilter(q, i, id, value, logic) {
     q.set(`filter[${i}][value]`, String(value));
     if (logic) q.set(`filter[${i}][logic]`, logic);
 }
-function query() {
+function query(overrides = {}) {
     const q = new URLSearchParams({
-        current: String(page.current),
-        pageSize: String(page.size),
+        current: String(overrides.current ?? page.current),
+        pageSize: String(overrides.pageSize ?? page.size),
     });
     let i = 0;
     if (filters.keyword) {
@@ -99,6 +102,7 @@ async function load(reset = false) {
     loading.value = true;
     try {
         normalize(await request(`/user/fetch?${query()}`));
+        selectedIds.value = [];
     } catch (e) {
         notify(e.message, "error");
     } finally {
@@ -300,6 +304,40 @@ const stats = computed(() => ({
     banned: users.value.filter((u) => u.banned).length,
     traffic: users.value.reduce((s, u) => s + Number(u.total_used || 0), 0),
 }));
+const allSelected = computed(() => users.value.length > 0 && users.value.every((u) => selectedIds.value.includes(u.id)));
+function toggleAll() { selectedIds.value = allSelected.value ? [] : users.value.map((u) => u.id); }
+function clearFilters() { Object.assign(filters, { keyword: "", plan_id: "", state: "all" }); load(true); }
+async function bulkBan(banned) {
+    if (!selectedIds.value.length || !confirm(`确定批量${banned ? "封禁" : "解封"}选中的 ${selectedIds.value.length} 个用户？`)) return;
+    bulkBusy.value = true;
+    try {
+        const results = await Promise.allSettled(selectedIds.value.map((id) => post("/user/update", { id, banned })));
+        const failed = results.filter((item) => item.status === "rejected").length;
+        notify(failed ? `已处理 ${results.length - failed} 个，${failed} 个失败` : `已${banned ? "封禁" : "解封"} ${results.length} 个用户`, failed ? "error" : "success");
+        await load();
+    } finally { bulkBusy.value = false; }
+}
+function csvCell(v) { return `"${String(v ?? "").replaceAll('"', '""')}"`; }
+async function exportUsers() {
+    exporting.value = true;
+    try {
+        const payload = await request(`/user/fetch?${query({ current: 1, pageSize: 10000 })}`);
+        const source = payload?.data ?? payload, list = source?.items || source?.data || (Array.isArray(source) ? source : []);
+        const lines = [["用户ID", "邮箱", "套餐", "权限组", "已用流量", "总流量", "余额", "佣金", "状态", "到期时间", "创建时间"], ...list.map((u) => [u.id, u.email, u.plan?.name || "", u.group?.name || "", u.total_used || 0, u.transfer_enable || 0, u.balance || 0, u.commission_balance || 0, state(u)[0], time(u.expired_at), time(u.created_at)])];
+        const blob = new Blob(["\uFEFF" + lines.map((line) => line.map(csvCell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href); notify(`已导出 ${list.length} 个用户`);
+    } catch (e) { notify(e.message, "error"); } finally { exporting.value = false; }
+}
+async function resetTraffic(u) {
+    if (!confirm(`确定手动重置 ${u.email} 的已用流量？此操作会写入重置日志。`)) return;
+    busy.value = u.id;
+    try { await post('/traffic-reset/reset-user', { user_id: u.id, reason: '用户管理页面手动重置' }); notify('用户流量已重置'); await load(); }
+    catch (e) { notify(e.message, 'error'); } finally { busy.value = null; }
+}
+function generatePassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    createForm.password = Array.from(crypto.getRandomValues(new Uint32Array(14)), (n) => chars[n % chars.length]).join('');
+}
 onMounted(() => Promise.all([load(true), loadOptions()]));
 function startCreate() {
     Object.assign(createForm, defaultCreate());
@@ -393,9 +431,7 @@ function downloadCreated() {
                 <h1>用户管理</h1>
                 <p>管理用户订阅、流量、余额、推广关系、权限和账号安全状态。</p>
             </div>
-            <button class="btn btn-primary" @click="startCreate">
-                <AppIcon name="UserPlus" :size="16" />创建用户
-            </button>
+            <div class="heading-actions"><button class="btn btn-ghost" :disabled="exporting" @click="exportUsers"><AppIcon name="Download" :size="15" />{{ exporting ? "导出中…" : "导出用户" }}</button><button class="btn btn-primary" @click="startCreate"><AppIcon name="UserPlus" :size="16" />创建用户</button></div>
         </div>
         <div class="stat-grid user-stats">
             <article class="stat-card">
@@ -436,16 +472,17 @@ function downloadCreated() {
                     <option value="banned">已封禁</option>
                     <option value="no_plan">无订阅</option>
                 </select></label
-            ><button class="btn btn-ghost" @click="load(true)">查询</button
+            ><label class="field compact-field"><span>每页显示</span><select v-model.number="page.size" @change="load(true)"><option :value="20">20 条</option><option :value="50">50 条</option><option :value="100">100 条</option></select></label><button class="btn btn-ghost" @click="clearFilters">重置</button><button class="btn btn-primary" @click="load(true)">查询</button
             ><button class="btn btn-ghost" :disabled="loading" @click="load()">
                 刷新
             </button>
         </div>
+        <div v-if="selectedIds.length" class="user-bulk-bar"><span>已选择 <strong>{{ selectedIds.length }}</strong> 个用户</span><div><button class="btn btn-ghost btn-sm" :disabled="bulkBusy" @click="bulkBan(false)">批量解封</button><button class="btn btn-danger btn-sm" :disabled="bulkBusy" @click="bulkBan(true)">批量封禁</button><button class="btn btn-ghost btn-sm" @click="selectedIds = []">取消选择</button></div></div>
         <section class="panel table-wrap user-table">
             <table>
                 <thead>
                     <tr>
-                        <th>用户</th>
+                        <th class="user-check"><input type="checkbox" :checked="allSelected" aria-label="选择当前页全部用户" @change="toggleAll" /></th><th>用户</th>
                         <th>订阅</th>
                         <th>流量</th>
                         <th>余额 / 佣金</th>
@@ -457,13 +494,12 @@ function downloadCreated() {
                 </thead>
                 <tbody>
                     <tr v-if="loading">
-                        <td colspan="8" class="empty">正在加载用户…</td>
+                        <td colspan="9" class="empty">正在加载用户…</td>
                     </tr>
                     <tr v-else-if="!users.length">
-                        <td colspan="8" class="empty">暂无符合条件的用户</td>
+                        <td colspan="9" class="empty">暂无符合条件的用户</td>
                     </tr>
-                    <tr v-for="u in users" :key="u.id">
-                        <td>
+                    <tr v-for="u in users" :key="u.id" :class="{ selected: selectedIds.includes(u.id) }"><td class="user-check"><input v-model="selectedIds" type="checkbox" :value="u.id" :aria-label="`选择用户 ${u.email}`" /></td><td>
                             <button class="link-btn" @click="detail(u)">
                                 {{ u.email }}</button
                             ><small
@@ -548,6 +584,7 @@ function downloadCreated() {
                                         复制订阅链接</button
                                     ><button @click="resetSecret(u)">
                                         重置订阅密钥</button
+                                    ><button @click="resetTraffic(u)">重置已用流量</button
                                     ><button @click="toggleBan(u)">
                                         {{
                                             u.banned ? "解除封禁" : "封禁用户"
@@ -681,24 +718,9 @@ function downloadCreated() {
                             v-model.trim="form.invite_user_email"
                             type="email"
                             placeholder="留空解除邀请关系" /></label
-                    ><label class="field"
-                        ><span>账号状态</span
-                        ><select v-model="form.banned">
-                            <option :value="false">正常</option>
-                            <option :value="true">封禁</option>
-                        </select></label
-                    ><label class="field"
-                        ><span>后台角色</span
-                        ><select v-model="form.is_staff">
-                            <option :value="false">普通用户</option>
-                            <option :value="true">后台员工</option>
-                        </select></label
-                    ><label class="field"
-                        ><span>管理员权限</span
-                        ><select v-model="form.is_admin">
-                            <option :value="false">非管理员</option>
-                            <option :value="true">管理员</option>
-                        </select></label
+                    ><label class="field"><span>封禁账号</span><ToggleSwitch v-model="form.banned" :true-value="true" :false-value="false" on-label="已封禁" off-label="正常使用" /></label
+                    ><label class="field"><span>后台员工</span><ToggleSwitch v-model="form.is_staff" :true-value="true" :false-value="false" on-label="允许登录后台" off-label="普通用户" /></label
+                    ><label class="field"><span>管理员权限</span><ToggleSwitch v-model="form.is_admin" :true-value="true" :false-value="false" on-label="完整管理员" off-label="非管理员" /></label
                     ><label class="field field-wide"
                         ><span>管理员备注</span
                         ><textarea v-model="form.remarks" rows="3" />
@@ -837,7 +859,7 @@ function downloadCreated() {
                     <button class="btn btn-ghost" @click="showCreate = false">关闭</button>
                 </div>
                 <label class="user-create-mode">
-                    <input v-model="createForm.batch" type="checkbox" />
+                    <ToggleSwitch v-model="createForm.batch" :true-value="true" :false-value="false" on-label="批量模式" off-label="单个创建" />
                     <span><strong>批量创建账号</strong><small>批量账号格式为“前缀_序号@域名”。</small></span>
                 </label>
                 <div class="smart-form">
@@ -850,7 +872,7 @@ function downloadCreated() {
                         <label class="field"><span>邮箱域名 *</span><input v-model.trim="createForm.email_suffix" placeholder="example.com" /></label>
                         <label class="field"><span>创建数量 *</span><input v-model.number="createForm.generate_count" type="number" min="1" max="500" /></label>
                     </template>
-                    <label class="field"><span>初始密码</span><input v-model="createForm.password" type="password" placeholder="留空则使用完整邮箱" /><small>自定义密码至少 8 位</small></label>
+                    <label class="field"><span>初始密码</span><div class="input-action"><input v-model="createForm.password" type="text" placeholder="留空则使用完整邮箱" /><button type="button" class="btn btn-ghost btn-sm" @click="generatePassword">随机生成</button></div><small>自定义密码至少 8 位</small></label>
                     <label class="field"><span>初始套餐</span><select v-model="createForm.plan_id"><option :value="null">无订阅</option><option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option></select></label>
                     <label class="field"><span>套餐到期时间</span><input v-model="createForm.expired_at" type="datetime-local" /><small>留空表示长期有效</small></label>
                 </div>

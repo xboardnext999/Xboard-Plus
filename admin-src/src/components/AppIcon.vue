@@ -8,6 +8,7 @@ import {
   Box,
   ChevronDown,
   CreditCard,
+  Download,
   Gauge,
   Gift,
   HardDrive,
@@ -21,10 +22,12 @@ import {
   Search,
   Server,
   SlidersHorizontal,
+  ShieldAlert,
   Store,
   Sun,
   Ticket,
   UserRound,
+  UserPlus,
   UsersRound,
 } from '@lucide/vue';
 
@@ -52,6 +55,7 @@ const icons = {
   Box,
   ChevronDown,
   CreditCard,
+  Download,
   Gauge,
   Gift,
   HardDrive,
@@ -65,10 +69,12 @@ const icons = {
   Search,
   Server,
   SlidersHorizontal,
+  ShieldAlert,
   Store,
   Sun,
   Ticket,
   UserRound,
+  UserPlus,
   UsersRound,
 };
 </script>
