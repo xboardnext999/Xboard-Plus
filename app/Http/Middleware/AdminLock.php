@@ -15,6 +15,6 @@ class AdminLock
         $scope = $this->lock->scope($request);
         if (str_ends_with($path, '/admin-lock/summary') && in_array($scope, ['simple', 'full'], true)) return $next($request);
         if ($scope === 'full') return $next($request);
-        return response()->json(['message' => $scope === 'simple' ? 'Simple mode cannot access this resource' : 'Admin console is locked', 'lock_scope' => $scope], 423);
+        return response()->json(['message' => 'Access verification required', 'lock_scope' => $scope], 423);
     }
 }

@@ -15,8 +15,8 @@ async function load() {
   catch (error) { notify(error.message, 'error'); } finally { loading.value = false; }
 }
 async function save() {
-  if (form.simple_password && form.simple_password !== form.simple_confirmation) return notify('两次输入的简易页面密码不一致', 'error');
-  if (form.full_password && form.full_password !== form.full_confirmation) return notify('两次输入的完整后台密码不一致', 'error');
+  if (form.simple_password && form.simple_password !== form.simple_confirmation) return notify('两次输入的访问密码 A 不一致', 'error');
+  if (form.full_password && form.full_password !== form.full_confirmation) return notify('两次输入的访问密码 B 不一致', 'error');
   if (form.simple_password && form.full_password && form.simple_password === form.full_password) return notify('两个访问密码不能相同', 'error');
   saving.value = true;
   try {
@@ -41,12 +41,12 @@ onMounted(load);
       </section>
       <div class="lock-settings-grid">
         <section class="panel lock-password-card">
-          <div class="panel-head"><div><h2>简易页面密码</h2><p>仅进入无敏感数据的服务概览页面。</p></div><span class="status-pill success">{{ state.simple_password_set ? '已设置' : '未设置' }}</span></div>
-          <label class="field"><span>新密码</span><input v-model="form.simple_password" :type="reveal ? 'text' : 'password'" minlength="8" maxlength="128" autocomplete="new-password" placeholder="留空表示不修改" /><small>至少 8 位，不能与完整后台密码相同。</small></label>
+          <div class="panel-head"><div><h2>访问密码 A</h2><p>用于日常状态验证。</p></div><span class="status-pill success">{{ state.simple_password_set ? '已设置' : '未设置' }}</span></div>
+          <label class="field"><span>新密码</span><input v-model="form.simple_password" :type="reveal ? 'text' : 'password'" minlength="8" maxlength="128" autocomplete="new-password" placeholder="留空表示不修改" /><small>至少 8 位，不能与访问密码 B 相同。</small></label>
           <label class="field"><span>确认新密码</span><input v-model="form.simple_confirmation" :type="reveal ? 'text' : 'password'" autocomplete="new-password" placeholder="再次输入新密码" /></label>
         </section>
         <section class="panel lock-password-card critical">
-          <div class="panel-head"><div><h2>完整后台密码</h2><p>解锁全部菜单、敏感数据和写操作。</p></div><span class="status-pill success">{{ state.full_password_set ? '已设置' : '未设置' }}</span></div>
+          <div class="panel-head"><div><h2>访问密码 B</h2><p>用于管理操作验证。</p></div><span class="status-pill success">{{ state.full_password_set ? '已设置' : '未设置' }}</span></div>
           <label class="field"><span>新密码</span><input v-model="form.full_password" :type="reveal ? 'text' : 'password'" minlength="12" maxlength="128" autocomplete="new-password" placeholder="留空表示不修改" /><small>至少 12 位，建议使用随机密码。</small></label>
           <label class="field"><span>确认新密码</span><input v-model="form.full_confirmation" :type="reveal ? 'text' : 'password'" autocomplete="new-password" placeholder="再次输入新密码" /></label>
         </section>
@@ -55,7 +55,7 @@ onMounted(load);
         <div class="panel-head"><div><h2>解锁策略</h2><p>密码变更后，所有管理员的现有解锁状态会立即失效。</p></div><button class="btn btn-ghost btn-sm" type="button" @click="reveal = !reveal">{{ reveal ? '隐藏密码' : '显示密码' }}</button></div>
         <div class="lock-policy-form">
           <label class="field"><span>解锁有效时间</span><select v-model.number="form.ttl_minutes"><option :value="30">30 分钟</option><option :value="60">1 小时</option><option :value="240">4 小时</option><option :value="480">8 小时</option><option :value="720">12 小时</option><option :value="1440">24 小时</option><option :value="10080">7 天</option></select></label>
-          <label class="field"><span>当前完整后台密码 *</span><input v-model="form.current_full_password" :type="reveal ? 'text' : 'password'" maxlength="128" autocomplete="current-password" placeholder="保存设置前必须验证" required /><small>用于确认本次修改由完整权限管理员操作。</small></label>
+          <label class="field"><span>当前访问密码 B *</span><input v-model="form.current_full_password" :type="reveal ? 'text' : 'password'" maxlength="128" autocomplete="current-password" placeholder="保存设置前必须验证" required /><small>用于确认本次设置修改。</small></label>
         </div>
         <div class="lock-security-note"><AppIcon name="ShieldAlert" :size="19" /><span>密码仅以不可逆哈希保存，页面和接口都不会返回密码原文。关闭访问锁同样需要验证当前完整密码。</span></div>
         <div class="modal-actions"><button class="btn btn-primary" :disabled="saving || !form.current_full_password" @click="save">{{ saving ? '保存中…' : '保存并应用' }}</button></div>
