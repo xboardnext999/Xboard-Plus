@@ -36,6 +36,7 @@ const faqDraggingId = ref(null),
     faqSorting = ref(false);
 let dragSnapshot = [];
 let dragGhost = null;
+let faqDragGhost = null;
 const toast = reactive({ text: "", type: "" });
 const banner = reactive({
     image_url: "",
@@ -314,10 +315,21 @@ function startFaqDrag(event, item) {
     faqDragOverId.value = null;
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(item.id));
+    const source = event.currentTarget;
+    const rect = source.getBoundingClientRect();
+    const clone = source.cloneNode(true);
+    clone.classList.remove("is-dragging", "is-drag-over", "muted");
+    clone.classList.add("digital-faq-drag-preview");
+    clone.style.width = `${rect.width}px`;
+    document.body.appendChild(clone);
+    faqDragGhost = clone;
+    event.dataTransfer.setDragImage(clone, 34, rect.height / 2);
 }
 function finishFaqDrag() {
     faqDraggingId.value = null;
     faqDragOverId.value = null;
+    faqDragGhost?.remove();
+    faqDragGhost = null;
 }
 async function dropFaqAt(target) {
     const sourceIndex = managedFaqs.value.findIndex((item) => item.id === faqDraggingId.value);
@@ -897,9 +909,11 @@ onMounted(load);
                         @dragover.prevent="faqDragOverId = item.id"
                         @drop.prevent="dropFaqAt(item)"
                     >
-                        <span class="digital-faq-sort" title="按住整行拖动"><AppIcon name="GripVertical" :size="15" /></span>
+                        <div class="digital-faq-row-controls">
+                            <span class="digital-faq-sort" title="按住整行拖动"><AppIcon name="GripVertical" :size="15" /></span>
+                            <ToggleSwitch :model-value="item.enabled" on-label="" off-label="" @update:model-value="toggleFaq(item, $event)" />
+                        </div>
                         <div><strong>{{ item.title }}</strong><p>{{ item.content }}</p></div>
-                        <ToggleSwitch :model-value="item.enabled" on-label="显示" off-label="隐藏" @update:model-value="toggleFaq(item, $event)" />
                         <div class="digital-faq-actions"><button class="btn btn-ghost btn-sm" @click="editFaq(item)">编辑</button><button class="btn btn-danger btn-sm" @click="dropFaq(item)">删除</button></div>
                     </article>
                     <div v-if="!managedFaqs.length" class="settings-loading">暂无常见问题，请先在左侧添加。</div>
