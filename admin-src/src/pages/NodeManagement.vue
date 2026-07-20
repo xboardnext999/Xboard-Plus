@@ -524,10 +524,10 @@ onMounted(load);
                                     @change="toggleAll"
                                 />
                             </th>
+                            <th>运行状态</th>
                             <th>节点</th>
                             <th>入口</th>
                             <th>权限组</th>
-                            <th>运行状态</th>
                             <th>流量 / 倍率</th>
                             <th class="right">操作</th>
                         </tr>
@@ -572,6 +572,33 @@ onMounted(load);
                                 </div>
                             </td>
                             <td>
+                                <div class="node-statuses">
+                                    <ToggleSwitch
+                                        class="node-visibility-switch"
+                                        :model-value="Number(item.show)"
+                                        :true-value="1"
+                                        :false-value="0"
+                                        on-label="已上架"
+                                        off-label="已下架"
+                                        :disabled="busyId === item.id"
+                                        @update:model-value="
+                                            quickUpdate(item, 'show', $event)
+                                        "
+                                    />
+                                    <span
+                                        class="status-pill"
+                                        :class="{
+                                            off: !Number(item.is_online),
+                                        }"
+                                        >{{
+                                            Number(item.is_online)
+                                                ? "在线"
+                                                : "离线"
+                                        }}</span
+                                    >
+                                </div>
+                            </td>
+                            <td>
                                 <div class="node-name-with-flag">
                                     <img
                                         v-if="flagForName(item.name)"
@@ -599,33 +626,6 @@ onMounted(load);
                                         >{{ group.name }}</span
                                     ><small v-if="!item.groups?.length"
                                         >未分配</small
-                                    >
-                                </div>
-                            </td>
-                            <td>
-                                <div class="node-statuses">
-                                    <ToggleSwitch
-                                        class="node-visibility-switch"
-                                        :model-value="Number(item.show)"
-                                        :true-value="1"
-                                        :false-value="0"
-                                        on-label="已上架"
-                                        off-label="已下架"
-                                        :disabled="busyId === item.id"
-                                        @update:model-value="
-                                            quickUpdate(item, 'show', $event)
-                                        "
-                                    />
-                                    <span
-                                        class="status-pill"
-                                        :class="{
-                                            off: !Number(item.is_online),
-                                        }"
-                                        >{{
-                                            Number(item.is_online)
-                                                ? "在线"
-                                                : "离线"
-                                        }}</span
                                     >
                                 </div>
                             </td>
