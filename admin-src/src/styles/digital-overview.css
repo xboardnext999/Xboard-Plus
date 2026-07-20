@@ -1,7 +1,7 @@
 /* Keep the management shortcuts and category summary visually balanced. */
 @media (min-width: 1401px) {
   .digital-overview-grid {
-    grid-template-columns: minmax(520px, 1.6fr) repeat(2, minmax(300px, .72fr));
+    grid-template-columns: minmax(640px, 2.28fr) repeat(2, minmax(280px, .72fr));
   }
 
   .digital-banner-summary,
