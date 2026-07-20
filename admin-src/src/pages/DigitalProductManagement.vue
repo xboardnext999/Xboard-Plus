@@ -21,6 +21,7 @@ const draggingId = ref(null),
     dragOverId = ref(null),
     sorting = ref(false);
 let dragSnapshot = [];
+let dragGhost = null;
 const toast = reactive({ text: "", type: "" });
 const banner = reactive({
     image_url: "",
@@ -109,11 +110,32 @@ function lowestPrice(row) {
     return prices.length ? Math.min(...prices) : 0;
 }
 function startDrag(event, row) {
-    draggingId.value = row.id;
     dragOverId.value = null;
     dragSnapshot = rows.value.map((item) => item.id);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(row.id));
+
+    const source = event.currentTarget;
+    const rect = source.getBoundingClientRect();
+    const table = document.createElement("table");
+    const body = document.createElement("tbody");
+    const clone = source.cloneNode(true);
+    table.className = "digital-row-drag-preview";
+    table.style.width = `${rect.width}px`;
+    Array.from(source.children).forEach((cell, index) => {
+        clone.children[index].style.width =
+            `${cell.getBoundingClientRect().width}px`;
+    });
+    clone.classList.remove("is-dragging", "is-drag-over");
+    body.appendChild(clone);
+    table.appendChild(body);
+    document.body.appendChild(table);
+    dragGhost = table;
+    event.dataTransfer.setDragImage(table, 32, rect.height / 2);
+
+    requestAnimationFrame(() => {
+        draggingId.value = row.id;
+    });
 }
 function dragOverRow(row) {
     if (draggingId.value && draggingId.value !== row.id) {
@@ -123,6 +145,8 @@ function dragOverRow(row) {
 function finishDrag() {
     draggingId.value = null;
     dragOverId.value = null;
+    dragGhost?.remove();
+    dragGhost = null;
 }
 async function dropRow(target) {
     const sourceIndex = rows.value.findIndex(
@@ -481,6 +505,11 @@ onMounted(load);
                             >
                                 <td class="digital-sale-column">
                                     <div class="digital-row-controls">
+                                        <span
+                                            class="digital-row-grip"
+                                            title="按住整行拖动排序"
+                                            aria-hidden="true"
+                                        ></span>
                                         <ToggleSwitch
                                             :model-value="
                                                 Boolean(row.show && row.sell)
