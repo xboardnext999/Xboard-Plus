@@ -26,6 +26,10 @@ class PlanService
     public function getAvailablePlans(?string $productType = 'subscription'): Collection
     {
         return Plan::when($productType, fn ($query) => $query->where('product_type', $productType))
+            ->when($productType === 'digital', fn($query) => $query->withCount([
+                'digitalItems as stock_count' => fn($items) => $items->where('status', \App\Models\DigitalProductItem::AVAILABLE),
+                'digitalItems as sold_count' => fn($items) => $items->where('status', \App\Models\DigitalProductItem::SOLD),
+            ]))
             ->where('show', true)
             ->where('sell', true)
             ->orderBy('sort')

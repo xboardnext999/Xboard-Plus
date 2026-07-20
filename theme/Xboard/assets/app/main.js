@@ -51,6 +51,7 @@ const periods = [
 const navItems = [
   { key: 'dashboard', label: '仪表盘', group: '', icon: 'dashboard.webp' },
   { key: 'plans', label: '购买套餐', group: '', icon: 'plan.webp' },
+  { key: 'digital', label: '数字商品', group: '', icon: 'order.webp' },
   { key: 'invite', label: '邀请好友', group: '', icon: 'invite.webp' },
   { key: 'subscribe', label: '我的订阅', group: '订阅', icon: 'subscription.webp' },
   { key: 'recharge', label: '充值余额', group: '订阅', icon: 'wallet.webp' },
@@ -1926,6 +1927,158 @@ const PlansPage = {
   },
 };
 
+function digitalPackageOptions(plan = {}) {
+  return (plan.product_config?.packages || [])
+    .filter((item) => item?.id && Number(item.price) > 0)
+    .map((item) => ({
+      key: String(item.id),
+      name: item.name || item.id,
+      price: Number(item.price) * 100,
+    }));
+}
+
+const DigitalProductCard = {
+  props: {
+    plan: { type: Object, required: true },
+    methods: { type: Array, default: () => [] },
+  },
+  setup(props) {
+    const packages = digitalPackageOptions(props.plan);
+    const selectedPackage = ref(packages[0]?.key || '');
+    const selectedMethod = ref(props.methods[0]?.id ? String(props.methods[0].id) : '');
+    const couponCode = ref('');
+    const local = reactive({ quote: null, quoteError: '', quoteLoading: false, submitting: false });
+    let quoteTimer = null;
+    let quoteSeq = 0;
+
+    async function refreshQuote() {
+      if (!selectedPackage.value) return;
+      const seq = ++quoteSeq;
+      local.quoteLoading = true;
+      local.quoteError = '';
+      try {
+        const quote = await api.post('/user/order/quote', {
+          plan_id: props.plan.id,
+          period: selectedPackage.value,
+          coupon_code: couponCode.value.trim(),
+          method: selectedMethod.value,
+          subscription_mode: 'append',
+        });
+        if (seq === quoteSeq) local.quote = quote;
+      } catch (error) {
+        if (seq === quoteSeq) {
+          local.quote = null;
+          local.quoteError = error.message || '价格计算失败';
+        }
+      } finally {
+        if (seq === quoteSeq) local.quoteLoading = false;
+      }
+    }
+
+    watch(() => [selectedPackage.value, selectedMethod.value, couponCode.value], () => {
+      clearTimeout(quoteTimer);
+      quoteTimer = setTimeout(refreshQuote, 220);
+    }, { immediate: true });
+    onBeforeUnmount(() => clearTimeout(quoteTimer));
+
+    async function buy(event) {
+      event.preventDefault();
+      if (!selectedPackage.value) return;
+      local.submitting = true;
+      try {
+        const tradeNo = await api.post('/user/order/save', {
+          plan_id: props.plan.id,
+          period: selectedPackage.value,
+          coupon_code: couponCode.value.trim(),
+          subscription_mode: 'append',
+        });
+        toast('订单已创建');
+        go('orders', { trade_no: tradeNo, method: selectedMethod.value });
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        local.submitting = false;
+      }
+    }
+
+    return () => {
+      const selected = packages.find((item) => item.key === selectedPackage.value) || packages[0] || {};
+      const quote = local.quote || {};
+      const payAmount = quote.pay_amount ?? quote.total_amount ?? selected.price ?? 0;
+      const deliveryLabels = { text: '文本交付', code: '卡密交付', link: '下载链接', account: '账号信息' };
+      return h('form', { class: 'digital-product-card', onSubmit: buy }, [
+        h('div', { class: 'digital-product-top' }, [
+          h('span', { class: 'digital-product-type' }, deliveryLabels[props.plan.product_config?.delivery_type] || '自动交付'),
+          h('span', { class: ['digital-stock-badge', Number(props.plan.stock_count) > 0 ? '' : 'is-empty'] }, Number(props.plan.stock_count) > 0 ? `库存 ${props.plan.stock_count}` : '暂时缺货'),
+        ]),
+        h('div', { class: 'digital-product-title' }, [
+          h('h2', props.plan.name),
+          h('strong', money(selected.price || 0, currencySymbol())),
+        ]),
+        h('div', { class: 'digital-product-description plan-content', innerHTML: safeBody(props.plan.content || '付款成功后自动交付') }),
+        h('label', ['选择商品', h('select', {
+          value: selectedPackage.value,
+          onChange: (event) => { selectedPackage.value = event.target.value; },
+        }, packages.map((item) => h('option', { value: item.key }, `${item.name} · ${money(item.price, currencySymbol())}`)))]),
+        h('label', ['优惠码', h('input', {
+          value: couponCode.value,
+          placeholder: '选填，输入后自动计算',
+          onInput: (event) => { couponCode.value = event.target.value; },
+        })]),
+        h('div', { class: 'plan-field' }, [
+          h('span', '支付方式'),
+          props.methods?.length ? h('div', { class: 'payment-methods digital-payment-methods' }, props.methods.map((method, index) => h('label', { class: 'payment-method' }, [
+            h('input', {
+              type: 'radio',
+              name: `digital-method-${props.plan.id}`,
+              value: method.id,
+              checked: String(selectedMethod.value || props.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0),
+              onChange: (event) => { selectedMethod.value = event.target.value; },
+            }),
+            method.icon ? h('img', { src: method.icon, alt: '' }) : h('span', { class: 'pay-icon' }, '¥'),
+            h('span', method.name || method.payment || `支付方式 ${method.id}`),
+          ]))) : emptyBlock('暂无可用支付方式'),
+        ]),
+        h('div', { class: 'digital-product-checkout' }, [
+          h('span', [h('small', '预计实付'), h('strong', local.quoteLoading ? '计算中…' : money(payAmount, currencySymbol()))]),
+          h('button', {
+            class: 'primary-button',
+            type: 'submit',
+            disabled: local.submitting || local.quoteLoading || Boolean(local.quoteError) || !selectedPackage.value || Number(props.plan.stock_count) <= 0 || !selectedMethod.value,
+          }, local.submitting ? '创建中…' : '立即购买'),
+        ]),
+        local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
+      ]);
+    };
+  },
+};
+
+const DigitalProductsPage = {
+  setup() {
+    const local = useAsyncPage(async (page) => {
+      const [products, methods] = await Promise.all([
+        api.get('/user/plan/fetch', { product_type: 'digital' }),
+        api.get('/user/order/getPaymentMethod').catch(() => []),
+      ]);
+      page.products = normalizeCollection(products);
+      page.methods = methods || [];
+    });
+    return () => h('div', [
+      pageError(local.error),
+      h('section', { class: 'digital-store-hero' }, [
+        h('div', [h('span', 'DIGITAL STORE'), h('h1', '数字商品'), h('p', '卡密、授权码、账号和下载链接，支付完成后自动交付。')]),
+        h('strong', `${(local.products || []).length} 件商品`),
+      ]),
+      h('div', { class: 'digital-product-grid' }, (local.products || []).map((plan) => h(DigitalProductCard, {
+        key: plan.id,
+        plan,
+        methods: local.methods || [],
+      }))),
+      local.ready && !(local.products || []).length ? emptyBlock('暂无可购买的数字商品') : null,
+    ]);
+  },
+};
+
 const OrdersPage = {
   setup() {
     if (state.route.query.trade_no) return () => h(OrderDetailPage, {
@@ -1946,7 +2099,7 @@ const OrdersPage = {
       ]);
       return h('section', { class: 'panel' }, [
         pageError(local.error),
-        h(DataTable, { headers: ['订单号', '套餐', '状态', '金额', '创建时间'], rows, empty: '暂无订单' }),
+        h(DataTable, { headers: ['订单号', '商品 / 套餐', '状态', '金额', '创建时间'], rows, empty: '暂无订单' }),
       ]);
     };
   },
@@ -2022,6 +2175,13 @@ const OrderDetailPage = {
           local.paymentMessage ? h('div', { class: 'success-box' }, local.paymentMessage) : null,
           local.paymentHtml ? h('div', { class: 'payment-frame', innerHTML: local.paymentHtml }) : null,
         ]) : null,
+        (order.digital_delivery || []).length ? h('section', { class: 'digital-order-delivery' }, [
+          h('div', { class: 'digital-order-delivery-head' }, [h('div', [h('small', 'DELIVERY'), h('h3', '数字商品交付内容')]), h('span', '已交付')]),
+          ...(order.digital_delivery || []).map((item) => h('div', { class: 'digital-order-delivery-item' }, [
+            h('pre', item.content),
+            h('div', [h('span', `交付时间 ${time(item.delivered_at)}`), h('button', { class: 'secondary-button', type: 'button', onClick: () => copyText(item.content).then(() => toast('交付内容已复制')) }, '复制内容')]),
+          ])),
+        ]) : (Number(order.status) === 3 && order.plan?.product_type === 'digital' ? h('div', { class: 'success-box' }, '订单已完成，交付内容正在生成，请稍后刷新。') : null),
       ]);
     };
   },
@@ -2565,6 +2725,7 @@ const routeComponents = {
   dashboard: DashboardPage,
   subscribe: SubscribePage,
   plans: PlansPage,
+  digital: DigitalProductsPage,
   orders: OrdersPage,
   recharge: RechargePage,
   profile: ProfilePage,
