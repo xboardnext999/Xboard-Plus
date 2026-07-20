@@ -69,6 +69,8 @@ class AdminRoute
                 $router->get('/banner', [DigitalProductController::class, 'banner']);
                 $router->post('/banner/save', [DigitalProductController::class, 'saveBanner']);
                 $router->post('/banner/upload', [DigitalProductController::class, 'uploadBanner']);
+                $router->post('/sort', [DigitalProductController::class, 'sort']);
+                $router->post('/status', [DigitalProductController::class, 'status']);
                 $router->post('/save', [DigitalProductController::class, 'save']);
                 $router->get('/stock', [DigitalProductController::class, 'stock']);
                 $router->get('/deliveries', [DigitalProductController::class, 'deliveries']);

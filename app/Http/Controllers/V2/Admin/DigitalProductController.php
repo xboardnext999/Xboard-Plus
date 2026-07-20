@@ -39,6 +39,27 @@ class DigitalProductController extends Controller
         return $this->storeImage($request, 'digital-banners', 'banner');
     }
 
+    public function sort(Request $request)
+    {
+        $data = $request->validate(['ids' => 'required|array|max:1000', 'ids.*' => 'required|integer']);
+        $ids = Plan::where('product_type', 'digital')->whereIn('id', $data['ids'])->pluck('id')->all();
+        if (count($ids) !== count(array_unique($data['ids']))) return $this->fail([422, '商品排序数据无效']);
+        DB::transaction(function () use ($data): void {
+            foreach ($data['ids'] as $sort => $id) Plan::where('id', $id)->where('product_type', 'digital')->update(['sort' => $sort + 1]);
+        });
+        return $this->success(true);
+    }
+
+    public function status(Request $request)
+    {
+        $data = $request->validate(['id' => 'required|integer', 'enabled' => 'required|boolean']);
+        $plan = Plan::where('id', $data['id'])->where('product_type', 'digital')->firstOrFail();
+        $plan->show = $data['enabled'];
+        $plan->sell = $data['enabled'];
+        $plan->save();
+        return $this->success(['id' => $plan->id, 'show' => $plan->show, 'sell' => $plan->sell]);
+    }
+
     public function fetch(Request $request)
     {
         $plans = Plan::where('product_type', 'digital')

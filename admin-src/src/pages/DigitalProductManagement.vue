@@ -17,6 +17,9 @@ const savingBanner = ref(false),
 const keyword = ref(""),
     statusFilter = ref("all"),
     categoryFilter = ref("all");
+const draggingId = ref(null),
+    sorting = ref(false);
+let dragSnapshot = [];
 const toast = reactive({ text: "", type: "" });
 const banner = reactive({
     image_url: "",
@@ -103,6 +106,51 @@ function lowestPrice(row) {
         .map((item) => Number(item.price || 0))
         .filter(Boolean);
     return prices.length ? Math.min(...prices) : 0;
+}
+function startDrag(event, row) {
+    draggingId.value = row.id;
+    dragSnapshot = rows.value.map((item) => item.id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(row.id));
+}
+async function dropRow(target) {
+    const sourceIndex = rows.value.findIndex(
+        (item) => item.id === draggingId.value,
+    );
+    const targetIndex = rows.value.findIndex((item) => item.id === target.id);
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex)
+        return;
+    const next = [...rows.value];
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    rows.value = next;
+    sorting.value = true;
+    try {
+        await post("/digital-products/sort", {
+            ids: next.map((item) => item.id),
+        });
+        notify("商品排序已保存");
+    } catch (e) {
+        rows.value = dragSnapshot
+            .map((id) => next.find((item) => item.id === id))
+            .filter(Boolean);
+        notify(e.message, "error");
+    } finally {
+        sorting.value = false;
+        draggingId.value = null;
+    }
+}
+async function toggleSelling(row, enabled) {
+    const previous = { show: row.show, sell: row.sell };
+    row.show = enabled;
+    row.sell = enabled;
+    try {
+        await post("/digital-products/status", { id: row.id, enabled });
+        notify(enabled ? "商品已上架销售" : "商品已下架");
+    } catch (e) {
+        Object.assign(row, previous);
+        notify(e.message, "error");
+    }
 }
 async function load() {
     loading.value = true;
@@ -395,6 +443,7 @@ onMounted(load);
                     <table>
                         <thead>
                             <tr>
+                                <th class="digital-sale-column">销售</th>
                                 <th>商品信息</th>
                                 <th>分类</th>
                                 <th>价格</th>
@@ -406,7 +455,36 @@ onMounted(load);
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="row in filteredRows" :key="row.id">
+                            <tr
+                                v-for="row in filteredRows"
+                                :key="row.id"
+                                :class="{
+                                    'is-dragging': draggingId === row.id,
+                                }"
+                                @dragover.prevent
+                                @drop.prevent="dropRow(row)"
+                            >
+                                <td class="digital-sale-column">
+                                    <div class="digital-row-controls">
+                                        <span
+                                            class="digital-drag-handle"
+                                            draggable="true"
+                                            title="拖动排序"
+                                            @dragstart="startDrag($event, row)"
+                                            @dragend="draggingId = null"
+                                            >⋮⋮</span
+                                        ><ToggleSwitch
+                                            :model-value="
+                                                Boolean(row.show && row.sell)
+                                            "
+                                            on-label=""
+                                            off-label=""
+                                            @update:model-value="
+                                                toggleSelling(row, $event)
+                                            "
+                                        />
+                                    </div>
+                                </td>
                                 <td>
                                     <div class="digital-product-cell">
                                         <span
@@ -486,7 +564,7 @@ onMounted(load);
                                 </td>
                             </tr>
                             <tr v-if="!filteredRows.length">
-                                <td colspan="8" class="settings-loading">
+                                <td colspan="9" class="settings-loading">
                                     没有符合条件的商品
                                 </td>
                             </tr>
