@@ -1,11 +1,271 @@
 {
+  "_SmartEditor-DcQsX0Gv.js": {
+    "file": "assets/SmartEditor-DcQsX0Gv.js",
+    "name": "SmartEditor",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "_http-NdM2fqYo.js": {
+    "file": "assets/http-NdM2fqYo.js",
+    "name": "http"
+  },
   "index.html": {
-    "file": "assets/index-DwSIpza8.js",
+    "file": "assets/index-DIqrzfAj.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
+    "dynamicImports": [
+      "src/pages/CouponManagement.vue",
+      "src/pages/Dashboard.vue",
+      "src/pages/GiftCardManagement.vue",
+      "src/pages/GroupBuy.vue",
+      "src/pages/GroupManagement.vue",
+      "src/pages/KnowledgeManagement.vue",
+      "src/pages/Login.vue",
+      "src/pages/NodeDiagnostics.vue",
+      "src/pages/NodeManagement.vue",
+      "src/pages/NoticeManagement.vue",
+      "src/pages/OrderManagement.vue",
+      "src/pages/PaymentManagement.vue",
+      "src/pages/PlanManagement.vue",
+      "src/pages/PluginManagement.vue",
+      "src/pages/ResourcePage.vue",
+      "src/pages/RouteManagement.vue",
+      "src/pages/ServerManagement.vue",
+      "src/pages/SystemConfig.vue",
+      "src/pages/ThemeManagement.vue",
+      "src/pages/TicketManagement.vue",
+      "src/pages/TrafficResetManagement.vue",
+      "src/pages/UserManagement.vue"
+    ],
     "css": [
-      "assets/index-C2ajvyw-.css"
+      "assets/index-1DkDO_ck.css"
+    ]
+  },
+  "src/pages/CouponManagement.vue": {
+    "file": "assets/CouponManagement-ChOkcWrn.js",
+    "name": "CouponManagement",
+    "src": "src/pages/CouponManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/Dashboard.vue": {
+    "file": "assets/Dashboard-CZZrzL1R.js",
+    "name": "Dashboard",
+    "src": "src/pages/Dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/GiftCardManagement.vue": {
+    "file": "assets/GiftCardManagement-D-IMV2oY.js",
+    "name": "GiftCardManagement",
+    "src": "src/pages/GiftCardManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/GroupBuy.vue": {
+    "file": "assets/GroupBuy-CT9uIkHG.js",
+    "name": "GroupBuy",
+    "src": "src/pages/GroupBuy.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/GroupManagement.vue": {
+    "file": "assets/GroupManagement-pQAFEB45.js",
+    "name": "GroupManagement",
+    "src": "src/pages/GroupManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/KnowledgeManagement.vue": {
+    "file": "assets/KnowledgeManagement-ygb65q2n.js",
+    "name": "KnowledgeManagement",
+    "src": "src/pages/KnowledgeManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/Login.vue": {
+    "file": "assets/Login-DuY4-1pq.js",
+    "name": "Login",
+    "src": "src/pages/Login.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/NodeDiagnostics.vue": {
+    "file": "assets/NodeDiagnostics-DBqgBaIA.js",
+    "name": "NodeDiagnostics",
+    "src": "src/pages/NodeDiagnostics.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/NodeManagement.vue": {
+    "file": "assets/NodeManagement-DPd_-b-1.js",
+    "name": "NodeManagement",
+    "src": "src/pages/NodeManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/NoticeManagement.vue": {
+    "file": "assets/NoticeManagement-C7d_FqXM.js",
+    "name": "NoticeManagement",
+    "src": "src/pages/NoticeManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/OrderManagement.vue": {
+    "file": "assets/OrderManagement-D9X8XCRT.js",
+    "name": "OrderManagement",
+    "src": "src/pages/OrderManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/PaymentManagement.vue": {
+    "file": "assets/PaymentManagement-jGBRYlnk.js",
+    "name": "PaymentManagement",
+    "src": "src/pages/PaymentManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js",
+      "_SmartEditor-DcQsX0Gv.js"
+    ]
+  },
+  "src/pages/PlanManagement.vue": {
+    "file": "assets/PlanManagement-C1XdPBfN.js",
+    "name": "PlanManagement",
+    "src": "src/pages/PlanManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/PluginManagement.vue": {
+    "file": "assets/PluginManagement-CsFzzgFo.js",
+    "name": "PluginManagement",
+    "src": "src/pages/PluginManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js",
+      "_SmartEditor-DcQsX0Gv.js"
+    ]
+  },
+  "src/pages/ResourcePage.vue": {
+    "file": "assets/ResourcePage-HjQMwDU3.js",
+    "name": "ResourcePage",
+    "src": "src/pages/ResourcePage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js",
+      "_SmartEditor-DcQsX0Gv.js"
+    ]
+  },
+  "src/pages/RouteManagement.vue": {
+    "file": "assets/RouteManagement-D1ec_UWo.js",
+    "name": "RouteManagement",
+    "src": "src/pages/RouteManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/ServerManagement.vue": {
+    "file": "assets/ServerManagement-DZvi_n0S.js",
+    "name": "ServerManagement",
+    "src": "src/pages/ServerManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/SystemConfig.vue": {
+    "file": "assets/SystemConfig-DlxRNDKu.js",
+    "name": "SystemConfig",
+    "src": "src/pages/SystemConfig.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js",
+      "_SmartEditor-DcQsX0Gv.js"
+    ]
+  },
+  "src/pages/ThemeManagement.vue": {
+    "file": "assets/ThemeManagement-DWGnmSM_.js",
+    "name": "ThemeManagement",
+    "src": "src/pages/ThemeManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js",
+      "_SmartEditor-DcQsX0Gv.js"
+    ]
+  },
+  "src/pages/TicketManagement.vue": {
+    "file": "assets/TicketManagement-Cm0glSUv.js",
+    "name": "TicketManagement",
+    "src": "src/pages/TicketManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/TrafficResetManagement.vue": {
+    "file": "assets/TrafficResetManagement-DQLeopPP.js",
+    "name": "TrafficResetManagement",
+    "src": "src/pages/TrafficResetManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
+    ]
+  },
+  "src/pages/UserManagement.vue": {
+    "file": "assets/UserManagement-DWnJbBBd.js",
+    "name": "UserManagement",
+    "src": "src/pages/UserManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_http-NdM2fqYo.js"
     ]
   }
 }

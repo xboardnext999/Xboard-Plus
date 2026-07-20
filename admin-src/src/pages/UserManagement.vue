@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import AppIcon from "../components/AppIcon.vue";
 import { get, post, request } from "../services/http";
+import { confirmAction } from "../services/confirm";
 const users = ref([]),
     plans = ref([]),
     groups = ref([]),
@@ -191,7 +192,7 @@ async function save() {
         selected.value &&
         ((!selected.value.is_admin && form.is_admin) ||
             (!selected.value.is_staff && form.is_staff)) &&
-        !confirm("你正在提升该用户的后台权限，确定继续？")
+        !(await confirmAction({ title: "授予后台权限", message: "你正在提升该用户的后台权限。员工或管理员可以登录管理后台，请确认该账号可信。", danger: true, confirmText: "确认授权" }))
     )
         return;
     saving.value = true;
@@ -244,9 +245,7 @@ async function detail(u) {
 async function toggleBan(u) {
     const ban = !u.banned;
     if (
-        !confirm(
-            `确定${ban ? "封禁" : "解封"}用户 ${u.email}？${ban ? "封禁会立即清除该用户所有登录会话。" : ""}`,
-        )
+        !(await confirmAction({ title: ban ? "封禁用户" : "解除封禁", message: `${ban ? "封禁" : "解封"}用户 ${u.email}？${ban ? "封禁会立即清除该用户所有登录会话。" : ""}`, danger: ban, confirmText: ban ? "确认封禁" : "确认解封" }))
     )
         return;
     busy.value = u.id;
@@ -261,7 +260,7 @@ async function toggleBan(u) {
     }
 }
 async function resetSecret(u) {
-    if (!confirm(`确定重置 ${u.email} 的订阅密钥？旧订阅链接将立即失效。`))
+    if (!(await confirmAction({ title: "重置订阅密钥", message: `重置 ${u.email} 的订阅密钥？旧订阅链接将立即失效。`, danger: true, confirmText: "确认重置" })))
         return;
     busy.value = u.id;
     try {
@@ -276,9 +275,7 @@ async function resetSecret(u) {
 }
 async function remove(u) {
     if (
-        !confirm(
-            `永久删除用户 ${u.email}？\n\n该操作会连带删除用户订单、邀请码、流量统计和工单，且无法恢复。`,
-        )
+        !(await confirmAction({ title: "永久删除用户", message: `永久删除用户 ${u.email}？该操作会连带删除用户订单、邀请码、流量统计和工单，且无法恢复。`, danger: true, confirmText: "继续删除" }))
     )
         return;
     const typed = prompt(`请输入用户邮箱 ${u.email} 确认永久删除`);
@@ -308,7 +305,7 @@ const allSelected = computed(() => users.value.length > 0 && users.value.every((
 function toggleAll() { selectedIds.value = allSelected.value ? [] : users.value.map((u) => u.id); }
 function clearFilters() { Object.assign(filters, { keyword: "", plan_id: "", state: "all" }); load(true); }
 async function bulkBan(banned) {
-    if (!selectedIds.value.length || !confirm(`确定批量${banned ? "封禁" : "解封"}选中的 ${selectedIds.value.length} 个用户？`)) return;
+    if (!selectedIds.value.length || !(await confirmAction({ title: `批量${banned ? "封禁" : "解封"}`, message: `将处理选中的 ${selectedIds.value.length} 个用户。`, danger: banned, confirmText: "确认执行" }))) return;
     bulkBusy.value = true;
     try {
         const results = await Promise.allSettled(selectedIds.value.map((id) => post("/user/update", { id, banned })));
@@ -329,7 +326,7 @@ async function exportUsers() {
     } catch (e) { notify(e.message, "error"); } finally { exporting.value = false; }
 }
 async function resetTraffic(u) {
-    if (!confirm(`确定手动重置 ${u.email} 的已用流量？此操作会写入重置日志。`)) return;
+    if (!(await confirmAction({ title: "重置用户流量", message: `手动重置 ${u.email} 的已用流量？此操作会写入重置日志。`, danger: true, confirmText: "确认重置" }))) return;
     busy.value = u.id;
     try { await post('/traffic-reset/reset-user', { user_id: u.id, reason: '用户管理页面手动重置' }); notify('用户流量已重置'); await load(); }
     catch (e) { notify(e.message, 'error'); } finally { busy.value = null; }
@@ -375,9 +372,7 @@ async function createUsers() {
             : undefined,
     };
     if (
-        !confirm(
-            `确定创建${createForm.batch ? ` ${body.generate_count} 个` : `用户 ${prefix}@${suffix}`}账号？`,
-        )
+        !(await confirmAction({ title: "创建用户", message: `确定创建${createForm.batch ? ` ${body.generate_count} 个` : `用户 ${prefix}@${suffix}`}账号？`, confirmText: "确认创建" }))
     )
         return;
     saving.value = true;

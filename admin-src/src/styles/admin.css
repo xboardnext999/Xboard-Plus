@@ -385,6 +385,7 @@ button:disabled {
 .menu-search-results button small { font-size: 10px; }
 .menu-search-results p { margin: 0; padding: 18px; color: var(--muted); font-size: 12px; text-align: center; }
 .sidebar-scrim { display: none; }
+.confirm-backdrop { z-index: 160; }.confirm-dialog { display:grid;grid-template-columns:46px minmax(0,1fr);gap:4px 14px;width:min(470px,calc(100vw - 32px)); }.confirm-icon { display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--brand-soft);color:var(--brand); }.confirm-icon.danger { background:var(--danger-soft);color:var(--danger); }.confirm-dialog h2 { margin:2px 0 7px;font-size:17px; }.confirm-dialog p { margin:0;color:var(--muted);font-size:12px;line-height:1.7;white-space:pre-line; }.confirm-dialog .modal-actions { grid-column:1/3; }
 
 .search-box input {
   min-width: 0;

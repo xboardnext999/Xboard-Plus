@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import AdminSidebar from '../components/AdminSidebar.vue';
 import AdminTopbar from '../components/AdminTopbar.vue';
+import ConfirmDialog from '../components/ConfirmDialog.vue';
 
 const route = useRoute();
 const collapsed = ref(localStorage.getItem('admin_sidebar_collapsed') === '1');
@@ -22,5 +23,6 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
       <AdminTopbar @toggle-sidebar="toggleSidebar" />
       <RouterView />
     </main>
+    <ConfirmDialog />
   </div>
 </template>

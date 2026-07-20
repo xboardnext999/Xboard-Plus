@@ -1,28 +1,12 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import AdminLayout from '../layout/AdminLayout.vue';
-import Dashboard from '../pages/Dashboard.vue';
-import GroupBuy from '../pages/GroupBuy.vue';
-import ResourcePage from '../pages/ResourcePage.vue';
-import Login from '../pages/Login.vue';
-import SystemConfig from '../pages/SystemConfig.vue';
-import PluginManagement from '../pages/PluginManagement.vue';
-import ThemeManagement from '../pages/ThemeManagement.vue';
-import NoticeManagement from '../pages/NoticeManagement.vue';
-import PaymentManagement from '../pages/PaymentManagement.vue';
-import KnowledgeManagement from '../pages/KnowledgeManagement.vue';
-import ServerManagement from '../pages/ServerManagement.vue';
-import NodeManagement from '../pages/NodeManagement.vue';
-import GroupManagement from '../pages/GroupManagement.vue';
-import RouteManagement from '../pages/RouteManagement.vue';
-import NodeDiagnostics from '../pages/NodeDiagnostics.vue';
-import PlanManagement from '../pages/PlanManagement.vue';
-import OrderManagement from '../pages/OrderManagement.vue';
-import CouponManagement from '../pages/CouponManagement.vue';
-import GiftCardManagement from '../pages/GiftCardManagement.vue';
-import UserManagement from '../pages/UserManagement.vue';
-import TicketManagement from '../pages/TicketManagement.vue';
-import TrafficResetManagement from '../pages/TrafficResetManagement.vue';
 import { flatMenus } from '../config/menu';
+
+const page = (name) => () => import(`../pages/${name}.vue`);
+const Dashboard = page('Dashboard'), GroupBuy = page('GroupBuy'), ResourcePage = page('ResourcePage'), Login = page('Login');
+const SystemConfig = page('SystemConfig'), PluginManagement = page('PluginManagement'), ThemeManagement = page('ThemeManagement'), NoticeManagement = page('NoticeManagement'), PaymentManagement = page('PaymentManagement'), KnowledgeManagement = page('KnowledgeManagement');
+const ServerManagement = page('ServerManagement'), NodeManagement = page('NodeManagement'), GroupManagement = page('GroupManagement'), RouteManagement = page('RouteManagement'), NodeDiagnostics = page('NodeDiagnostics');
+const PlanManagement = page('PlanManagement'), OrderManagement = page('OrderManagement'), CouponManagement = page('CouponManagement'), GiftCardManagement = page('GiftCardManagement'), UserManagement = page('UserManagement'), TicketManagement = page('TicketManagement'), TrafficResetManagement = page('TrafficResetManagement');
 
 const menuRoutes = flatMenus
   .filter((item) => !['/dashboard', '/system/config', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy'].includes(item.path))

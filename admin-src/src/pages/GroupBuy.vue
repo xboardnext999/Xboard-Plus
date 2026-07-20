@@ -429,10 +429,7 @@ onMounted(() => {
         </label>
         <label class="field">
           <span>活动状态</span>
-          <select v-model.number="form.status">
-            <option :value="1">启用</option>
-            <option :value="0">停用</option>
-          </select>
+          <ToggleSwitch v-model="form.status" :true-value="1" :false-value="0" on-label="已启用" off-label="已停用" />
         </label>
       </div>
 
