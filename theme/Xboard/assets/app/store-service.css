@@ -1,0 +1,61 @@
+.store-service-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin: 14px 0 2px;
+  border-radius: 12px;
+  background: var(--panel-soft);
+  padding: 4px;
+}
+
+.store-service-tabs button {
+  min-width: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  padding: 8px 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.store-service-tabs button.active {
+  background: var(--card-bg);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, .08);
+  color: var(--primary);
+}
+
+.store-order-lookup {
+  display: grid;
+  justify-items: center;
+  padding: 20px 0 4px;
+  text-align: center;
+}
+
+.store-service-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 11%, transparent);
+  color: var(--primary);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.store-order-lookup h3 { margin: 12px 0 5px; color: var(--text); font-size: 15px; }
+.store-order-lookup p { margin: 0; color: var(--muted); font-size: 11px; }
+.store-order-lookup form { display: grid; grid-template-columns: minmax(0, 1fr) auto; width: 100%; gap: 7px; margin-top: 15px; }
+.store-order-lookup input { min-width: 0; height: 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-soft); padding: 0 11px; color: var(--text); outline: 0; }
+.store-order-lookup input:focus { border-color: var(--primary); }
+.store-order-lookup form button { border: 0; border-radius: 10px; background: var(--primary); padding: 0 13px; color: #fff; font-weight: 800; cursor: pointer; }
+.store-order-lookup > a { margin-top: 12px; color: var(--primary); font-size: 11px; text-decoration: none; }
+
+.store-faq-list { display: grid; align-content: start; gap: 7px; overflow: auto; padding-top: 12px; }
+.store-faq-list article { overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: var(--panel-soft); }
+.store-faq-list article.active { border-color: color-mix(in srgb, var(--primary) 28%, var(--line)); background: color-mix(in srgb, var(--primary) 5%, var(--card-bg)); }
+.store-faq-list button { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; border: 0; background: transparent; padding: 11px 12px; color: var(--text); font-size: 12px; font-weight: 750; text-align: left; cursor: pointer; }
+.store-faq-list button b { color: var(--primary); font-size: 17px; }
+.store-faq-list p { margin: 0; padding: 0 12px 12px; color: var(--muted); font-size: 11px; line-height: 1.65; }

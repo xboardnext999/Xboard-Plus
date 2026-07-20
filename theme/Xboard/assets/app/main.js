@@ -2011,6 +2011,14 @@ const DigitalProductsPage = {
     const selectedPackage = ref('');
     const cartOpen = ref(false);
     const selectedCategory = ref('all');
+    const serviceTab = ref('notice');
+    const orderQuery = ref('');
+    const faqOpen = ref(0);
+    const storeFaqs = [
+      ['购买后如何交付？', '自动交付商品会在支付完成后写入订单详情；人工交付商品请留意订单状态和站内通知。'],
+      ['在哪里查看已购买内容？', '在订单查询中输入订单号，或进入“我的订单”打开对应订单，即可查看交付内容。'],
+      ['支付成功但没有收到商品？', '请先刷新订单详情。若仍未显示，请保留订单号并通过工单联系管理员处理。'],
+    ];
     const local = useAsyncPage(async (page) => {
       const [products, banner, categories, notices] = await Promise.all([
         api.get('/user/plan/fetch', { product_type: 'digital' }),
@@ -2084,13 +2092,30 @@ const DigitalProductsPage = {
           h('div', [h('span', '● DIGITAL STORE'), h('h1', local.banner?.title || '数字商品中心'), h('p', local.banner?.subtitle || '精选数字资产，安全购买，支付完成后快速交付。'), local.banner?.button_text !== '' ? h('a', { href: local.banner?.link_url || '#digital-products' }, `${local.banner?.button_text || '了解更多'}  →`) : null]),
         ]) : h('section', { class: 'store-banner store-banner-loading', 'aria-label': 'Banner 加载中' }),
         h('aside', { class: 'store-notice-panel' }, [
-          h('header', [h('div', [h('small', 'STORE NOTICE'), h('h2', '最新公告')]), h('span', '公告')]),
-          h('div', { class: 'store-notice-list' }, (local.notices || []).length
+          h('header', [h('div', [h('small', 'STORE SERVICE'), h('h2', serviceTab.value === 'notice' ? '最新公告' : serviceTab.value === 'order' ? '订单查询' : '常见问题')])]),
+          h('nav', { class: 'store-service-tabs' }, [
+            ['notice', '公告'], ['order', '查单'], ['faq', '常见问题'],
+          ].map(([key, label]) => h('button', { type: 'button', class: serviceTab.value === key ? 'active' : '', onClick: () => { serviceTab.value = key; } }, label))),
+          serviceTab.value === 'notice' ? h('div', { class: 'store-notice-list' }, (local.notices || []).length
             ? local.notices.map((notice) => h('article', { key: notice.id }, [
               h('div', [h('i'), h('h3', notice.title || '站点公告')]),
               h('div', { class: 'store-notice-content', innerHTML: safeBody(notice.content || notice.body || '') }),
             ]))
-            : [h('article', { class: 'is-empty' }, [h('div', [h('i'), h('h3', '暂无公告')]), h('p', '新的站点通知会显示在这里。')])]),
+            : [h('article', { class: 'is-empty' }, [h('div', [h('i'), h('h3', '暂无公告')]), h('p', '新的站点通知会显示在这里。')])]) : null,
+          serviceTab.value === 'order' ? h('div', { class: 'store-order-lookup' }, [
+            h('div', { class: 'store-service-icon' }, '⌕'),
+            h('h3', '查询数字商品订单'),
+            h('p', '输入订单号，快速查看支付状态与交付内容。'),
+            h('form', { onSubmit: (event) => { event.preventDefault(); const tradeNo = orderQuery.value.trim(); if (!tradeNo) return toast('请输入订单号', 'error'); go('orders', { trade_no: tradeNo }); } }, [
+              h('input', { value: orderQuery.value, placeholder: '请输入订单号', autocomplete: 'off', onInput: (event) => { orderQuery.value = event.target.value; } }),
+              h('button', { type: 'submit' }, '立即查询'),
+            ]),
+            h('a', { href: '#/orders' }, '查看我的全部订单 →'),
+          ]) : null,
+          serviceTab.value === 'faq' ? h('div', { class: 'store-faq-list' }, storeFaqs.map((item, index) => h('article', { class: faqOpen.value === index ? 'active' : '' }, [
+            h('button', { type: 'button', onClick: () => { faqOpen.value = faqOpen.value === index ? -1 : index; } }, [h('span', item[0]), h('b', faqOpen.value === index ? '−' : '+')]),
+            faqOpen.value === index ? h('p', item[1]) : null,
+          ]))) : null,
         ]),
       ]),
       h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('div', { class: 'store-heading-actions' }, [h('span', `${visibleProducts().length} 件商品`), h('button', { type: 'button', class: 'store-cart-button', onClick: () => { cartOpen.value = true; } }, `🛒 购物车 ${digitalCart.value.reduce((sum, item) => sum + item.quantity, 0)}`)])]),
