@@ -43,7 +43,9 @@
 }
 
 .digital-faq-modal {
-  width: min(1120px, 94vw);
+  width: min(980px, calc(100vw - 40px));
+  max-height: 86vh;
+  padding: 24px;
 }
 
 .digital-quick-panel .digital-quick-grid {
@@ -61,9 +63,11 @@
 
 .digital-faq-layout {
   display: grid;
-  grid-template-columns: minmax(300px, .72fr) minmax(0, 1.28fr);
-  gap: 18px;
-  margin-top: 18px;
+  grid-template-columns: minmax(320px, .82fr) minmax(0, 1.18fr);
+  align-items: start;
+  gap: 16px;
+  min-height: 0;
+  margin-top: 14px;
 }
 
 .digital-faq-form {
@@ -71,48 +75,79 @@
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--panel-soft);
-  padding: 18px;
+  padding: 16px;
+}
+
+.digital-faq-form .field {
+  width: 100%;
+  margin: 0 0 14px;
+}
+
+.digital-faq-form input,
+.digital-faq-form textarea {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .digital-faq-form textarea {
-  min-height: 150px;
+  min-height: 132px;
+  line-height: 1.65;
   resize: vertical;
 }
 
 .digital-faq-form-row {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-columns: 110px minmax(0, 1fr);
   align-items: end;
-  gap: 14px;
+  gap: 12px;
+}
+
+.digital-faq-form-row .field {
+  margin-bottom: 0;
+}
+
+.digital-faq-form .modal-actions {
+  margin-top: 16px;
+  padding-top: 14px;
 }
 
 .digital-faq-manage-list {
   display: grid;
   align-content: start;
-  gap: 9px;
-  max-height: 560px;
+  gap: 8px;
+  max-height: 475px;
   overflow: auto;
+  padding-right: 3px;
+  scrollbar-width: thin;
 }
 
 .digital-faq-manage-list article {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 12px;
+  background: var(--panel-soft);
+  padding: 12px;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.digital-faq-manage-list article:hover {
+  border-color: color-mix(in srgb, var(--brand) 24%, var(--line));
   background: var(--card-bg);
-  padding: 13px;
+  box-shadow: 0 7px 18px rgba(15, 23, 42, .04);
 }
 
 .digital-faq-manage-list article.muted { opacity: .62; }
 .digital-faq-manage-list article > div:nth-child(2) { min-width: 0; }
-.digital-faq-manage-list strong { display: block; overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.digital-faq-manage-list strong { display: block; overflow: hidden; color: var(--text); font-size: 12px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
 .digital-faq-manage-list p { display: -webkit-box; overflow: hidden; margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .digital-faq-sort { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: rgba(108, 92, 231, .09); color: var(--primary); font-size: 11px; font-weight: 800; }
-.digital-faq-actions { display: flex; gap: 6px; }
+.digital-faq-actions { display: flex; align-items: center; gap: 5px; }
 
 @media (max-width: 900px) {
+  .digital-faq-modal { width: min(680px, calc(100vw - 24px)); }
   .digital-faq-layout { grid-template-columns: 1fr; }
   .digital-faq-manage-list { max-height: none; }
   .digital-faq-manage-list article { grid-template-columns: 34px minmax(0, 1fr); }
