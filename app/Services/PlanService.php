@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserSubscription;
 use App\Exceptions\ApiException;
 use Illuminate\Database\Eloquent\Collection;
+use App\Models\DigitalProductItem;
 
 class PlanService
 {
@@ -25,7 +26,7 @@ class PlanService
      */
     public function getAvailablePlans(?string $productType = 'subscription'): Collection
     {
-        return Plan::when($productType, fn ($query) => $query->where('product_type', $productType))
+        $plans = Plan::when($productType, fn ($query) => $query->where('product_type', $productType))
             ->when($productType === 'digital', fn($query) => $query->withCount([
                 'digitalItems as stock_count' => fn($items) => $items->where('status', \App\Models\DigitalProductItem::AVAILABLE),
                 'digitalItems as sold_count' => fn($items) => $items->where('status', \App\Models\DigitalProductItem::SOLD),
@@ -37,6 +38,22 @@ class PlanService
             ->filter(function ($plan) {
                 return $this->hasCapacity($plan);
             });
+        if ($productType === 'digital' && $plans->isNotEmpty()) {
+            $stocks = DigitalProductItem::whereIn('plan_id', $plans->pluck('id'))->where('status', DigitalProductItem::AVAILABLE)
+                ->selectRaw("plan_id, COALESCE(package_id, '') package_key, COUNT(*) aggregate")
+                ->groupBy('plan_id', 'package_id')->get()->groupBy('plan_id');
+            $plans->each(function (Plan $plan) use ($stocks): void {
+                $rows = $stocks->get($plan->id, collect());
+                $common = (int) ($rows->firstWhere('package_key', '')?->aggregate ?? 0);
+                $config = $plan->product_config ?: [];
+                $config['packages'] = collect($config['packages'] ?? [])->map(function ($package) use ($rows, $common) {
+                    $package['stock_count'] = (int) ($rows->firstWhere('package_key', (string) ($package['id'] ?? ''))?->aggregate ?? 0) + $common;
+                    return $package;
+                })->values()->all();
+                $plan->product_config = $config;
+            });
+        }
+        return $plans;
     }
 
     /**

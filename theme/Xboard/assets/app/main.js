@@ -1935,6 +1935,9 @@ function digitalPackageOptions(plan = {}) {
       key: String(item.id),
       name: item.name || item.id,
       price: Number(item.price) * 100,
+      originalPrice: Number(item.original_price || 0) * 100,
+      description: item.description || '',
+      stockCount: item.stock_count === undefined ? null : Number(item.stock_count),
     }));
 }
 
@@ -1982,7 +1985,8 @@ const DigitalProductsPage = {
     });
     function open(plan) {
       selected.value = plan;
-      selectedPackage.value = digitalPackageOptions(plan)[0]?.key || '';
+      const options = digitalPackageOptions(plan);
+      selectedPackage.value = (options.find((item) => item.stockCount === null || item.stockCount > 0) || options[0])?.key || '';
     }
     function checkout() {
       if (!selected.value || !selectedPackage.value) return;
@@ -2010,11 +2014,12 @@ const DigitalProductsPage = {
           ]),
           h('div', { class: 'store-modal-content' }, [
             h('div', { class: 'store-modal-description', innerHTML: safeBody(selected.value.content || '支付完成后自动交付') }),
-            h('p', [h('span', '库存：'), h('strong', `● 剩余 ${selected.value.stock_count} 件`)]),
-            h('label', ['商品规格', h('select', { value: selectedPackage.value, onChange: (event) => { selectedPackage.value = event.target.value; } }, digitalPackageOptions(selected.value).map((item) => h('option', { value: item.key }, `${item.name} · ${money(item.price, currencySymbol())}`)))]),
+            h('p', [h('span', '当前规格库存：'), h('strong', `● 剩余 ${digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.stockCount ?? selected.value.stock_count} 件`)]),
+            h('label', ['商品规格', h('select', { value: selectedPackage.value, onChange: (event) => { selectedPackage.value = event.target.value; } }, digitalPackageOptions(selected.value).map((item) => h('option', { value: item.key, disabled: item.stockCount === 0 }, `${item.name} · ${money(item.price, currencySymbol())}${item.stockCount === null ? '' : ` · 库存 ${item.stockCount}`}`)))]),
+            digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.description ? h('p', { class: 'store-spec-description' }, digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value).description) : null,
             h('div', { class: 'store-quantity' }, [h('span', '数量'), h('div', [h('button', { type: 'button', disabled: true }, '−'), h('strong', '1'), h('button', { type: 'button', disabled: true }, '+')])]),
           ]),
-          h('div', { class: 'store-modal-actions' }, [h('button', { class: 'secondary-button', type: 'button', onClick: () => { selected.value = null; } }, '稍后购买'), h('button', { class: 'primary-button', type: 'button', onClick: checkout }, '立即购买')]),
+          h('div', { class: 'store-modal-actions' }, [h('button', { class: 'secondary-button', type: 'button', onClick: () => { selected.value = null; } }, '稍后购买'), h('button', { class: 'primary-button', type: 'button', disabled: digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.stockCount === 0, onClick: checkout }, digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.stockCount === 0 ? '当前规格已售罄' : '立即购买')]),
         ]),
       ]) : null,
     ]);

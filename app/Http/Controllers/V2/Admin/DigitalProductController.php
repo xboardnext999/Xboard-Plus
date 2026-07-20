@@ -7,6 +7,8 @@ use App\Models\DigitalProductItem;
 use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class DigitalProductController extends Controller
 {
@@ -17,6 +19,20 @@ class DigitalProductController extends Controller
                 'digitalItems as stock_count' => fn($query) => $query->where('status', DigitalProductItem::AVAILABLE),
                 'digitalItems as sold_count' => fn($query) => $query->where('status', DigitalProductItem::SOLD),
             ])->orderBy('sort')->get();
+        $stockByPackage = DigitalProductItem::whereIn('plan_id', $plans->pluck('id'))
+            ->where('status', DigitalProductItem::AVAILABLE)
+            ->selectRaw("plan_id, COALESCE(package_id, '') package_key, COUNT(*) aggregate")
+            ->groupBy('plan_id', 'package_id')->get()->groupBy('plan_id');
+        $plans->each(function (Plan $plan) use ($stockByPackage): void {
+            $rows = $stockByPackage->get($plan->id, collect());
+            $common = (int) ($rows->firstWhere('package_key', '')?->aggregate ?? 0);
+            $config = $plan->product_config ?: [];
+            $config['packages'] = collect($config['packages'] ?? [])->map(function ($package) use ($rows, $common) {
+                $package['stock_count'] = (int) ($rows->firstWhere('package_key', (string) ($package['id'] ?? ''))?->aggregate ?? 0) + $common;
+                return $package;
+            })->values()->all();
+            $plan->product_config = $config;
+        });
         return $this->success($plans);
     }
 
@@ -38,6 +54,8 @@ class DigitalProductController extends Controller
             'product_config.packages.*.id' => 'required|string|max:64',
             'product_config.packages.*.name' => 'required|string|max:100',
             'product_config.packages.*.price' => 'required|numeric|min:0',
+            'product_config.packages.*.original_price' => 'nullable|numeric|min:0',
+            'product_config.packages.*.description' => 'nullable|string|max:200',
         ]);
         $data['product_type'] = 'digital';
         $data['transfer_enable'] = 0;
@@ -49,6 +67,8 @@ class DigitalProductController extends Controller
             'id' => preg_replace('/[^A-Za-z0-9_-]/', '-', (string) $package['id']),
             'name' => trim($package['name']),
             'price' => (float) $package['price'],
+            'original_price' => (float) ($package['original_price'] ?? 0),
+            'description' => trim((string) ($package['description'] ?? '')),
         ])->filter(fn($package) => $package['price'] > 0)->values()->all();
         if (empty($config['packages']) && !collect($data['prices'] ?? [])->contains(fn($price) => (float) $price > 0)) {
             return $this->fail([422, '请至少设置一个有效销售套餐或价格']);
@@ -59,6 +79,18 @@ class DigitalProductController extends Controller
         $plan->fill($data);
         $plan->save();
         return $this->success($plan->fresh());
+    }
+
+    public function uploadCover(Request $request)
+    {
+        $request->validate(['file' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120']);
+        $file = $request->file('file');
+        if (!$file || !$file->isValid()) return $this->fail([400, '图片上传失败']);
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'webp');
+        $filename = 'product_' . time() . '_' . Str::random(10) . '.' . $extension;
+        $path = Storage::disk('public')->putFileAs('digital-products', $file, $filename);
+        if (!$path) return $this->fail([400, '图片上传失败']);
+        return $this->success(['url' => '/storage/digital-products/' . $filename]);
     }
 
     public function stock(Request $request)
