@@ -50,6 +50,7 @@ class Order extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
         'surplus_order_ids' => 'array',
+        'digital_cart_items' => 'array',
         'handling_amount' => 'integer'
     ];
 

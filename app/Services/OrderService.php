@@ -258,7 +258,9 @@ class OrderService
                     ->update(['status' => Order::STATUS_DISCOUNTED]);
             }
 
-            if ($isForwarding) {
+            if (!empty($order->digital_cart_items)) {
+                $this->buyDigitalCart($order);
+            } elseif ($isForwarding) {
                 $this->buyForwardingPlan($order, $plan);
             } elseif ($isDigital) {
                 $this->buyDigitalProduct($order, $plan);
@@ -596,6 +598,28 @@ class OrderService
         $item->user_id = $this->user->id;
         $item->sold_at = time();
         $item->save();
+    }
+
+    private function buyDigitalCart(Order $order): void
+    {
+        foreach ((array) $order->digital_cart_items as $cartItem) {
+            $plan = Plan::where('id', (int) ($cartItem['plan_id'] ?? 0))->where('product_type', 'digital')->first();
+            if (!$plan) throw new ApiException('购物车商品已不存在');
+            $packageId = (string) ($cartItem['package_id'] ?? '');
+            $quantity = max(1, (int) ($cartItem['quantity'] ?? 1));
+            $items = \App\Models\DigitalProductItem::where('plan_id', $plan->id)
+                ->where(fn($query) => $query->where('package_id', $packageId)->orWhereNull('package_id'))
+                ->where('status', \App\Models\DigitalProductItem::AVAILABLE)
+                ->lockForUpdate()->limit($quantity)->get();
+            if ($items->count() < $quantity) throw new ApiException("{$plan->name} 库存不足");
+            foreach ($items as $item) {
+                $item->status = \App\Models\DigitalProductItem::SOLD;
+                $item->order_id = $order->id;
+                $item->user_id = $this->user->id;
+                $item->sold_at = time();
+                $item->save();
+            }
+        }
     }
 
     /**

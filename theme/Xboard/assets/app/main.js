@@ -135,6 +135,7 @@ function siteLogoUrl() {
 
 function currentTitle(name) {
   if (name === 'digital-checkout') return '订单结算';
+  if (name === 'digital-detail') return '商品详情';
   return navItems.find((item) => item.key === name)?.label || '仪表盘';
 }
 
@@ -456,6 +457,30 @@ function userAvatarUrl(user = state.user) {
 
 function safeBody(html) {
   return String(html || '');
+}
+
+function markdownBody(source = '') {
+  const escaped = String(source).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return escaped
+    .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, '<img src="$2" alt="$1">')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, '<a href="$2" rel="noopener">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^[-*] (.*)$/gm, '<li>$1</li>')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+const digitalCartStorageKey = 'xboard-digital-cart-v1';
+function loadDigitalCart() {
+  try { return JSON.parse(localStorage.getItem(digitalCartStorageKey) || '[]'); } catch { return []; }
+}
+const digitalCart = ref(loadDigitalCart());
+function storeDigitalCart() {
+  localStorage.setItem(digitalCartStorageKey, JSON.stringify(digitalCart.value));
 }
 
 function formData(form) {
@@ -1945,6 +1970,8 @@ const DigitalProductCard = {
   props: {
     plan: { type: Object, required: true },
     onOpen: { type: Function, required: true },
+    onAdd: { type: Function, required: true },
+    onDetail: { type: Function, required: true },
   },
   setup(props) {
     const packages = digitalPackageOptions(props.plan);
@@ -1967,7 +1994,10 @@ const DigitalProductCard = {
           h('div', { class: 'store-product-summary', innerHTML: safeBody(props.plan.content || '支付完成后自动交付') }),
           h('div', { class: 'store-product-footer' }, [
             h('span', [h('small', '价格'), h('strong', money(price, currencySymbol()))]),
-            h('button', { type: 'button', disabled: Number(props.plan.stock_count) <= 0, onClick: (event) => { event.stopPropagation(); props.onOpen(props.plan); } }, '→'),
+            h('div', { class: 'store-card-actions' }, [
+              h('button', { type: 'button', title: '加入购物车', disabled: Number(props.plan.stock_count) <= 0, onClick: (event) => { event.stopPropagation(); props.onAdd(props.plan); } }, '🛒'),
+              h('button', { type: 'button', title: '查看详情', onClick: (event) => { event.stopPropagation(); props.onDetail(props.plan); } }, '→'),
+            ]),
           ]),
         ]),
       ]);
@@ -1979,6 +2009,7 @@ const DigitalProductsPage = {
   setup() {
     const selected = ref(null);
     const selectedPackage = ref('');
+    const cartOpen = ref(false);
     const local = useAsyncPage(async (page) => {
       const [products, banner] = await Promise.all([
         api.get('/user/plan/fetch', { product_type: 'digital' }),
@@ -2007,6 +2038,31 @@ const DigitalProductsPage = {
       if (!selected.value || !selectedPackage.value) return;
       go('digital-checkout', { plan_id: selected.value.id, package: selectedPackage.value });
     }
+    function addToCart(plan, packageId = '') {
+      const options = digitalPackageOptions(plan);
+      const pkg = options.find((item) => item.key === packageId) || options.find((item) => item.stockCount === null || item.stockCount > 0) || options[0];
+      if (!pkg || pkg.stockCount === 0) return toast('当前规格已售罄', 'error');
+      const key = `${plan.id}:${pkg.key}`;
+      const current = digitalCart.value.find((item) => item.key === key);
+      if (current) current.quantity = Math.min(Number(pkg.stockCount || 20), current.quantity + 1);
+      else digitalCart.value.push({ key, plan_id: plan.id, package_id: pkg.key, quantity: 1, name: plan.name, package_name: pkg.name, unit_price: pkg.price, image_url: plan.product_config?.image_url || '', stock_count: pkg.stockCount });
+      digitalCart.value = [...digitalCart.value];
+      storeDigitalCart();
+      cartOpen.value = true;
+      toast('已加入购物车');
+    }
+    function changeCart(item, amount) {
+      item.quantity = Math.max(0, Math.min(Number(item.stock_count || 20), item.quantity + amount));
+      if (!item.quantity) digitalCart.value = digitalCart.value.filter((row) => row.key !== item.key);
+      else digitalCart.value = [...digitalCart.value];
+      storeDigitalCart();
+    }
+    function openDetail(plan) { go('digital-detail', { id: plan.id }); }
+    function checkoutCart() {
+      if (!digitalCart.value.length) return;
+      cartOpen.value = false;
+      go('digital-checkout', { cart: '1' });
+    }
     return () => h('div', [
       pageError(local.error),
       local.ready ? h('section', {
@@ -2017,8 +2073,8 @@ const DigitalProductsPage = {
       }, [
         h('div', [h('span', '● DIGITAL STORE'), h('h1', local.banner?.title || '数字商品中心'), h('p', local.banner?.subtitle || '精选数字资产，安全购买，支付完成后快速交付。'), local.banner?.button_text !== '' ? h('a', { href: local.banner?.link_url || '#digital-products' }, `${local.banner?.button_text || '了解更多'}  →`) : null]),
       ]) : h('section', { class: 'store-banner store-banner-loading', 'aria-label': 'Banner 加载中' }),
-      h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('span', `${(local.products || []).length} 件商品`)]),
-      h('div', { class: 'store-product-grid' }, (local.products || []).map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open }))),
+      h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('div', { class: 'store-heading-actions' }, [h('span', `${(local.products || []).length} 件商品`), h('button', { type: 'button', class: 'store-cart-button', onClick: () => { cartOpen.value = true; } }, `🛒 购物车 ${digitalCart.value.reduce((sum, item) => sum + item.quantity, 0)}`)])]),
+      h('div', { class: 'store-product-grid' }, (local.products || []).map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open, onAdd: addToCart, onDetail: openDetail }))),
       local.ready && !(local.products || []).length ? emptyBlock('暂无可购买的数字商品') : null,
       selected.value ? h('div', { class: 'store-modal-backdrop', onClick: (event) => { if (event.target === event.currentTarget) selected.value = null; } }, [
         h('section', { class: 'store-quick-modal' }, [
@@ -2034,10 +2090,59 @@ const DigitalProductsPage = {
             digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.description ? h('p', { class: 'store-spec-description' }, digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value).description) : null,
             h('div', { class: 'store-quantity' }, [h('span', '数量'), h('div', [h('button', { type: 'button', disabled: true }, '−'), h('strong', '1'), h('button', { type: 'button', disabled: true }, '+')])]),
           ]),
-          h('div', { class: 'store-modal-actions' }, [h('button', { class: 'secondary-button', type: 'button', onClick: () => { selected.value = null; } }, '稍后购买'), h('button', { class: 'primary-button', type: 'button', disabled: digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.stockCount === 0, onClick: checkout }, digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.stockCount === 0 ? '当前规格已售罄' : '立即购买')]),
+          h('div', { class: 'store-modal-actions' }, [h('button', { class: 'secondary-button', type: 'button', onClick: () => { addToCart(selected.value, selectedPackage.value); selected.value = null; } }, '加入购物车'), h('button', { class: 'secondary-button', type: 'button', onClick: () => openDetail(selected.value) }, '查看详情'), h('button', { class: 'primary-button', type: 'button', disabled: digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.stockCount === 0, onClick: checkout }, digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.stockCount === 0 ? '当前规格已售罄' : '立即购买')]),
+        ]),
+      ]) : null,
+      cartOpen.value ? h('div', { class: 'store-modal-backdrop', onClick: (event) => { if (event.target === event.currentTarget) cartOpen.value = false; } }, [
+        h('aside', { class: 'store-cart-drawer' }, [
+          h('div', { class: 'store-modal-head' }, [h('div', [h('h2', '购物车'), h('small', `共 ${digitalCart.value.reduce((sum, item) => sum + item.quantity, 0)} 件商品`)]), h('button', { type: 'button', onClick: () => { cartOpen.value = false; } }, '×')]),
+          h('div', { class: 'store-cart-list' }, digitalCart.value.length ? digitalCart.value.map((item) => h('div', { class: 'store-cart-item', key: item.key }, [
+            h('div', { class: 'store-cart-thumb', style: item.image_url ? { backgroundImage: `url("${item.image_url}")` } : {} }, item.image_url ? [] : [String(item.name).slice(0, 1)]),
+            h('div', [h('strong', item.name), h('small', item.package_name), h('b', money(item.unit_price * item.quantity, currencySymbol()))]),
+            h('div', { class: 'store-cart-quantity' }, [h('button', { type: 'button', onClick: () => changeCart(item, -1) }, '−'), h('span', item.quantity), h('button', { type: 'button', onClick: () => changeCart(item, 1) }, '+')]),
+          ])) : [emptyBlock('购物车还是空的')]),
+          h('div', { class: 'store-cart-footer' }, [h('div', [h('span', '合计'), h('strong', money(digitalCart.value.reduce((sum, item) => sum + item.unit_price * item.quantity, 0), currencySymbol()))]), h('button', { class: 'primary-button', type: 'button', disabled: !digitalCart.value.length, onClick: checkoutCart }, '统一结算')]),
         ]),
       ]) : null,
     ]);
+  },
+};
+
+const DigitalProductDetailPage = {
+  setup() {
+    const selectedPackage = ref('');
+    const activeImage = ref('');
+    const local = useAsyncPage(async (page) => {
+      page.plan = await api.get('/user/plan/fetch', { id: state.route.query.id });
+      const options = digitalPackageOptions(page.plan);
+      selectedPackage.value = (options.find((item) => item.stockCount === null || item.stockCount > 0) || options[0])?.key || '';
+      activeImage.value = page.plan.product_config?.image_url || page.plan.product_config?.gallery?.[0] || '';
+    });
+    function add() {
+      const plan = local.plan;
+      const pkg = digitalPackageOptions(plan).find((item) => item.key === selectedPackage.value);
+      if (!plan || !pkg) return;
+      const key = `${plan.id}:${pkg.key}`;
+      const current = digitalCart.value.find((item) => item.key === key);
+      if (current) current.quantity = Math.min(Number(pkg.stockCount || 20), current.quantity + 1);
+      else digitalCart.value.push({ key, plan_id: plan.id, package_id: pkg.key, quantity: 1, name: plan.name, package_name: pkg.name, unit_price: pkg.price, image_url: plan.product_config?.image_url || '', stock_count: pkg.stockCount });
+      digitalCart.value = [...digitalCart.value]; storeDigitalCart(); toast('已加入购物车');
+    }
+    return () => {
+      const plan = local.plan || {};
+      const options = digitalPackageOptions(plan);
+      const pkg = options.find((item) => item.key === selectedPackage.value) || {};
+      const gallery = [...new Set([plan.product_config?.image_url, ...(plan.product_config?.gallery || [])].filter(Boolean))];
+      return h('div', { class: 'store-detail-page' }, [
+        pageError(local.error),
+        h('button', { class: 'store-back-link', type: 'button', onClick: () => go('digital') }, '← 返回数字商品'),
+        local.ready ? h('section', { class: 'store-detail-hero' }, [
+          h('div', { class: 'store-detail-gallery' }, [h('div', { class: 'store-detail-main-image', style: activeImage.value ? { backgroundImage: `url("${activeImage.value}")` } : {} }, activeImage.value ? [] : [h('span', String(plan.name || 'D').slice(0, 1))]), gallery.length > 1 ? h('div', { class: 'store-detail-thumbs' }, gallery.map((url) => h('button', { class: activeImage.value === url ? 'active' : '', style: { backgroundImage: `url("${url}")` }, onClick: () => { activeImage.value = url; } }))) : null]),
+          h('div', { class: 'store-detail-info' }, [h('span', plan.product_config?.category || '数字商品'), h('h1', plan.name), h('div', { class: 'store-product-summary', innerHTML: safeBody(plan.content || '') }), h('strong', money(pkg.price || 0, currencySymbol())), h('label', ['选择规格', h('select', { value: selectedPackage.value, onChange: (event) => { selectedPackage.value = event.target.value; } }, options.map((item) => h('option', { value: item.key, disabled: item.stockCount === 0 }, `${item.name} · ${money(item.price, currencySymbol())} · 库存 ${item.stockCount ?? '-'}`)))]), h('div', { class: 'store-detail-actions' }, [h('button', { class: 'secondary-button', type: 'button', disabled: pkg.stockCount === 0, onClick: add }, '🛒 加入购物车'), h('button', { class: 'primary-button', type: 'button', disabled: pkg.stockCount === 0, onClick: () => go('digital-checkout', { plan_id: plan.id, package: selectedPackage.value }) }, '立即购买')])]),
+        ]) : null,
+        local.ready ? h('article', { class: 'store-detail-content' }, [h('h2', '商品详情'), h('div', { innerHTML: markdownBody(plan.product_config?.detail_markdown || plan.content || '暂无商品详情') })]) : null,
+      ]);
+    };
   },
 };
 
@@ -2045,35 +2150,47 @@ const DigitalCheckoutPage = {
   setup() {
     const couponCode = ref('');
     const selectedMethod = ref('');
+    const cartMode = state.route.query.cart === '1';
     const local = useAsyncPage(async (page) => {
-      const [plan, methods] = await Promise.all([
-        api.get('/user/plan/fetch', { id: state.route.query.plan_id }),
+      const [planData, methods] = await Promise.all([
+        cartMode ? api.get('/user/plan/fetch', { product_type: 'digital' }) : api.get('/user/plan/fetch', { id: state.route.query.plan_id }),
         api.get('/user/order/getPaymentMethod').catch(() => []),
       ]);
-      page.plan = plan;
+      const products = cartMode ? normalizeCollection(planData) : [planData];
+      page.items = cartMode ? digitalCart.value.map((cartItem) => {
+        const plan = products.find((item) => Number(item.id) === Number(cartItem.plan_id));
+        const pkg = digitalPackageOptions(plan).find((item) => item.key === cartItem.package_id);
+        return plan && pkg ? { ...cartItem, plan, package: pkg } : null;
+      }).filter(Boolean) : [{ key: `${planData.id}:${state.route.query.package}`, plan_id: planData.id, package_id: state.route.query.package, quantity: 1, plan: planData, package: digitalPackageOptions(planData).find((item) => item.key === state.route.query.package) || digitalPackageOptions(planData)[0] }];
+      page.plan = page.items[0]?.plan;
       page.methods = methods || [];
-      page.package = digitalPackageOptions(plan).find((item) => item.key === state.route.query.package) || digitalPackageOptions(plan)[0];
+      page.package = page.items[0]?.package;
       selectedMethod.value = page.methods[0]?.id ? String(page.methods[0].id) : '';
       page.quote = null;
       page.submitting = false;
     });
     let quoteTimer = null;
     async function refreshQuote() {
-      if (!local.plan || !local.package || !selectedMethod.value) return;
+      if (!local.items?.length || !selectedMethod.value) return;
       try {
-        local.quote = await api.post('/user/order/quote', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), method: selectedMethod.value, subscription_mode: 'append' });
+        local.quote = cartMode
+          ? await api.post('/user/order/digital-cart/quote', { items: local.items.map((item) => ({ plan_id: item.plan_id, package_id: item.package_id, quantity: item.quantity })), method: selectedMethod.value })
+          : await api.post('/user/order/quote', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), method: selectedMethod.value, subscription_mode: 'append' });
         local.quoteError = '';
       } catch (error) {
         local.quoteError = error.message;
       }
     }
-    watch(() => [couponCode.value, selectedMethod.value, local.package?.key], () => { clearTimeout(quoteTimer); quoteTimer = setTimeout(refreshQuote, 220); });
+    watch(() => [couponCode.value, selectedMethod.value, local.items?.length], () => { clearTimeout(quoteTimer); quoteTimer = setTimeout(refreshQuote, 220); });
     onBeforeUnmount(() => clearTimeout(quoteTimer));
     async function submit() {
-      if (!local.plan || !local.package || !selectedMethod.value) return;
+      if (!local.items?.length || !selectedMethod.value) return;
       local.submitting = true;
       try {
-        const tradeNo = await api.post('/user/order/save', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), subscription_mode: 'append' });
+        const tradeNo = cartMode
+          ? await api.post('/user/order/digital-cart/save', { items: local.items.map((item) => ({ plan_id: item.plan_id, package_id: item.package_id, quantity: item.quantity })) })
+          : await api.post('/user/order/save', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), subscription_mode: 'append' });
+        if (cartMode) { digitalCart.value = []; storeDigitalCart(); }
         toast('订单已创建，请完成支付');
         go('orders', { trade_no: tradeNo, method: selectedMethod.value });
       } catch (error) {
@@ -2086,7 +2203,7 @@ const DigitalCheckoutPage = {
       const plan = local.plan || {};
       const pkg = local.package || {};
       const quote = local.quote || {};
-      const original = quote.original_amount ?? pkg.price ?? 0;
+      const original = quote.original_amount ?? (local.items || []).reduce((sum, item) => sum + (item.package?.price || 0) * item.quantity, 0);
       const pay = quote.pay_amount ?? quote.total_amount ?? original;
       return h('div', { class: 'store-checkout-page' }, [
         pageError(local.error),
@@ -2094,14 +2211,14 @@ const DigitalCheckoutPage = {
         h('div', { class: 'store-checkout-steps' }, [h('span', { class: 'active' }, '1  订单结算'), h('i'), h('span', '2  发起支付')]),
         h('div', { class: 'store-checkout-layout' }, [
           h('main', [
-            h('section', { class: 'store-checkout-panel' }, [h('h2', '订单商品'), h('div', { class: 'store-checkout-product' }, [h('div', { class: 'store-checkout-thumb', style: plan.product_config?.image_url ? { backgroundImage: `url("${plan.product_config.image_url}")` } : {} }, plan.product_config?.image_url ? [] : [h('span', String(plan.name || 'D').slice(0, 1))]), h('div', [h('h3', plan.name || '数字商品'), h('p', `数量：1`), h('p', `规格：${pkg.name || '-'}`), h('strong', money(pkg.price || 0, currencySymbol()))])])]),
-            h('section', { class: 'store-checkout-panel' }, [h('h2', '优惠券'), h('input', { value: couponCode.value, placeholder: '输入优惠券代码（可选）', onInput: (event) => { couponCode.value = event.target.value; } })]),
+            h('section', { class: 'store-checkout-panel' }, [h('h2', '订单商品'), h('div', { class: 'store-checkout-products' }, (local.items || []).map((item) => h('div', { class: 'store-checkout-product', key: item.key }, [h('div', { class: 'store-checkout-thumb', style: item.plan.product_config?.image_url ? { backgroundImage: `url("${item.plan.product_config.image_url}")` } : {} }, item.plan.product_config?.image_url ? [] : [h('span', String(item.plan.name || 'D').slice(0, 1))]), h('div', [h('h3', item.plan.name || '数字商品'), h('p', `数量：${item.quantity}`), h('p', `规格：${item.package?.name || '-'}`), h('strong', money((item.package?.price || 0) * item.quantity, currencySymbol()))])])))]),
+            !cartMode ? h('section', { class: 'store-checkout-panel' }, [h('h2', '优惠券'), h('input', { value: couponCode.value, placeholder: '输入优惠券代码（可选）', onInput: (event) => { couponCode.value = event.target.value; } })]) : null,
             h('section', { class: 'store-checkout-panel' }, [h('h2', '购买方式'), h('div', { class: 'store-buy-mode' }, [h('span', { class: 'active' }, '登录会员购买')])]),
           ]),
           h('aside', { class: 'store-checkout-panel store-checkout-summary' }, [
             h('h2', '提交订单'),
             h('p', '订单金额以服务端计算为准'),
-            h('div', [quoteLine('商品数量', '1'), quoteLine('原始金额', money(original, currencySymbol())), quoteLine('优惠券', money(quote.discount_amount || 0, currencySymbol())), quoteLine('余额抵扣', money(quote.balance_amount || 0, currencySymbol()))]),
+            h('div', [quoteLine('商品数量', String((local.items || []).reduce((sum, item) => sum + item.quantity, 0))), quoteLine('原始金额', money(original, currencySymbol())), quoteLine('优惠券', money(quote.discount_amount || 0, currencySymbol())), quoteLine('余额抵扣', money(quote.balance_amount || 0, currencySymbol()))]),
             h('div', { class: 'store-checkout-total' }, [h('span', '应付金额（预估）'), h('strong', money(pay, currencySymbol()))]),
             h('h3', '支付方式'),
             local.methods?.length ? h('div', { class: 'payment-methods digital-payment-methods' }, local.methods.map((method, index) => h('label', { class: 'payment-method' }, [h('input', { type: 'radio', name: 'checkout-method', value: method.id, checked: String(selectedMethod.value || local.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0), onChange: (event) => { selectedMethod.value = event.target.value; } }), method.icon ? h('img', { src: method.icon, alt: '' }) : h('span', { class: 'pay-icon' }, '¥'), h('span', method.name || method.payment)]))) : emptyBlock('暂无可用支付方式'),
@@ -2761,6 +2878,7 @@ const routeComponents = {
   subscribe: SubscribePage,
   plans: PlansPage,
   digital: DigitalProductsPage,
+  'digital-detail': DigitalProductDetailPage,
   'digital-checkout': DigitalCheckoutPage,
   orders: OrdersPage,
   recharge: RechargePage,

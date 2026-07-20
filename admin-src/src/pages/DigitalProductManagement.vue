@@ -14,6 +14,8 @@ const rows = ref([]),
 const savingBanner = ref(false),
     uploadingBanner = ref(false),
     uploadingCover = ref(false);
+const uploadingGallery = ref(false),
+    detailPreview = ref(false);
 const keyword = ref(""),
     statusFilter = ref("all"),
     categoryFilter = ref("all");
@@ -47,6 +49,8 @@ const form = reactive({
         delivery_type: "code",
         category: "数字商品",
         image_url: "",
+        detail_markdown: "",
+        gallery: [],
         featured: false,
         packages: [emptyPackage()],
     },
@@ -215,6 +219,8 @@ function open(row = null) {
                 : "code",
             category: row?.product_config?.category || "数字商品",
             image_url: row?.product_config?.image_url || "",
+            detail_markdown: row?.product_config?.detail_markdown || "",
+            gallery: [...(row?.product_config?.gallery || [])],
             featured: Boolean(row?.product_config?.featured),
             packages: row?.product_config?.packages?.length
                 ? row.product_config.packages.map((item) => ({
@@ -274,6 +280,58 @@ async function upload(path, event, target) {
         target.value = false;
         event.target.value = "";
     }
+}
+async function uploadGallery(event) {
+    const files = [...(event.target.files || [])];
+    if (!files.length) return;
+    uploadingGallery.value = true;
+    try {
+        for (const file of files) {
+            const body = new FormData();
+            body.append("file", file);
+            const result = await post("/digital-products/cover/upload", body);
+            form.product_config.gallery.push(result.url);
+        }
+        notify("详情图片上传成功");
+    } catch (e) {
+        notify(e.message, "error");
+    } finally {
+        uploadingGallery.value = false;
+        event.target.value = "";
+    }
+}
+function insertMarkdown(prefix, suffix = "", placeholder = "内容") {
+    const textarea = document.querySelector("#digital-detail-editor");
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const source = form.product_config.detail_markdown || "";
+    const selected = source.slice(start, end) || placeholder;
+    form.product_config.detail_markdown = `${source.slice(0, start)}${prefix}${selected}${suffix}${source.slice(end)}`;
+    requestAnimationFrame(() => textarea.focus());
+}
+function markdownPreview(source = "") {
+    const escaped = String(source)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    return escaped
+        .replace(/^### (.*)$/gm, "<h3>$1</h3>")
+        .replace(/^## (.*)$/gm, "<h2>$1</h2>")
+        .replace(/^# (.*)$/gm, "<h1>$1</h1>")
+        .replace(
+            /!\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g,
+            '<img src="$2" alt="$1">',
+        )
+        .replace(
+            /\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g,
+            '<a href="$2">$1</a>',
+        )
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/^[-*] (.*)$/gm, "<li>$1</li>")
+        .replace(/\n{2,}/g, "</p><p>")
+        .replace(/\n/g, "<br>");
 }
 async function saveBanner() {
     if (!banner.title.trim()) return notify("请输入 Banner 标题", "error");
@@ -814,6 +872,133 @@ onMounted(load);
                                 >
                             </div>
                         </div>
+                    </div>
+                    <div class="field field-wide digital-detail-field">
+                        <div class="digital-editor-heading">
+                            <span>商品详情（Markdown）</span>
+                            <div>
+                                <button
+                                    class="btn btn-ghost btn-sm"
+                                    :class="{ active: !detailPreview }"
+                                    @click="detailPreview = false"
+                                >
+                                    编辑
+                                </button>
+                                <button
+                                    class="btn btn-ghost btn-sm"
+                                    :class="{ active: detailPreview }"
+                                    @click="detailPreview = true"
+                                >
+                                    预览
+                                </button>
+                            </div>
+                        </div>
+                        <div
+                            v-if="!detailPreview"
+                            class="digital-markdown-editor"
+                        >
+                            <div class="digital-editor-toolbar">
+                                <button
+                                    type="button"
+                                    @click="insertMarkdown('## ', '', '标题')"
+                                >
+                                    H2
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="insertMarkdown('**', '**', '粗体')"
+                                >
+                                    B
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="insertMarkdown('- ', '', '列表项')"
+                                >
+                                    列表
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="
+                                        insertMarkdown(
+                                            '[',
+                                            '](https://)',
+                                            '链接文字',
+                                        )
+                                    "
+                                >
+                                    链接
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="
+                                        insertMarkdown(
+                                            '![',
+                                            '](/storage/图片地址)',
+                                            '图片说明',
+                                        )
+                                    "
+                                >
+                                    图片
+                                </button>
+                            </div>
+                            <textarea
+                                id="digital-detail-editor"
+                                v-model="form.product_config.detail_markdown"
+                                rows="12"
+                                placeholder="# 商品详情&#10;&#10;支持 Markdown 标题、图片、链接、列表、粗体和代码。"
+                            ></textarea>
+                        </div>
+                        <article
+                            v-else
+                            class="digital-markdown-preview"
+                            v-html="
+                                markdownPreview(
+                                    form.product_config.detail_markdown ||
+                                        '暂无详情内容',
+                                )
+                            "
+                        ></article>
+                    </div>
+                    <div class="field field-wide digital-gallery-field">
+                        <div class="digital-editor-heading">
+                            <span>详情图片</span>
+                            <label class="btn btn-ghost btn-sm"
+                                ><input
+                                    hidden
+                                    multiple
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp,image/gif"
+                                    @change="uploadGallery"
+                                />{{
+                                    uploadingGallery ? "上传中…" : "上传图片"
+                                }}</label
+                            >
+                        </div>
+                        <div
+                            v-if="form.product_config.gallery.length"
+                            class="digital-gallery-grid"
+                        >
+                            <figure
+                                v-for="(url, index) in form.product_config
+                                    .gallery"
+                                :key="url + index"
+                            >
+                                <img :src="url" alt="" /><button
+                                    type="button"
+                                    @click="
+                                        form.product_config.gallery.splice(
+                                            index,
+                                            1,
+                                        )
+                                    "
+                                >
+                                    ×
+                                </button>
+                            </figure>
+                        </div>
+                        <p v-else class="field-help">
+                            可上传多张商品展示图，用户可在详情页浏览。
+                        </p>
                     </div>
                     <label class="field"
                         ><span>首页推荐</span

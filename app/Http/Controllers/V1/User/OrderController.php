@@ -15,11 +15,94 @@ use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\PlanService;
 use App\Services\UserService;
+use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    private function digitalCartItems(Request $request): array
+    {
+        $data = $request->validate([
+            'items' => 'required|array|min:1|max:50',
+            'items.*.plan_id' => 'required|integer',
+            'items.*.package_id' => 'required|string|max:64',
+            'items.*.quantity' => 'required|integer|min:1|max:20',
+        ]);
+        $plans = Plan::whereIn('id', collect($data['items'])->pluck('plan_id')->unique())
+            ->where('product_type', 'digital')->where('show', true)->where('sell', true)->get()->keyBy('id');
+        $normalized = [];
+        foreach ($data['items'] as $item) {
+            $plan = $plans->get((int) $item['plan_id']);
+            if (!$plan) throw new ApiException('购物车中存在不可购买的商品');
+            $package = collect((array) data_get($plan->product_config, 'packages', []))->firstWhere('id', (string) $item['package_id']);
+            if (!$package || (float) ($package['price'] ?? 0) <= 0) throw new ApiException('商品规格不存在或已停售');
+            $quantity = (int) $item['quantity'];
+            $available = \App\Models\DigitalProductItem::where('plan_id', $plan->id)
+                ->where('status', \App\Models\DigitalProductItem::AVAILABLE)
+                ->where(fn($query) => $query->where('package_id', $package['id'])->orWhereNull('package_id'))->count();
+            if ($available < $quantity) throw new ApiException("{$plan->name}（{$package['name']}）库存不足");
+            $normalized[] = [
+                'plan_id' => (int) $plan->id,
+                'package_id' => (string) $package['id'],
+                'quantity' => $quantity,
+                'name' => $plan->name,
+                'package_name' => (string) ($package['name'] ?? $package['id']),
+                'unit_price' => (int) round((float) $package['price'] * 100),
+                'image_url' => (string) data_get($plan->product_config, 'image_url', ''),
+            ];
+        }
+        return $normalized;
+    }
+
+    public function digitalCartQuote(Request $request)
+    {
+        $items = $this->digitalCartItems($request);
+        $original = collect($items)->sum(fn($item) => $item['unit_price'] * $item['quantity']);
+        $balance = min((int) $request->user()->balance, $original);
+        $total = max(0, $original - $balance);
+        $handling = 0;
+        if ($total > 0 && $request->integer('method')) {
+            $payment = Payment::where('id', $request->integer('method'))->where('enable', 1)->first();
+            if (!$payment) throw new ApiException(__('Payment method is not available'));
+            $handling = (int) round(($total * ($payment->handling_fee_percent / 100)) + $payment->handling_fee_fixed);
+        }
+        return $this->success([
+            'items' => $items, 'item_count' => collect($items)->sum('quantity'),
+            'original_amount' => $original, 'balance_amount' => $balance,
+            'discount_amount' => 0, 'handling_amount' => $handling,
+            'total_amount' => $total, 'pay_amount' => $total + $handling,
+        ]);
+    }
+
+    public function digitalCartSave(Request $request)
+    {
+        $items = $this->digitalCartItems($request);
+        $userService = app(UserService::class);
+        if ($userService->isNotCompleteOrderByUserId($request->user()->id)) {
+            throw new ApiException(__('You have an unpaid or pending order, please try again later or cancel it'));
+        }
+        $order = DB::transaction(function () use ($request, $items, $userService) {
+            $user = User::lockForUpdate()->findOrFail($request->user()->id);
+            $original = collect($items)->sum(fn($item) => $item['unit_price'] * $item['quantity']);
+            $order = new Order([
+                'user_id' => $user->id,
+                'plan_id' => $items[0]['plan_id'],
+                'period' => $items[0]['package_id'],
+                'trade_no' => Helper::generateOrderNo(),
+                'total_amount' => $original,
+                'type' => Order::TYPE_NEW_PURCHASE,
+                'digital_cart_items' => $items,
+            ]);
+            if ($user->balance && $order->total_amount > 0) {
+                $this->handleUserBalance($order, $user, $userService);
+            }
+            if (!$order->save()) throw new ApiException(__('Failed to create order'));
+            return $order;
+        });
+        return $this->success($order->trade_no);
+    }
+
     public function fetch(Request $request)
     {
         $request->validate([

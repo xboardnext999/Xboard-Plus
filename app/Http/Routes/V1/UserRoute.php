@@ -43,6 +43,8 @@ class UserRoute
             // Order
             $router->post('/order/quote', [OrderController::class, 'quote']);
             $router->post('/order/save', [OrderController::class, 'save']);
+            $router->post('/order/digital-cart/quote', [OrderController::class, 'digitalCartQuote']);
+            $router->post('/order/digital-cart/save', [OrderController::class, 'digitalCartSave']);
             $router->post('/order/checkout', [OrderController::class, 'checkout']);
             $router->get('/order/check', [OrderController::class, 'check']);
             $router->get('/order/detail', [OrderController::class, 'detail']);
