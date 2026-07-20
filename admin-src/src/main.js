@@ -3,6 +3,7 @@ import App from './App.vue';
 import router, { prefetchCommonPages } from './router';
 import ToggleSwitch from './components/ToggleSwitch.vue';
 import './styles/admin.css';
+import './styles/digital-overview.css';
 
 document.documentElement.classList.toggle('dark', localStorage.getItem('theme') === 'dark');
 window.addEventListener('admin:unauthorized', () => {

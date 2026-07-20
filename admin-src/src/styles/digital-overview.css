@@ -1,0 +1,32 @@
+/* Keep the management shortcuts and category summary visually balanced. */
+@media (min-width: 1401px) {
+  .digital-overview-grid {
+    grid-template-columns: minmax(520px, 1.6fr) repeat(2, minmax(300px, .72fr));
+  }
+
+  .digital-banner-summary,
+  .digital-quick-panel,
+  .digital-side-card {
+    min-height: 285px;
+  }
+}
+
+@media (max-width: 1400px) and (min-width: 901px) {
+  .digital-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .digital-banner-summary {
+    grid-column: 1 / -1;
+  }
+
+  .digital-side-card {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .digital-banner-summary {
+    grid-column: auto;
+  }
+}
