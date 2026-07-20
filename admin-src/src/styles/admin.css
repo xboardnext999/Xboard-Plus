@@ -585,6 +585,29 @@ select {
   outline: none;
 }
 
+/* Native selection controls must not inherit text-field dimensions. */
+input[type="checkbox"] {
+  appearance: auto;
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border-radius: 4px;
+  accent-color: var(--brand);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
 input:focus,
 select:focus {
   border-color: var(--brand);
