@@ -34,6 +34,10 @@ class AdminPermission
     private function resolvePage(string $relative): ?string
     {
         if ($relative === 'system/getAuditLog') return '/system/audit';
+        if (in_array($relative, ['forwarding/summary', 'forwarding/options'], true)) return '/forwarding/dashboard';
+        if (preg_match('#^forwarding/(forwards|tunnels|nodes|limits|access)(?:/|$)#', $relative, $matches)) {
+            return '/forwarding/' . $matches[1];
+        }
         foreach (self::MAP as $prefix => $page) if ($relative === $prefix || str_starts_with($relative, $prefix . '/')) return $page;
         return null;
     }

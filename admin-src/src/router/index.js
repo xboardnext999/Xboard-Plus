@@ -11,7 +11,7 @@ const PlanManagement = page('PlanManagement'), OrderManagement = page('OrderMana
 const FluxManagement = page('FluxManagement');
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/admin-lock', '/system/temporary-access', '/system/audit', '/system/backup', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy', '/flux/dashboard', '/flux/forwards', '/flux/tunnels', '/flux/nodes', '/flux/limits', '/flux/access'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/admin-lock', '/system/temporary-access', '/system/audit', '/system/backup', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy', '/forwarding/dashboard', '/forwarding/forwards', '/forwarding/tunnels', '/forwarding/nodes', '/forwarding/limits', '/forwarding/access'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -57,7 +57,7 @@ const router = createRouter({
         { path: 'user/list', name: 'UserManagement', component: UserManagement, meta: { title: '用户管理', group: '用户管理' } },
         { path: 'user/ticket', name: 'TicketManagement', component: TicketManagement, meta: { title: '工单管理', group: '用户管理' } },
         { path: 'user/traffic-reset-log', name: 'TrafficResetManagement', component: TrafficResetManagement, meta: { title: '流量重置日志', group: '用户管理' } },
-        { path: 'flux/:resource', name: 'FluxManagement', component: FluxManagement, meta: { title: '流量转发', group: '流量转发' } },
+        { path: 'forwarding/:resource', name: 'FluxManagement', component: FluxManagement, meta: { title: '流量转发', group: '流量转发' } },
         {
           path: 'finance/plan',
           name: 'GroupBuy',

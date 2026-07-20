@@ -56,7 +56,7 @@ class AdminRoute
                 $router->post('/create', [BackupController::class, 'create']);
                 $router->post('/settings', [BackupController::class, 'saveSettings']);
             });
-            $router->group(['prefix' => 'flux'], function ($router) {
+            $router->group(['prefix' => 'forwarding'], function ($router) {
                 $router->get('/summary', [FluxController::class, 'summary']);
                 $router->get('/options', [FluxController::class, 'options']);
                 $router->get('/{resource}', [FluxController::class, 'index']);

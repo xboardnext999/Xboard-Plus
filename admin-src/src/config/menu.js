@@ -51,12 +51,12 @@ export const menuGroups = [
   {
     title: '流量转发',
     items: [
-      { title: '转发概览', path: '/flux/dashboard', icon: 'ChartNoAxesCombined' },
-      { title: '转发规则', path: '/flux/forwards', icon: 'Shuffle' },
-      { title: '隧道管理', path: '/flux/tunnels', icon: 'Waypoints' },
-      { title: '转发节点', path: '/flux/nodes', icon: 'Network' },
-      { title: '限速策略', path: '/flux/limits', icon: 'Gauge' },
-      { title: '用户授权', path: '/flux/access', icon: 'ShieldCheck' },
+      { title: '转发概览', path: '/forwarding/dashboard', icon: 'ChartNoAxesCombined' },
+      { title: '转发规则', path: '/forwarding/forwards', icon: 'Shuffle' },
+      { title: '隧道管理', path: '/forwarding/tunnels', icon: 'Waypoints' },
+      { title: '转发节点', path: '/forwarding/nodes', icon: 'Network' },
+      { title: '限速策略', path: '/forwarding/limits', icon: 'Gauge' },
+      { title: '用户授权', path: '/forwarding/access', icon: 'ShieldCheck' },
     ],
   },
 ];
