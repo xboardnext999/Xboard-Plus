@@ -24,8 +24,9 @@ class FluxController extends Controller
             'recent' => DB::table('flux_flow_stats')->orderByDesc('id')->limit(20)->get()];
     }
 
-    public function index(Request $request, string $resource)
+    public function index(Request $request)
     {
+        $resource = (string) $request->route('resource');
         $table = $this->table($resource); $query = DB::table($table);
         if ($keyword = trim((string)$request->input('keyword'))) {
             $columns = match ($resource) { 'nodes','tunnels','limits' => ['name'], 'forwards' => ['name','remote_addr'], default => [] };
@@ -36,8 +37,9 @@ class FluxController extends Controller
         return ['data' => $page->items(), 'total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()];
     }
 
-    public function save(Request $request, string $resource)
+    public function save(Request $request)
     {
+        $resource = (string) $request->route('resource');
         $table = $this->table($resource); $id = $request->integer('id') ?: null;
         $rules = $this->rules($resource, $id); $data = $request->validate($rules);
         unset($data['id']); $now = now();
@@ -47,8 +49,9 @@ class FluxController extends Controller
         return ['id' => $id, 'data' => DB::table($table)->find($id)];
     }
 
-    public function destroy(Request $request, string $resource)
+    public function destroy(Request $request)
     {
+        $resource = (string) $request->route('resource');
         $request->validate(['id' => 'required|integer']); DB::table($this->table($resource))->where('id', $request->integer('id'))->delete(); return ['success' => true];
     }
 
