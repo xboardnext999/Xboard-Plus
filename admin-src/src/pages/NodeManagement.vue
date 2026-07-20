@@ -34,6 +34,7 @@ const sortDirty = ref(false);
 const showForm = ref(false);
 const advanced = ref(false);
 const protocolJson = ref("{}");
+const protocolError = ref("");
 const toast = reactive({ text: "", type: "success" });
 const form = reactive(defaultForm());
 function defaults(type = "vless") {
@@ -205,10 +206,43 @@ function editNode(item) {
 function changeType() {
     form.protocol_settings = defaults(form.type);
     protocolJson.value = JSON.stringify(form.protocol_settings, null, 2);
+    protocolError.value = "";
 }
 function closeForm() {
+    advanced.value = false;
     showForm.value = false;
     Object.assign(form, defaultForm());
+}
+function openAdvanced() {
+    protocolError.value = "";
+    advanced.value = true;
+}
+function formatProtocol() {
+    try {
+        protocolJson.value = JSON.stringify(
+            JSON.parse(protocolJson.value || "{}"),
+            null,
+            2,
+        );
+        protocolError.value = "";
+    } catch {
+        protocolError.value = "JSON 格式有误，请检查括号、引号和逗号。";
+    }
+}
+function resetProtocol() {
+    protocolJson.value = JSON.stringify(defaults(form.type), null, 2);
+    protocolError.value = "";
+}
+function applyProtocol() {
+    try {
+        form.protocol_settings = JSON.parse(protocolJson.value || "{}");
+        protocolJson.value = JSON.stringify(form.protocol_settings, null, 2);
+        protocolError.value = "";
+        advanced.value = false;
+        notify("高级协议参数已应用，请保存节点使其生效");
+    } catch {
+        protocolError.value = "JSON 格式有误，请检查括号、引号和逗号。";
+    }
 }
 async function save() {
     if (
@@ -222,7 +256,9 @@ async function save() {
     try {
         protocol = JSON.parse(protocolJson.value || "{}");
     } catch {
-        return notify("协议参数不是有效 JSON", "error");
+        protocolError.value = "JSON 格式有误，请检查括号、引号和逗号。";
+        advanced.value = true;
+        return notify("高级协议参数格式有误", "error");
     }
     saving.value = true;
     try {
@@ -791,16 +827,10 @@ onMounted(load);
                         /><small>0 表示不限制</small></label
                     >
                 </div>
-                <button class="advanced-toggle" @click="advanced = !advanced">
-                    {{ advanced ? "收起" : "展开" }}高级协议参数</button
-                ><label v-if="advanced" class="field protocol-json"
-                    ><span>protocol_settings JSON</span
-                    ><textarea
-                        v-model="protocolJson"
-                        rows="14"
-                        spellcheck="false"
-                    />
-                </label>
+                <button class="advanced-toggle" @click="openAdvanced">
+                    高级协议参数
+                    <small>在独立窗口中编辑 {{ form.type }} 配置</small>
+                </button>
                 <div class="modal-actions">
                     <button
                         class="btn btn-primary"
@@ -808,6 +838,57 @@ onMounted(load);
                         @click="save"
                     >
                         {{ saving ? "保存中…" : "保存节点" }}
+                    </button>
+                </div>
+            </section>
+        </div>
+        <div
+            v-if="advanced"
+            class="modal-backdrop protocol-modal-backdrop"
+            @click.self="advanced = false"
+        >
+            <section class="modal-card protocol-modal">
+                <div class="panel-head">
+                    <div>
+                        <span class="protocol-type">{{ form.type }}</span>
+                        <h2>高级协议参数</h2>
+                        <p>编辑 protocol_settings JSON；应用后需保存节点才会生效。</p>
+                    </div>
+                    <button class="btn btn-ghost" @click="advanced = false">
+                        关闭
+                    </button>
+                </div>
+                <div class="protocol-toolbar">
+                    <div>
+                        <strong>JSON 配置</strong>
+                        <small>仅修改当前节点的协议扩展参数</small>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" @click="resetProtocol">
+                        恢复协议默认值
+                    </button>
+                    <button class="btn btn-ghost btn-sm" @click="formatProtocol">
+                        格式化 JSON
+                    </button>
+                </div>
+                <textarea
+                    v-model="protocolJson"
+                    class="protocol-editor"
+                    rows="18"
+                    spellcheck="false"
+                    @input="protocolError = ''"
+                />
+                <div v-if="protocolError" class="protocol-error">
+                    {{ protocolError }}
+                </div>
+                <div class="protocol-note">
+                    未填写的参数将使用服务端默认值；恢复默认值只影响当前编辑内容。
+                </div>
+                <div class="modal-actions protocol-actions">
+                    <button class="btn btn-ghost" @click="advanced = false">
+                        取消
+                    </button>
+                    <button class="btn btn-primary" @click="applyProtocol">
+                        应用参数
                     </button>
                 </div>
             </section>
