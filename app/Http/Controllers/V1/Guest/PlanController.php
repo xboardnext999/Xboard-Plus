@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V1\Guest;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PlanResource;
 use App\Models\Plan;
+use App\Models\DigitalProductCategory;
 use App\Services\PlanService;
 use Auth;
 use Illuminate\Http\Request;
@@ -30,5 +31,14 @@ class PlanController extends Controller
             'subtitle' => '精选数字资产，安全购买，支付完成后快速交付。',
             'button_text' => '了解更多', 'link_url' => '#digital-products',
         ]));
+    }
+
+    public function digitalCategories()
+    {
+        $categories = DigitalProductCategory::where('enabled', true)
+            ->withCount(['plans as product_count' => fn($query) => $query
+                ->where('product_type', 'digital')->where('show', true)->where('sell', true)])
+            ->orderBy('sort')->orderBy('id')->get(['id', 'name']);
+        return $this->success($categories);
     }
 }

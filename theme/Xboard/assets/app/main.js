@@ -2010,10 +2010,12 @@ const DigitalProductsPage = {
     const selected = ref(null);
     const selectedPackage = ref('');
     const cartOpen = ref(false);
+    const selectedCategory = ref('all');
     const local = useAsyncPage(async (page) => {
-      const [products, banner] = await Promise.all([
+      const [products, banner, categories] = await Promise.all([
         api.get('/user/plan/fetch', { product_type: 'digital' }),
         api.get('/guest/plan/digital-banner').catch(() => ({})),
+        api.get('/guest/plan/digital-categories').catch(() => []),
       ]);
       const productRows = normalizeCollection(products);
       const bannerData = banner || {};
@@ -2028,7 +2030,12 @@ const DigitalProductsPage = {
       }
       page.products = productRows;
       page.banner = bannerData;
+      page.categories = normalizeCollection(categories);
     });
+    function visibleProducts() {
+      if (selectedCategory.value === 'all') return local.products || [];
+      return (local.products || []).filter((plan) => String(plan.digital_category_id) === String(selectedCategory.value));
+    }
     function open(plan) {
       selected.value = plan;
       const options = digitalPackageOptions(plan);
@@ -2073,9 +2080,13 @@ const DigitalProductsPage = {
       }, [
         h('div', [h('span', '● DIGITAL STORE'), h('h1', local.banner?.title || '数字商品中心'), h('p', local.banner?.subtitle || '精选数字资产，安全购买，支付完成后快速交付。'), local.banner?.button_text !== '' ? h('a', { href: local.banner?.link_url || '#digital-products' }, `${local.banner?.button_text || '了解更多'}  →`) : null]),
       ]) : h('section', { class: 'store-banner store-banner-loading', 'aria-label': 'Banner 加载中' }),
-      h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('div', { class: 'store-heading-actions' }, [h('span', `${(local.products || []).length} 件商品`), h('button', { type: 'button', class: 'store-cart-button', onClick: () => { cartOpen.value = true; } }, `🛒 购物车 ${digitalCart.value.reduce((sum, item) => sum + item.quantity, 0)}`)])]),
-      h('div', { class: 'store-product-grid' }, (local.products || []).map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open, onAdd: addToCart, onDetail: openDetail }))),
-      local.ready && !(local.products || []).length ? emptyBlock('暂无可购买的数字商品') : null,
+      h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('div', { class: 'store-heading-actions' }, [h('span', `${visibleProducts().length} 件商品`), h('button', { type: 'button', class: 'store-cart-button', onClick: () => { cartOpen.value = true; } }, `🛒 购物车 ${digitalCart.value.reduce((sum, item) => sum + item.quantity, 0)}`)])]),
+      h('nav', { class: 'store-category-nav', 'aria-label': '商品分类' }, [
+        h('button', { type: 'button', class: selectedCategory.value === 'all' ? 'active' : '', onClick: () => { selectedCategory.value = 'all'; } }, [h('span', '全部商品'), h('small', String((local.products || []).length))]),
+        ...(local.categories || []).map((category) => h('button', { key: category.id, type: 'button', class: String(selectedCategory.value) === String(category.id) ? 'active' : '', onClick: () => { selectedCategory.value = category.id; } }, [h('span', category.name), h('small', String(category.product_count || 0))])),
+      ]),
+      h('div', { class: 'store-product-grid' }, visibleProducts().map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open, onAdd: addToCart, onDetail: openDetail }))),
+      local.ready && !visibleProducts().length ? emptyBlock(selectedCategory.value === 'all' ? '暂无可购买的数字商品' : '该分类暂无商品') : null,
       selected.value ? h('div', { class: 'store-modal-backdrop', onClick: (event) => { if (event.target === event.currentTarget) selected.value = null; } }, [
         h('section', { class: 'store-quick-modal' }, [
           h('div', { class: 'store-modal-head' }, [h('h2', '快速购买'), h('button', { type: 'button', onClick: () => { selected.value = null; } }, '×')]),

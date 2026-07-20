@@ -24,6 +24,7 @@ class PlanResource extends JsonResource
             'group_id' => $this->resource['group_id'],
             'name' => $this->resource['name'],
             'product_type' => $this->resource['product_type'] ?? 'subscription',
+            'digital_category_id' => $this->resource['digital_category_id'] ?? null,
             'product_config' => $this->resource['product_config'] ?? null,
             'stock_count' => isset($this->resource['stock_count']) ? (int) $this->resource['stock_count'] : null,
             'sold_count' => isset($this->resource['sold_count']) ? (int) $this->resource['sold_count'] : null,
