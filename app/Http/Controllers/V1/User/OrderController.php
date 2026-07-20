@@ -25,7 +25,7 @@ class OrderController extends Controller
         $request->validate([
             'status' => 'nullable|integer|in:0,1,2,3',
         ]);
-        $orders = Order::with('plan')
+        $orders = Order::with(['plan', 'digitalItems'])
             ->where('user_id', $request->user()->id)
             ->when($request->input('status') !== null, function ($query) use ($request) {
                 $query->where('status', $request->input('status'));
@@ -41,7 +41,7 @@ class OrderController extends Controller
         $request->validate([
             'trade_no' => 'required|string',
         ]);
-        $order = Order::with(['payment', 'plan'])
+        $order = Order::with(['payment', 'plan', 'digitalItems'])
             ->where('user_id', $request->user()->id)
             ->where('trade_no', $request->input('trade_no'))
             ->first();

@@ -36,6 +36,14 @@ class OrderResource extends JsonResource
                 'payment' => $this->payment->payment,
                 'icon' => $this->payment->icon,
             ] : null),
+            'digital_delivery' => $this->when(
+                $this->relationLoaded('digitalItems'),
+                fn() => $this->digitalItems->map(fn($item) => [
+                    'id' => $item->id,
+                    'content' => $item->content,
+                    'delivered_at' => $item->sold_at,
+                ])->values()
+            ),
         ];
     }
 }

@@ -244,7 +244,8 @@ class OrderService
             $this->user = User::lockForUpdate()->find($order->user_id);
             $subscriptionService = app(SubscriptionService::class);
             $isForwarding = $plan?->isForwarding();
-            if (!$isForwarding && $order->period !== Plan::PERIOD_RESET_TRAFFIC) {
+            $isDigital = $plan?->isDigital();
+            if (!$isForwarding && !$isDigital && $order->period !== Plan::PERIOD_RESET_TRAFFIC) {
                 $subscriptionService->ensureLegacySubscription($this->user);
             }
 
@@ -259,6 +260,8 @@ class OrderService
 
             if ($isForwarding) {
                 $this->buyForwardingPlan($order, $plan);
+            } elseif ($isDigital) {
+                $this->buyDigitalProduct($order, $plan);
             } else {
                 match ((string) $order->period) {
                     Plan::PERIOD_ONETIME => $this->buyByOneTime($plan),
@@ -309,6 +312,10 @@ class OrderService
             $active = $tunnelId && DB::table('flux_user_tunnels')->where('user_id', $user->id)->where('tunnel_id', $tunnelId)
                 ->where('enabled', true)->where(function ($query) { $query->whereNull('expires_at')->orWhere('expires_at', '>', time()); })->exists();
             $order->type = $active ? Order::TYPE_RENEWAL : Order::TYPE_NEW_PURCHASE;
+            return;
+        }
+        if ($plan?->isDigital()) {
+            $order->type = Order::TYPE_NEW_PURCHASE;
             return;
         }
         if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
@@ -571,6 +578,19 @@ class OrderService
                 'created_at' => now(),
             ]);
         }
+    }
+
+    private function buyDigitalProduct(Order $order, Plan $plan): void
+    {
+        $item = \App\Models\DigitalProductItem::where('plan_id', $plan->id)
+            ->where('status', \App\Models\DigitalProductItem::AVAILABLE)
+            ->lockForUpdate()->first();
+        if (!$item) throw new ApiException('该数字商品库存不足');
+        $item->status = \App\Models\DigitalProductItem::SOLD;
+        $item->order_id = $order->id;
+        $item->user_id = $this->user->id;
+        $item->sold_at = time();
+        $item->save();
     }
 
     /**

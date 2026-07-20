@@ -63,6 +63,13 @@ class PlanController extends Controller
             $params['reset_traffic_method'] = Plan::RESET_TRAFFIC_NEVER;
             // 传统套餐的容量字段不适用于转发授权；0 在旧逻辑中代表“售罄”，这里统一为不限。
             if (empty($params['capacity_limit'])) $params['capacity_limit'] = null;
+        } elseif ($params['product_type'] === 'digital') {
+            $params['group_id'] = null;
+            $params['reset_traffic_method'] = Plan::RESET_TRAFFIC_NEVER;
+            $params['capacity_limit'] = null;
+            if (empty($params['product_config']['delivery_type'])) {
+                $params['product_config']['delivery_type'] = 'text';
+            }
         } else {
             $params['product_config'] = null;
         }

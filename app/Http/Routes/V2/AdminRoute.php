@@ -26,6 +26,7 @@ use App\Http\Controllers\V2\Admin\AdminLockController;
 use App\Http\Controllers\V2\Admin\AdminAccessController;
 use App\Http\Controllers\V2\Admin\BackupController;
 use App\Http\Controllers\V2\Admin\FluxController;
+use App\Http\Controllers\V2\Admin\DigitalProductController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class AdminRoute
@@ -62,6 +63,13 @@ class AdminRoute
                 $router->get('/{resource}', [FluxController::class, 'index']);
                 $router->post('/{resource}/save', [FluxController::class, 'save']);
                 $router->post('/{resource}/drop', [FluxController::class, 'destroy']);
+            });
+            $router->group(['prefix' => 'digital-products'], function ($router) {
+                $router->get('/fetch', [DigitalProductController::class, 'fetch']);
+                $router->post('/save', [DigitalProductController::class, 'save']);
+                $router->get('/stock', [DigitalProductController::class, 'stock']);
+                $router->post('/stock/import', [DigitalProductController::class, 'importStock']);
+                $router->post('/stock/drop', [DigitalProductController::class, 'deleteStock']);
             });
             // Config
             $router->group([

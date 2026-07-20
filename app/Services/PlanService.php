@@ -78,6 +78,10 @@ class PlanService
             $this->validateForwardingPurchase($user, $period);
             return;
         }
+        if ($this->plan->isDigital()) {
+            $this->validateDigitalPurchase($period);
+            return;
+        }
 
         // 转换周期格式为新版格式
         $periodKey = self::getPeriodKey($period);
@@ -108,6 +112,19 @@ class PlanService
         if (empty($config['tunnel_id'])) throw new ApiException('该转发套餐尚未配置隧道');
         if (!$this->plan->show || !$this->plan->sell) throw new ApiException(__('This subscription has been sold out, please choose another subscription'));
         if (!$this->hasCapacity($this->plan)) throw new ApiException(__('Current product is sold out'));
+    }
+
+    protected function validateDigitalPurchase(string $period): void
+    {
+        $periodKey = self::getPeriodKey($period);
+        $prices = $this->plan->prices ?? [];
+        if (!isset($prices[$periodKey]) || (float) $prices[$periodKey] <= 0) {
+            throw new ApiException(__('This payment period cannot be purchased, please choose another period'));
+        }
+        if (!$this->plan->show || !$this->plan->sell) throw new ApiException('该数字商品暂不可购买');
+        if (!\App\Models\DigitalProductItem::where('plan_id', $this->plan->id)->where('status', \App\Models\DigitalProductItem::AVAILABLE)->exists()) {
+            throw new ApiException('该数字商品库存不足');
+        }
     }
 
     /**

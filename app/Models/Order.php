@@ -117,4 +117,9 @@ class Order extends Model
     {
         return $this->hasMany(CommissionLog::class, 'trade_no', 'trade_no');
     }
+
+    public function digitalItems(): HasMany
+    {
+        return $this->hasMany(DigitalProductItem::class, 'order_id');
+    }
 }

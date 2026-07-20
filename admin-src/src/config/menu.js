@@ -49,6 +49,12 @@ export const menuGroups = [
     ],
   },
   {
+    title: '数字商品',
+    items: [
+      { title: '数字商品', path: '/digital/products', icon: 'Package' },
+    ],
+  },
+  {
     title: '流量转发',
     items: [
       { title: '转发概览', path: '/forwarding/dashboard', icon: 'ChartNoAxesCombined' },

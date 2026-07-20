@@ -361,4 +361,9 @@ class Plan extends Model
     {
         return ($this->product_type ?? 'subscription') === 'forwarding';
     }
+
+    public function isDigital(): bool
+    {
+        return ($this->product_type ?? 'subscription') === 'digital';
+    }
 }

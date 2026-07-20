@@ -36,7 +36,7 @@ class PlanSave extends FormRequest
             'device_limit' => 'integer|nullable|min:0',
             'capacity_limit' => 'integer|nullable|min:0',
             'tags' => 'array|nullable',
-            'product_type' => 'nullable|string|in:subscription,forwarding',
+            'product_type' => 'nullable|string|in:subscription,forwarding,digital',
             'product_config' => 'nullable|array',
             'product_config.tunnel_id' => 'nullable|integer|exists:flux_tunnels,id',
             'product_config.speed_limit_id' => 'nullable|integer|exists:flux_speed_limits,id',
