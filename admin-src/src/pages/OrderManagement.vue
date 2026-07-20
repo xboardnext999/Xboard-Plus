@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
+import { useRoute } from "vue-router";
 import AppIcon from "../components/AppIcon.vue";
 import { get, post, request } from "../services/http";
 
@@ -28,6 +29,7 @@ const orders = ref([]),
     detail = ref(null),
     showAssign = ref(false),
     assigning = ref(false);
+const route = useRoute();
 const filters = reactive({
     keyword: "",
     status: "all",
@@ -227,7 +229,10 @@ async function saveAssign() {
         assigning.value = false;
     }
 }
-onMounted(() => Promise.all([load(true), loadPlans()]));
+onMounted(() => {
+    if (route.path.startsWith("/digital/")) filters.product_type = "digital";
+    return Promise.all([load(true), loadPlans()]);
+});
 </script>
 <template>
     <section class="page-stack">

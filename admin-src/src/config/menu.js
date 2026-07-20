@@ -51,7 +51,10 @@ export const menuGroups = [
   {
     title: '数字商品',
     items: [
-      { title: '数字商品', path: '/digital/products', icon: 'Package' },
+      { title: '商品管理', path: '/digital/products', icon: 'Package' },
+      { title: '库存管理', path: '/digital/inventory', icon: 'Archive' },
+      { title: '订单记录', path: '/digital/orders', icon: 'ReceiptText' },
+      { title: '交付记录', path: '/digital/delivery', icon: 'Send' },
     ],
   },
   {
