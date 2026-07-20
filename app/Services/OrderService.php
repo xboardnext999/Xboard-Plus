@@ -585,7 +585,9 @@ class OrderService
         $selectedPackage = collect((array) data_get($plan->product_config, 'packages', []))->firstWhere('id', $order->period);
         $packageId = $selectedPackage['id'] ?? null;
         $item = \App\Models\DigitalProductItem::where('plan_id', $plan->id)
-            ->when($packageId, fn($query) => $query->where('package_id', $packageId))
+            ->when($packageId, fn($query) => $query->where(function ($query) use ($packageId) {
+                $query->where('package_id', $packageId)->orWhereNull('package_id');
+            }))
             ->where('status', \App\Models\DigitalProductItem::AVAILABLE)
             ->lockForUpdate()->first();
         if (!$item) throw new ApiException('该数字商品库存不足');

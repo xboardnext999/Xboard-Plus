@@ -123,7 +123,9 @@ class PlanService
         if (!$this->plan->show || !$this->plan->sell) throw new ApiException('该数字商品暂不可购买');
         $selectedPackage = collect((array) data_get($this->plan->product_config, 'packages', []))->firstWhere('id', $periodKey);
         if (!\App\Models\DigitalProductItem::where('plan_id', $this->plan->id)->where('status', \App\Models\DigitalProductItem::AVAILABLE)
-            ->when($selectedPackage, fn($query) => $query->where('package_id', $selectedPackage['id']))
+            ->when($selectedPackage, fn($query) => $query->where(function ($query) use ($selectedPackage) {
+                $query->where('package_id', $selectedPackage['id'])->orWhereNull('package_id');
+            }))
             ->exists()) {
             throw new ApiException('该数字商品库存不足');
         }

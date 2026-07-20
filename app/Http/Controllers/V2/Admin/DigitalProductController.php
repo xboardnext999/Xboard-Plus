@@ -26,7 +26,7 @@ class DigitalProductController extends Controller
             'id' => 'nullable|integer|exists:v2_plan,id',
             'name' => 'required|string|max:255',
             'content' => 'nullable|string',
-            'prices' => 'required|array',
+            'prices' => 'nullable|array',
             'prices.*' => 'nullable|numeric|min:0',
             'show' => 'boolean', 'sell' => 'boolean', 'sort' => 'integer|min:0',
             'product_config' => 'nullable|array',
@@ -47,6 +47,9 @@ class DigitalProductController extends Controller
             'name' => trim($package['name']),
             'price' => (float) $package['price'],
         ])->filter(fn($package) => $package['price'] > 0)->values()->all();
+        if (empty($config['packages']) && !collect($data['prices'] ?? [])->contains(fn($price) => (float) $price > 0)) {
+            return $this->fail([422, '请至少设置一个有效销售套餐或价格']);
+        }
         $data['product_config'] = $config;
         $plan = !empty($data['id']) ? Plan::findOrFail($data['id']) : new Plan();
         unset($data['id']);
@@ -75,7 +78,7 @@ class DigitalProductController extends Controller
         if ($lines->isEmpty()) return $this->fail([422, '没有可导入的库存内容']);
         $now = time();
         DB::transaction(function () use ($lines, $plan, $now, $packageId): void {
-            $lines->chunk(500)->each(function ($chunk) use ($plan, $now): void {
+            $lines->chunk(500)->each(function ($chunk) use ($plan, $now, $packageId): void {
                 $rows = $chunk->map(fn($content) => ['plan_id' => $plan->id, 'package_id' => $packageId, 'content' => $content, 'status' => DigitalProductItem::AVAILABLE, 'created_at' => $now, 'updated_at' => $now])->all();
                 DigitalProductItem::insert($rows);
             });
