@@ -568,6 +568,18 @@ onMounted(load);
                             </td>
                             <td>
                                 <div class="node-statuses">
+                                    <ToggleSwitch
+                                        class="node-visibility-switch"
+                                        :model-value="Number(item.show)"
+                                        :true-value="1"
+                                        :false-value="0"
+                                        on-label="已上架"
+                                        off-label="已下架"
+                                        :disabled="busyId === item.id"
+                                        @update:model-value="
+                                            quickUpdate(item, 'show', $event)
+                                        "
+                                    />
                                     <span
                                         class="status-pill"
                                         :class="{
@@ -577,20 +589,6 @@ onMounted(load);
                                             Number(item.is_online)
                                                 ? "在线"
                                                 : "离线"
-                                        }}</span
-                                    ><span
-                                        class="status-pill"
-                                        :class="{ off: !Number(item.show) }"
-                                        >{{
-                                            Number(item.show)
-                                                ? "已上架"
-                                                : "已下架"
-                                        }}</span
-                                    ><span
-                                        class="status-pill"
-                                        :class="{ off: !item.enabled }"
-                                        >{{
-                                            item.enabled ? "运行中" : "已停用"
                                         }}</span
                                     >
                                 </div>
@@ -606,18 +604,7 @@ onMounted(load);
                             </td>
                             <td>
                                 <div class="actions node-actions">
-                                    <ToggleSwitch
-                                        class="node-visibility-switch"
-                                        :model-value="Number(item.show)"
-                                        :true-value="1"
-                                        :false-value="0"
-                                        on-label="已上架"
-                                        off-label="已下架"
-                                        :disabled="busyId === item.id"
-                                        @update:model-value="
-                                            quickUpdate(item, 'show', $event)
-                                        "
-                                    /><button
+                                    <button
                                         class="btn btn-ghost btn-sm"
                                         @click="editNode(item)"
                                     >
