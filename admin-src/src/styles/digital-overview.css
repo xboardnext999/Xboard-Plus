@@ -1,4 +1,15 @@
 /* Keep the management shortcuts and category summary visually balanced. */
+.digital-product-workbench .digital-banner-summary {
+  border: 0;
+  background-clip: padding-box;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .055);
+  transform: translateZ(0);
+}
+
+.digital-product-workbench .digital-banner-summary::before {
+  border-radius: inherit;
+}
+
 @media (min-width: 1401px) {
   .digital-overview-grid {
     grid-template-columns: minmax(640px, 2.28fr) repeat(2, minmax(280px, .72fr));
