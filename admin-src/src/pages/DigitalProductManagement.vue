@@ -12,8 +12,7 @@ const rows = ref([]),
     showForm = ref(false),
     showBannerForm = ref(false),
     showCategoryEditor = ref(false),
-    showCategoryManager = ref(false),
-    showFaqManager = ref(false);
+    showCategoryManager = ref(false);
 const managedCategories = ref([]),
     categorySaving = ref(false);
 const categoryForm = reactive({ id: null, name: "", enabled: true });
@@ -207,6 +206,7 @@ async function load() {
         rows.value = Array.isArray(data) ? data : [];
         managedCategories.value = Array.isArray(categoryData) ? categoryData : [];
         managedFaqs.value = Array.isArray(faqData) ? faqData : [];
+        if (!faqForm.id) faqForm.sort = managedFaqs.value.length + 1;
         Object.assign(banner, bannerData || {});
     } catch (e) {
         notify(e.message, "error");
@@ -264,7 +264,12 @@ function openFaq(item = null) {
         enabled: item?.enabled ?? true,
         sort: item?.sort ?? managedFaqs.value.length + 1,
     });
-    showFaqManager.value = true;
+    requestAnimationFrame(() => {
+        document.getElementById("digital-faq-panel")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+        });
+    });
 }
 async function saveFaq() {
     if (!faqForm.title.trim()) return notify("请输入问题标题", "error");
@@ -282,7 +287,7 @@ async function saveFaq() {
     }
 }
 async function editFaq(item) {
-    Object.assign(faqForm, { id: item.id, title: item.title, content: item.content, enabled: item.enabled, sort: item.sort });
+    openFaq(item);
 }
 async function toggleFaq(item, enabled) {
     try {
@@ -836,6 +841,43 @@ onMounted(load);
             </aside>
         </div>
 
+        <section id="digital-faq-panel" class="panel digital-faq-panel">
+            <div class="digital-faq-panel-head">
+                <div>
+                    <span class="digital-faq-panel-icon"><AppIcon name="BookOpen" :size="18" /></span>
+                    <div><h2>常见问题</h2><p>维护问题、答案、显示状态和前台排序。</p></div>
+                </div>
+                <span class="digital-faq-count">{{ managedFaqs.length }} 个问题</span>
+            </div>
+            <div class="digital-faq-layout">
+                <div class="digital-faq-form">
+                    <div class="digital-faq-form-title">
+                        <strong>{{ faqForm.id ? "编辑问题" : "添加问题" }}</strong>
+                        <span>{{ faqForm.id ? `正在编辑 #${faqForm.id}` : "创建新的帮助内容" }}</span>
+                    </div>
+                    <label class="field"><span>问题标题 *</span><input v-model.trim="faqForm.title" maxlength="150" placeholder="例如：购买后如何交付？" /></label>
+                    <label class="field"><span>问题内容 *</span><textarea v-model.trim="faqForm.content" rows="6" maxlength="5000" placeholder="输入清晰、简洁的答案内容"></textarea></label>
+                    <div class="digital-faq-form-row">
+                        <label class="field"><span>排序</span><input v-model.number="faqForm.sort" type="number" min="0" max="9999" /></label>
+                        <label class="field"><span>前台显示</span><ToggleSwitch v-model="faqForm.enabled" on-label="显示" off-label="隐藏" /></label>
+                    </div>
+                    <div class="modal-actions">
+                        <button v-if="faqForm.id" class="btn btn-ghost" @click="openFaq()">取消编辑</button>
+                        <button class="btn btn-primary" :disabled="faqSaving" @click="saveFaq">{{ faqSaving ? "保存中…" : faqForm.id ? "保存修改" : "添加问题" }}</button>
+                    </div>
+                </div>
+                <div class="digital-faq-manage-list">
+                    <article v-for="item in managedFaqs" :key="item.id" :class="{ muted: !item.enabled }">
+                        <span class="digital-faq-sort">{{ item.sort }}</span>
+                        <div><strong>{{ item.title }}</strong><p>{{ item.content }}</p></div>
+                        <ToggleSwitch :model-value="item.enabled" on-label="显示" off-label="隐藏" @update:model-value="toggleFaq(item, $event)" />
+                        <div class="digital-faq-actions"><button class="btn btn-ghost btn-sm" @click="editFaq(item)">编辑</button><button class="btn btn-danger btn-sm" @click="dropFaq(item)">删除</button></div>
+                    </article>
+                    <div v-if="!managedFaqs.length" class="settings-loading">暂无常见问题，请先在左侧添加。</div>
+                </div>
+            </div>
+        </section>
+
         <div
             v-if="showBannerForm"
             class="modal-backdrop"
@@ -1273,41 +1315,6 @@ onMounted(load);
                         </div>
                     </div>
                     <div v-if="!managedCategories.length" class="settings-loading">暂无分类</div>
-                </div>
-            </section>
-        </div>
-        <div
-            v-if="showFaqManager"
-            class="modal-backdrop"
-            @click.self="showFaqManager = false"
-        >
-            <section class="modal-card digital-faq-modal">
-                <div class="panel-head">
-                    <div><h2>常见问题</h2><p>维护问题、答案、显示状态和前台排序。</p></div>
-                    <button class="btn btn-ghost" @click="showFaqManager = false">关闭</button>
-                </div>
-                <div class="digital-faq-layout">
-                    <div class="digital-faq-form">
-                        <label class="field"><span>问题标题 *</span><input v-model.trim="faqForm.title" maxlength="150" placeholder="例如：购买后如何交付？" /></label>
-                        <label class="field"><span>问题内容 *</span><textarea v-model.trim="faqForm.content" rows="7" maxlength="5000" placeholder="输入清晰、简洁的答案内容"></textarea></label>
-                        <div class="digital-faq-form-row">
-                            <label class="field"><span>排序</span><input v-model.number="faqForm.sort" type="number" min="0" max="9999" /></label>
-                            <label class="field"><span>前台显示</span><ToggleSwitch v-model="faqForm.enabled" on-label="显示" off-label="隐藏" /></label>
-                        </div>
-                        <div class="modal-actions">
-                            <button v-if="faqForm.id" class="btn btn-ghost" @click="openFaq()">取消编辑</button>
-                            <button class="btn btn-primary" :disabled="faqSaving" @click="saveFaq">{{ faqSaving ? "保存中…" : faqForm.id ? "保存修改" : "添加问题" }}</button>
-                        </div>
-                    </div>
-                    <div class="digital-faq-manage-list">
-                        <article v-for="item in managedFaqs" :key="item.id" :class="{ muted: !item.enabled }">
-                            <span class="digital-faq-sort">{{ item.sort }}</span>
-                            <div><strong>{{ item.title }}</strong><p>{{ item.content }}</p></div>
-                            <ToggleSwitch :model-value="item.enabled" on-label="显示" off-label="隐藏" @update:model-value="toggleFaq(item, $event)" />
-                            <div class="digital-faq-actions"><button class="btn btn-ghost btn-sm" @click="editFaq(item)">编辑</button><button class="btn btn-danger btn-sm" @click="dropFaq(item)">删除</button></div>
-                        </article>
-                        <div v-if="!managedFaqs.length" class="settings-loading">暂无常见问题</div>
-                    </div>
                 </div>
             </section>
         </div>
