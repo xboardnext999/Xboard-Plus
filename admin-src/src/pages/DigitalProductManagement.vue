@@ -11,7 +11,8 @@ const rows = ref([]),
     saving = ref(false),
     showForm = ref(false),
     showBannerForm = ref(false),
-    showCategoryForm = ref(false);
+    showCategoryEditor = ref(false),
+    showCategoryManager = ref(false);
 const managedCategories = ref([]),
     categorySaving = ref(false);
 const categoryForm = reactive({ id: null, name: "", enabled: true });
@@ -244,7 +245,10 @@ function openCategory(item = null) {
         name: item?.name || "",
         enabled: item?.enabled ?? true,
     });
-    showCategoryForm.value = true;
+    showCategoryEditor.value = true;
+}
+function openCategoryManager() {
+    showCategoryManager.value = true;
 }
 async function saveCategory() {
     if (!categoryForm.name.trim()) return notify("请输入分类名称", "error");
@@ -252,6 +256,7 @@ async function saveCategory() {
     try {
         await post("/digital-products/categories/save", categoryForm);
         notify(categoryForm.id ? "分类已更新" : "分类已创建");
+        showCategoryEditor.value = false;
         Object.assign(categoryForm, { id: null, name: "", enabled: true });
         const data = await get("/digital-products/categories");
         managedCategories.value = Array.isArray(data) ? data : [];
@@ -541,7 +546,7 @@ onMounted(load);
                         <h2>商品分类</h2>
                         <p>{{ categories.length }} 个分类</p>
                     </div>
-                    <button class="btn btn-ghost btn-sm" @click="openCategory()">
+                    <button class="btn btn-ghost btn-sm" @click="openCategoryManager()">
                         管理分类
                     </button>
                 </div>
@@ -1155,28 +1160,45 @@ onMounted(load);
             </section>
         </div>
         <div
-            v-if="showCategoryForm"
+            v-if="showCategoryEditor"
             class="modal-backdrop"
-            @click.self="showCategoryForm = false"
+            @click.self="showCategoryEditor = false"
+        >
+            <section class="modal-card digital-category-editor-modal">
+                <div class="panel-head">
+                    <div>
+                        <h2>{{ categoryForm.id ? "编辑分类" : "创建分类" }}</h2>
+                        <p>{{ categoryForm.id ? "修改分类名称和显示状态。" : "新建一个用于归类数字商品的分类。" }}</p>
+                    </div>
+                    <button class="btn btn-ghost" @click="showCategoryEditor = false">关闭</button>
+                </div>
+                <div class="digital-category-editor-form">
+                    <label class="field">
+                        <span>分类名称 *</span>
+                        <input v-model.trim="categoryForm.name" maxlength="50" placeholder="输入分类名称" @keyup.enter="saveCategory" />
+                    </label>
+                    <label class="field"><span>显示状态</span><ToggleSwitch v-model="categoryForm.enabled" on-label="已启用" off-label="已停用" /></label>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" @click="showCategoryEditor = false">取消</button>
+                    <button class="btn btn-primary" :disabled="categorySaving" @click="saveCategory">
+                        {{ categorySaving ? "保存中…" : categoryForm.id ? "保存修改" : "创建分类" }}
+                    </button>
+                </div>
+            </section>
+        </div>
+        <div
+            v-if="showCategoryManager"
+            class="modal-backdrop"
+            @click.self="showCategoryManager = false"
         >
             <section class="modal-card digital-category-modal">
                 <div class="panel-head">
                     <div>
-                        <h2>商品分类管理</h2>
-                        <p>独立创建和维护分类，商品通过分类 ID 关联。</p>
+                        <h2>分类管理</h2>
+                        <p>调整分类顺序、显示状态，或维护已有分类。</p>
                     </div>
-                    <button class="btn btn-ghost" @click="showCategoryForm = false">关闭</button>
-                </div>
-                <div class="digital-category-create">
-                    <label class="field">
-                        <span>{{ categoryForm.id ? "分类名称" : "创建新分类" }}</span>
-                        <input v-model.trim="categoryForm.name" maxlength="50" placeholder="输入分类名称" @keyup.enter="saveCategory" />
-                    </label>
-                    <ToggleSwitch v-model="categoryForm.enabled" on-label="已启用" off-label="已停用" />
-                    <button class="btn btn-primary" :disabled="categorySaving" @click="saveCategory">
-                        {{ categorySaving ? "保存中…" : categoryForm.id ? "保存修改" : "创建分类" }}
-                    </button>
-                    <button v-if="categoryForm.id" class="btn btn-ghost" @click="openCategory()">取消编辑</button>
+                    <button class="btn btn-ghost" @click="showCategoryManager = false">关闭</button>
                 </div>
                 <div class="digital-category-manage-list">
                     <div v-for="(item, index) in managedCategories" :key="item.id">
@@ -1190,6 +1212,7 @@ onMounted(load);
                             <button class="btn btn-danger btn-sm" :disabled="Number(item.plans_count || 0) > 0" @click="dropCategory(item)">删除</button>
                         </div>
                     </div>
+                    <div v-if="!managedCategories.length" class="settings-loading">暂无分类</div>
                 </div>
             </section>
         </div>
