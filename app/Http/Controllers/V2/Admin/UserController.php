@@ -672,14 +672,17 @@ class UserController extends Controller
         } // all: ignore filter/sort
 
         try {
+            $affectedGroupIds = (clone $builder)->whereNotNull('group_id')->distinct()->pluck('group_id');
             $builder->update([
                 'banned' => 1
             ]);
+            foreach ($affectedGroupIds as $groupId) {
+                \App\Jobs\NodeGroupUserSyncJob::dispatch((int) $groupId);
+            }
         } catch (\Exception $e) {
             Log::error($e);
             return $this->fail([500, '处理失败']);
         }
-        // Full refresh not implemented.
         return $this->success(true);
     }
 

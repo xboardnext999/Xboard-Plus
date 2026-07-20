@@ -15,6 +15,8 @@ class BackupDatabase extends Command
 
     public function handle()
     {
+        $databaseBackupPath = null;
+        $compressedBackupPath = null;
         $isUpload = $this->argument('upload');
         // 如果是上传到云端则判断是否存在必要配置
         if($isUpload){
@@ -94,7 +96,8 @@ class BackupDatabase extends Command
         }catch(\Exception $e){
             Log::channel('backup')->error("😔：数据库备份失败 \n" . $e);
             $this->error("😔：数据库备份失败\n" . $e);
-            File::delete($compressedBackupPath);
+            if ($databaseBackupPath) File::delete($databaseBackupPath);
+            if ($compressedBackupPath) File::delete($compressedBackupPath);
         }
     }
 }

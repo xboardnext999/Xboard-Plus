@@ -32,6 +32,7 @@ class AdminLockService
     }
     public function scope(Request $request): string
     {
+        if ($request->attributes->get('admin_access_profile')) return 'b';
         if (!$this->enabled()) return 'b';
         $scope = (string) Cache::get($this->key($request), 'locked');
         return in_array($scope, ['a', 'b'], true) ? $scope : 'locked';

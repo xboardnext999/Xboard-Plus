@@ -44,10 +44,13 @@ class Kernel extends ConsoleKernel
         $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
         // cleanup stale online_count (GC for Redis TTL expiration)
         $schedule->command('cleanup:online-status')->everyFiveMinutes()->onOneServer();
-        // backup Timing
-        // if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
-        //     $schedule->command('backup:database', ['true'])->daily()->onOneServer();
-        // }
+        if ((bool) admin_setting('auto_backup_enabled', 0)) {
+            $schedule->command('backup:database')->dailyAt((string) admin_setting('auto_backup_time', '03:30'))->onOneServer()->withoutOverlapping(120);
+            $schedule->call(function () {
+                $cutoff = now()->subDays((int) admin_setting('backup_retention', 14))->timestamp;
+                foreach (glob(storage_path('backup/*.gz')) ?: [] as $file) if (filemtime($file) < $cutoff) @unlink($file);
+            })->dailyAt('04:30')->onOneServer();
+        }
         app(PluginManager::class)->registerPluginSchedules($schedule);
 
     }

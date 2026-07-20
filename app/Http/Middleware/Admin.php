@@ -24,6 +24,12 @@ class Admin
         if (!$user || !$user->is_admin) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+
+        $profile = $user->adminAccessProfile;
+        if ($profile) {
+            if (!$profile->isUsableFor($request->ip())) return response()->json(['message' => 'Temporary access has expired or is not allowed'], 403);
+            $request->attributes->set('admin_access_profile', $profile);
+        }
         
         return $next($request);
     }

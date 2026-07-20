@@ -23,6 +23,8 @@ use App\Http\Controllers\V2\Admin\ThemeController;
 use App\Http\Controllers\V2\Admin\TrafficResetController;
 use App\Http\Controllers\V2\Admin\NodeSyncDiagnosticController;
 use App\Http\Controllers\V2\Admin\AdminLockController;
+use App\Http\Controllers\V2\Admin\AdminAccessController;
+use App\Http\Controllers\V2\Admin\BackupController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class AdminRoute
@@ -31,7 +33,7 @@ class AdminRoute
     {
         $router->group([
             'prefix' => '{secure_path}',
-            'middleware' => ['admin.path', 'admin', 'admin.lock', 'log'],
+            'middleware' => ['admin.path', 'admin', 'admin.lock', 'admin.permission', 'log'],
         ], function ($router) {
             $router->group(['prefix' => 'admin-lock'], function ($router) {
                 $router->get('/status', [AdminLockController::class, 'status']);
@@ -40,6 +42,18 @@ class AdminRoute
                 $router->get('/summary', [AdminLockController::class, 'summary']);
                 $router->get('/settings', [AdminLockController::class, 'settings']);
                 $router->post('/settings', [AdminLockController::class, 'updateSettings']);
+            });
+            $router->group(['prefix' => 'temporary-access'], function ($router) {
+                $router->get('/me', [AdminAccessController::class, 'me']);
+                $router->get('/fetch', [AdminAccessController::class, 'index']);
+                $router->post('/save', [AdminAccessController::class, 'save']);
+                $router->post('/revoke', [AdminAccessController::class, 'revoke']);
+                $router->post('/drop', [AdminAccessController::class, 'destroy']);
+            });
+            $router->group(['prefix' => 'backup'], function ($router) {
+                $router->get('/fetch', [BackupController::class, 'index']);
+                $router->post('/create', [BackupController::class, 'create']);
+                $router->post('/settings', [BackupController::class, 'saveSettings']);
             });
             // Config
             $router->group([

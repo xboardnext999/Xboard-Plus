@@ -5,11 +5,12 @@ import { flatMenus } from '../config/menu';
 const page = (name) => () => import(`../pages/${name}.vue`);
 const Dashboard = page('Dashboard'), GroupBuy = page('GroupBuy'), ResourcePage = page('ResourcePage'), Login = page('Login');
 const SystemConfig = page('SystemConfig'), AdminLockSettings = page('AdminLockSettings'), PluginManagement = page('PluginManagement'), ThemeManagement = page('ThemeManagement'), NoticeManagement = page('NoticeManagement'), PaymentManagement = page('PaymentManagement'), KnowledgeManagement = page('KnowledgeManagement');
+const TemporaryAccess = page('TemporaryAccess'), AuditManagement = page('AuditManagement'), BackupManagement = page('BackupManagement');
 const ServerManagement = page('ServerManagement'), NodeManagement = page('NodeManagement'), GroupManagement = page('GroupManagement'), RouteManagement = page('RouteManagement'), NodeDiagnostics = page('NodeDiagnostics');
 const PlanManagement = page('PlanManagement'), OrderManagement = page('OrderManagement'), CouponManagement = page('CouponManagement'), GiftCardManagement = page('GiftCardManagement'), UserManagement = page('UserManagement'), TicketManagement = page('TicketManagement'), TrafficResetManagement = page('TrafficResetManagement');
 
 const menuRoutes = flatMenus
-  .filter((item) => !['/dashboard', '/system/config', '/system/admin-lock', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy'].includes(item.path))
+  .filter((item) => !['/dashboard', '/system/config', '/system/admin-lock', '/system/temporary-access', '/system/audit', '/system/backup', '/system/plugin', '/system/theme', '/system/notice', '/system/payment', '/system/knowledge', '/node/server', '/node/list', '/node/group', '/node/route', '/node/diagnostic', '/subscription/plan', '/subscription/order', '/subscription/coupon', '/subscription/gift-card', '/user/list', '/user/ticket', '/user/traffic-reset-log', '/finance/plan?xgb=group-buy'].includes(item.path))
   .map((item) => ({
     path: item.path,
     name: item.title,
@@ -35,6 +36,9 @@ const router = createRouter({
         },
         { path: 'system/config', name: 'SystemConfig', component: SystemConfig, meta: { title: '系统配置', group: '系统管理' } },
         { path: 'system/admin-lock', name: 'AdminLockSettings', component: AdminLockSettings, meta: { title: '后台访问锁', group: '系统管理' } },
+        { path: 'system/temporary-access', name: 'TemporaryAccess', component: TemporaryAccess, meta: { title: '临时访问', group: '系统管理' } },
+        { path: 'system/audit', name: 'AuditManagement', component: AuditManagement, meta: { title: '操作审计', group: '系统管理' } },
+        { path: 'system/backup', name: 'BackupManagement', component: BackupManagement, meta: { title: '备份管理', group: '系统管理' } },
         { path: 'system/plugin', name: 'PluginManagement', component: PluginManagement, meta: { title: '插件管理', group: '系统管理' } },
         { path: 'system/theme', name: 'ThemeManagement', component: ThemeManagement, meta: { title: '主题配置', group: '系统管理' } },
         { path: 'system/notice', name: 'NoticeManagement', component: NoticeManagement, meta: { title: '公告管理', group: '系统管理' } },

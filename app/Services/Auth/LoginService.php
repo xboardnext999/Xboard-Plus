@@ -67,6 +67,12 @@ class LoginService
             return [false, [400, __('Your account has been suspended')]];
         }
 
+        $profile = $user->adminAccessProfile;
+        if ($profile) {
+            if (!$profile->isUsableFor(request()->ip()) || $profile->login_count >= $profile->max_logins) return [false, [403, '临时访问已过期、次数用尽或当前 IP 不被允许']];
+            $profile->increment('login_count');
+        }
+
         // 更新最后登录时间
         $user->last_login_at = time();
         $user->save();

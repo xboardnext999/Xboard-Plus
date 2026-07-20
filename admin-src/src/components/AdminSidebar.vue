@@ -3,12 +3,13 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { menuGroups } from '../config/menu';
 import AppIcon from './AppIcon.vue';
-defineProps({ collapsed: Boolean });
+const props = defineProps({ collapsed: Boolean, accessPermissions: { type: Object, default: null } });
 defineEmits(['close']);
 
 const route = useRoute();
 
 const activePath = computed(() => route.fullPath);
+const visibleGroups = computed(() => menuGroups.map((group) => ({ ...group, items: group.items.filter((item) => !props.accessPermissions || props.accessPermissions[item.path.split('?')[0]]) })).filter((group) => group.items.length));
 </script>
 
 <template>
@@ -19,7 +20,7 @@ const activePath = computed(() => route.fullPath);
     </RouterLink>
 
     <nav class="sidebar-nav">
-      <section v-for="group in menuGroups" :key="group.title || 'root'" class="nav-group">
+      <section v-for="group in visibleGroups" :key="group.title || 'root'" class="nav-group">
         <h3 v-if="group.title">{{ group.title }}</h3>
         <RouterLink
           v-for="item in group.items"

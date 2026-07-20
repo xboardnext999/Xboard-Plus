@@ -147,6 +147,11 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'user_id', 'id');
     }
 
+    public function adminAccessProfile()
+    {
+        return $this->hasOne(AdminAccessProfile::class, 'user_id');
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id', 'id');

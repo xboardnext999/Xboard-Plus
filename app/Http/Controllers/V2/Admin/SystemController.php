@@ -149,7 +149,7 @@ class SystemController extends Controller
     public function getAuditLog(Request $request)
     {
         $current = max(1, (int) $request->input('current', 1));
-        $pageSize = max(10, (int) $request->input('page_size', 10));
+        $pageSize = min(100, max(10, (int) $request->input('page_size', 10)));
 
         $builder = AdminAuditLog::with('admin:id,email')
             ->orderBy('id', 'DESC')
