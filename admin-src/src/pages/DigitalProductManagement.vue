@@ -514,11 +514,11 @@ onMounted(load);
                 </div>
                 <div class="digital-quick-grid">
                     <button @click="open()">
-                        <AppIcon name="Plus" :size="18" /><span
+                        <i><AppIcon name="Plus" :size="17" /></i><span
                             >新建商品</span
                         ></button
                     ><button @click="showBannerForm = true">
-                        <AppIcon name="Image" :size="18" /><span
+                        <i><AppIcon name="Image" :size="17" /></i><span
                             >横幅配置</span
                         ></button
                     ><button
@@ -526,7 +526,7 @@ onMounted(load);
                             router.push({ name: 'DigitalInventoryManagement' })
                         "
                     >
-                        <AppIcon name="Database" :size="18" /><span
+                        <i><AppIcon name="Database" :size="17" /></i><span
                             >库存管理</span
                         ></button
                     ><button
@@ -534,7 +534,7 @@ onMounted(load);
                             router.push({ name: 'DigitalDeliveryManagement' })
                         "
                     >
-                        <AppIcon name="ClipboardList" :size="18" /><span
+                        <i><AppIcon name="ClipboardList" :size="17" /></i><span
                             >交付记录</span
                         >
                     </button>
@@ -546,18 +546,20 @@ onMounted(load);
                         <h2>商品分类</h2>
                         <p>{{ categories.length }} 个分类</p>
                     </div>
-                    <button class="btn btn-ghost btn-sm" @click="openCategoryManager()">
-                        管理分类
+                    <button class="btn btn-ghost btn-sm digital-category-manage-button" @click="openCategoryManager()">
+                        <AppIcon name="SlidersHorizontal" :size="14" />管理
                     </button>
                 </div>
                 <div class="digital-category-list">
                     <button
                         v-for="item in categoryStats"
                         :key="item.name"
+                        :class="{ active: categoryFilter === item.name }"
                         @click="categoryFilter = item.name"
                     >
-                        <span>{{ item.name }}</span
-                        ><strong>{{ item.count }}</strong></button
+                        <i><AppIcon name="Tag" :size="15" /></i>
+                        <span><b>{{ item.name }}</b><small>{{ item.enabled ? "前台显示" : "已停用" }}</small></span>
+                        <strong>{{ item.count }}</strong></button
                     ><span v-if="!categoryStats.length">暂无分类</span>
                 </div>
             </aside>
