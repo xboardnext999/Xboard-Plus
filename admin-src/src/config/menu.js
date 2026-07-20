@@ -9,6 +9,7 @@ export const menuGroups = [
     title: '系统管理',
     items: [
       { title: '系统配置', path: '/system/config', icon: 'SlidersHorizontal' },
+      { title: '后台访问锁', path: '/system/admin-lock', icon: 'LockKeyhole' },
       { title: '插件管理', path: '/system/plugin', icon: 'Box' },
       { title: '主题配置', path: '/system/theme', icon: 'Monitor' },
       { title: '公告管理', path: '/system/notice', icon: 'Newspaper' },

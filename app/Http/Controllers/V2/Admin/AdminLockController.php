@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Services\AdminLockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AdminLockController extends Controller
 {
@@ -28,5 +30,32 @@ class AdminLockController extends Controller
             'sync' => '正常',
             'updated_at' => now()->toDateTimeString(),
         ]);
+    }
+    public function settings()
+    {
+        return $this->success([
+            'enabled' => $this->lock->enabled(),
+            'ttl_minutes' => (int) ($this->lock->ttl() / 60),
+            'simple_password_set' => $this->lock->hasSimplePassword(),
+            'full_password_set' => $this->lock->hasFullPassword(),
+        ]);
+    }
+    public function updateSettings(Request $request)
+    {
+        $data = $request->validate([
+            'enabled' => 'required|boolean', 'ttl_minutes' => 'required|integer|min:5|max:10080',
+            'current_full_password' => 'required|string|max:128',
+            'simple_password' => 'nullable|string|min:8|max:128', 'full_password' => 'nullable|string|min:12|max:128',
+        ]);
+        if (!$this->lock->verifyFull((string) $data['current_full_password'])) throw ValidationException::withMessages(['current_full_password' => '当前完整后台密码不正确']);
+        $simple = (string) ($data['simple_password'] ?? ''); $full = (string) ($data['full_password'] ?? '');
+        if ($simple !== '' && $full !== '' && hash_equals($simple, $full)) throw ValidationException::withMessages(['full_password' => '两个访问密码不能相同']);
+        if ($simple !== '' && $full === '' && $this->lock->verifyFull($simple)) throw ValidationException::withMessages(['simple_password' => '简易页面密码不能与完整后台密码相同']);
+        if ($full !== '' && $simple === '' && $this->lock->verifySimple($full)) throw ValidationException::withMessages(['full_password' => '完整后台密码不能与简易页面密码相同']);
+        $settings = ['admin_lock_enabled' => $data['enabled'] ? 1 : 0, 'admin_lock_ttl' => (int) $data['ttl_minutes'] * 60, 'admin_lock_version' => bin2hex(random_bytes(12))];
+        if ($simple !== '') $settings['admin_lock_simple_hash'] = Hash::make($simple);
+        if ($full !== '') $settings['admin_lock_full_hash'] = Hash::make($full);
+        admin_setting($settings);
+        return $this->success(['saved' => true, 'requires_unlock' => (bool) $data['enabled']]);
     }
 }

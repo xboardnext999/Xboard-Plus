@@ -38,6 +38,8 @@ class AdminRoute
                 $router->post('/unlock', [AdminLockController::class, 'unlock']);
                 $router->post('/lock', [AdminLockController::class, 'lock']);
                 $router->get('/summary', [AdminLockController::class, 'summary']);
+                $router->get('/settings', [AdminLockController::class, 'settings']);
+                $router->post('/settings', [AdminLockController::class, 'updateSettings']);
             });
             // Config
             $router->group([
