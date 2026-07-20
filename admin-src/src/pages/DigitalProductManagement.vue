@@ -7,7 +7,8 @@ import { get, post } from "../services/http";
 const rows = ref([]),
     loading = ref(true),
     saving = ref(false),
-    showForm = ref(false);
+    showForm = ref(false),
+    showBannerForm = ref(false);
 const toast = reactive({ text: "", type: "" });
 const form = reactive({
     id: null,
@@ -77,7 +78,9 @@ function open(row = null) {
         sell: row?.sell ?? true,
         prices: { ...(row?.prices || {}), onetime: row?.prices?.onetime || 0 },
         product_config: {
-            delivery_type: row ? row.product_config?.delivery_type || "text" : "code",
+            delivery_type: row
+                ? row.product_config?.delivery_type || "text"
+                : "code",
             category: row?.product_config?.category || "数字商品",
             image_url: row?.product_config?.image_url || "",
             featured: Boolean(row?.product_config?.featured),
@@ -166,6 +169,7 @@ async function saveBanner() {
             await post("/digital-products/banner/save", banner),
         );
         notify("商城 Banner 已保存");
+        showBannerForm.value = false;
     } catch (e) {
         notify(e.message, "error");
     } finally {
@@ -210,12 +214,8 @@ onMounted(load);
                     <h2>商城 Banner</h2>
                     <p>配置数字商品页面顶部的宣传图片与跳转内容。</p>
                 </div>
-                <button
-                    class="btn btn-primary"
-                    :disabled="savingBanner"
-                    @click="saveBanner"
-                >
-                    {{ savingBanner ? "保存中…" : "保存 Banner" }}
+                <button class="btn btn-ghost" @click="showBannerForm = true">
+                    编辑 Banner
                 </button>
             </div>
             <div class="digital-banner-config">
@@ -234,7 +234,7 @@ onMounted(load);
                         ><span>{{ banner.subtitle || "Banner 副标题" }}</span>
                     </div>
                 </div>
-                <div class="smart-form">
+                <div v-if="false" class="smart-form">
                     <div class="field field-wide">
                         <span>Banner 图片</span>
                         <div class="digital-cover-inputs">
@@ -364,6 +364,105 @@ onMounted(load);
             </article>
         </div>
         <div
+            v-if="showBannerForm"
+            class="modal-backdrop"
+            @click.self="showBannerForm = false"
+        >
+            <section
+                class="modal-card forwarding-plan-modal digital-banner-modal"
+            >
+                <div class="panel-head">
+                    <div>
+                        <h2>编辑商城 Banner</h2>
+                        <p>设置前台数字商品页面顶部展示内容。</p>
+                    </div>
+                    <button
+                        class="btn btn-ghost"
+                        @click="showBannerForm = false"
+                    >
+                        关闭
+                    </button>
+                </div>
+                <div
+                    class="digital-banner-preview"
+                    :style="
+                        banner.image_url
+                            ? {
+                                  backgroundImage: `linear-gradient(90deg,rgba(4,10,18,.72),rgba(4,10,18,.12)),url(${banner.image_url})`,
+                              }
+                            : {}
+                    "
+                >
+                    <div>
+                        <strong>{{ banner.title || "Banner 标题" }}</strong
+                        ><span>{{ banner.subtitle || "Banner 副标题" }}</span>
+                    </div>
+                </div>
+                <div class="smart-form">
+                    <div class="field field-wide">
+                        <span>Banner 图片</span>
+                        <div class="digital-cover-inputs">
+                            <input
+                                v-model.trim="banner.image_url"
+                                placeholder="可填写图片 URL，或直接上传图片"
+                            /><label class="btn btn-ghost btn-sm"
+                                ><input
+                                    hidden
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp,image/gif"
+                                    @change="uploadBanner"
+                                />{{
+                                    uploadingBanner ? "上传中…" : "上传图片"
+                                }}</label
+                            >
+                        </div>
+                    </div>
+                    <label class="field"
+                        ><span>标题 *</span
+                        ><input
+                            v-model.trim="banner.title"
+                            maxlength="100"
+                            placeholder="数字商品中心"
+                    /></label>
+                    <label class="field"
+                        ><span>副标题</span
+                        ><input
+                            v-model.trim="banner.subtitle"
+                            maxlength="255"
+                            placeholder="精选数字资产，安全购买"
+                    /></label>
+                    <label class="field"
+                        ><span>按钮文字</span
+                        ><input
+                            v-model.trim="banner.button_text"
+                            maxlength="30"
+                            placeholder="了解更多"
+                    /></label>
+                    <label class="field"
+                        ><span>跳转链接</span
+                        ><input
+                            v-model.trim="banner.link_url"
+                            maxlength="2048"
+                            placeholder="https://... 或 #digital-products"
+                    /></label>
+                </div>
+                <div class="modal-actions">
+                    <button
+                        class="btn btn-ghost"
+                        @click="showBannerForm = false"
+                    >
+                        取消</button
+                    ><button
+                        class="btn btn-primary"
+                        :disabled="savingBanner"
+                        @click="saveBanner"
+                    >
+                        {{ savingBanner ? "保存中…" : "保存 Banner" }}
+                    </button>
+                </div>
+            </section>
+        </div>
+        <div
             v-if="showForm"
             class="modal-backdrop"
             @click.self="showForm = false"
@@ -401,11 +500,17 @@ onMounted(load);
                     ><label class="field"
                         ><span>交付方式</span
                         ><ToggleSwitch
-                            :model-value="form.product_config.delivery_type !== 'text'"
+                            :model-value="
+                                form.product_config.delivery_type !== 'text'
+                            "
                             on-label="自动交付"
                             off-label="人工交付"
-                            @update:model-value="form.product_config.delivery_type = $event ? 'code' : 'text'" /></label
-                    >
+                            @update:model-value="
+                                form.product_config.delivery_type = $event
+                                    ? 'code'
+                                    : 'text'
+                            "
+                    /></label>
                     <div class="field field-wide digital-cover-field">
                         <span>商品封面</span>
                         <div class="digital-cover-control">
