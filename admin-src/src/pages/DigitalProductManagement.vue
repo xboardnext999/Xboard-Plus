@@ -10,7 +10,11 @@ const rows = ref([]),
     loading = ref(true),
     saving = ref(false),
     showForm = ref(false),
-    showBannerForm = ref(false);
+    showBannerForm = ref(false),
+    showCategoryForm = ref(false);
+const managedCategories = ref([]),
+    categorySaving = ref(false);
+const categoryForm = reactive({ id: null, name: "", enabled: true });
 const savingBanner = ref(false),
     uploadingBanner = ref(false),
     uploadingCover = ref(false);
@@ -41,6 +45,7 @@ const emptyPackage = () => ({
 });
 const form = reactive({
     id: null,
+    digital_category_id: null,
     name: "",
     content: "",
     show: true,
@@ -59,17 +64,11 @@ const form = reactive({
 const selling = computed(() =>
     rows.value.filter((row) => row.show && row.sell),
 );
-const categories = computed(() => [
-    ...new Set(
-        rows.value.map((row) => row.product_config?.category || "数字商品"),
-    ),
-]);
+const categories = computed(() => managedCategories.value.map((item) => item.name));
 const categoryStats = computed(() =>
-    categories.value.map((name) => ({
-        name,
-        count: rows.value.filter(
-            (row) => (row.product_config?.category || "数字商品") === name,
-        ).length,
+    managedCategories.value.map((item) => ({
+        ...item,
+        count: Number(item.plans_count || 0),
     })),
 );
 const lowStock = computed(() =>
@@ -194,11 +193,13 @@ async function toggleSelling(row, enabled) {
 async function load() {
     loading.value = true;
     try {
-        const [data, bannerData] = await Promise.all([
+        const [data, bannerData, categoryData] = await Promise.all([
             get("/digital-products/fetch"),
             get("/digital-products/banner"),
+            get("/digital-products/categories"),
         ]);
         rows.value = Array.isArray(data) ? data : [];
+        managedCategories.value = Array.isArray(categoryData) ? categoryData : [];
         Object.assign(banner, bannerData || {});
     } catch (e) {
         notify(e.message, "error");
@@ -209,6 +210,10 @@ async function load() {
 function open(row = null) {
     Object.assign(form, {
         id: row?.id || null,
+        digital_category_id:
+            row?.digital_category_id ||
+            managedCategories.value.find((item) => item.enabled)?.id ||
+            null,
         name: row?.name || "",
         content: row?.content || "",
         show: row?.show ?? true,
@@ -233,6 +238,63 @@ function open(row = null) {
     });
     showForm.value = true;
 }
+function openCategory(item = null) {
+    Object.assign(categoryForm, {
+        id: item?.id || null,
+        name: item?.name || "",
+        enabled: item?.enabled ?? true,
+    });
+    showCategoryForm.value = true;
+}
+async function saveCategory() {
+    if (!categoryForm.name.trim()) return notify("请输入分类名称", "error");
+    categorySaving.value = true;
+    try {
+        await post("/digital-products/categories/save", categoryForm);
+        notify(categoryForm.id ? "分类已更新" : "分类已创建");
+        Object.assign(categoryForm, { id: null, name: "", enabled: true });
+        const data = await get("/digital-products/categories");
+        managedCategories.value = Array.isArray(data) ? data : [];
+    } catch (e) {
+        notify(e.message, "error");
+    } finally {
+        categorySaving.value = false;
+    }
+}
+async function toggleCategory(item, enabled) {
+    try {
+        await post("/digital-products/categories/save", { ...item, enabled });
+        item.enabled = enabled;
+        notify(enabled ? "分类已启用" : "分类已停用");
+    } catch (e) {
+        notify(e.message, "error");
+    }
+}
+async function moveCategory(index, offset) {
+    const target = index + offset;
+    if (target < 0 || target >= managedCategories.value.length) return;
+    const next = [...managedCategories.value];
+    const [moved] = next.splice(index, 1);
+    next.splice(target, 0, moved);
+    try {
+        managedCategories.value = next;
+        await post("/digital-products/categories/sort", { ids: next.map((item) => item.id) });
+        notify("分类排序已保存");
+    } catch (e) {
+        notify(e.message, "error");
+        await load();
+    }
+}
+async function dropCategory(item) {
+    if (!window.confirm(`确认删除分类“${item.name}”？`)) return;
+    try {
+        await post("/digital-products/categories/drop", { id: item.id });
+        managedCategories.value = managedCategories.value.filter((entry) => entry.id !== item.id);
+        notify("分类已删除");
+    } catch (e) {
+        notify(e.message, "error");
+    }
+}
 function addPackage() {
     form.product_config.packages.push(emptyPackage());
 }
@@ -246,6 +308,7 @@ async function save() {
             item.id?.trim() && item.name?.trim() && Number(item.price) > 0,
     );
     if (!form.name.trim()) return notify("请输入商品名称", "error");
+    if (!form.digital_category_id) return notify("请选择商品分类", "error");
     if (!packages.length) return notify("请至少设置一个有效规格", "error");
     saving.value = true;
     try {
@@ -359,9 +422,14 @@ onMounted(load);
                 <h1>数字商品管理</h1>
                 <p>管理数字商品、销售规格、交付方式与库存状态。</p>
             </div>
-            <button class="btn btn-primary" @click="open()">
-                <AppIcon name="Plus" :size="16" />新建商品
-            </button>
+            <div class="digital-heading-actions">
+                <button class="btn btn-ghost" @click="openCategory()">
+                    <AppIcon name="FolderPlus" :size="16" />创建分类
+                </button>
+                <button class="btn btn-primary" @click="open()">
+                    <AppIcon name="Plus" :size="16" />新建商品
+                </button>
+            </div>
         </div>
 
         <div class="digital-kpi-grid">
@@ -473,6 +541,9 @@ onMounted(load);
                         <h2>商品分类</h2>
                         <p>{{ categories.length }} 个分类</p>
                     </div>
+                    <button class="btn btn-ghost btn-sm" @click="openCategory()">
+                        管理分类
+                    </button>
                 </div>
                 <div class="digital-category-list">
                     <button
@@ -823,9 +894,18 @@ onMounted(load);
                         ><textarea v-model="form.content" rows="3" /></label
                     ><label class="field"
                         ><span>商品分类</span
-                        ><input
-                            v-model.trim="form.product_config.category"
-                            maxlength="50" /></label
+                        ><select v-model="form.digital_category_id">
+                            <option :value="null" disabled>请选择分类</option>
+                            <option
+                                v-for="item in managedCategories.filter(
+                                    (entry) => entry.enabled || entry.id === form.digital_category_id,
+                                )"
+                                :key="item.id"
+                                :value="item.id"
+                            >
+                                {{ item.name }}{{ item.enabled ? "" : "（已停用）" }}
+                            </option>
+                        </select></label
                     ><label class="field"
                         ><span>交付方式</span
                         ><ToggleSwitch
@@ -1071,6 +1151,45 @@ onMounted(load);
                     >
                         {{ saving ? "保存中…" : "保存商品" }}
                     </button>
+                </div>
+            </section>
+        </div>
+        <div
+            v-if="showCategoryForm"
+            class="modal-backdrop"
+            @click.self="showCategoryForm = false"
+        >
+            <section class="modal-card digital-category-modal">
+                <div class="panel-head">
+                    <div>
+                        <h2>商品分类管理</h2>
+                        <p>独立创建和维护分类，商品通过分类 ID 关联。</p>
+                    </div>
+                    <button class="btn btn-ghost" @click="showCategoryForm = false">关闭</button>
+                </div>
+                <div class="digital-category-create">
+                    <label class="field">
+                        <span>{{ categoryForm.id ? "分类名称" : "创建新分类" }}</span>
+                        <input v-model.trim="categoryForm.name" maxlength="50" placeholder="输入分类名称" @keyup.enter="saveCategory" />
+                    </label>
+                    <ToggleSwitch v-model="categoryForm.enabled" on-label="已启用" off-label="已停用" />
+                    <button class="btn btn-primary" :disabled="categorySaving" @click="saveCategory">
+                        {{ categorySaving ? "保存中…" : categoryForm.id ? "保存修改" : "创建分类" }}
+                    </button>
+                    <button v-if="categoryForm.id" class="btn btn-ghost" @click="openCategory()">取消编辑</button>
+                </div>
+                <div class="digital-category-manage-list">
+                    <div v-for="(item, index) in managedCategories" :key="item.id">
+                        <span class="digital-category-order"><AppIcon name="GripVertical" :size="16" /></span>
+                        <div><strong>{{ item.name }}</strong><small>{{ item.plans_count || 0 }} 个商品</small></div>
+                        <ToggleSwitch :model-value="item.enabled" on-label="显示" off-label="停用" @update:model-value="toggleCategory(item, $event)" />
+                        <div class="digital-category-row-actions">
+                            <button class="btn btn-ghost btn-sm" :disabled="index === 0" @click="moveCategory(index, -1)">上移</button>
+                            <button class="btn btn-ghost btn-sm" :disabled="index === managedCategories.length - 1" @click="moveCategory(index, 1)">下移</button>
+                            <button class="btn btn-ghost btn-sm" @click="openCategory(item)">编辑</button>
+                            <button class="btn btn-danger btn-sm" :disabled="Number(item.plans_count || 0) > 0" @click="dropCategory(item)">删除</button>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>

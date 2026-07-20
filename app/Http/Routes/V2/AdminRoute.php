@@ -69,6 +69,10 @@ class AdminRoute
                 $router->get('/banner', [DigitalProductController::class, 'banner']);
                 $router->post('/banner/save', [DigitalProductController::class, 'saveBanner']);
                 $router->post('/banner/upload', [DigitalProductController::class, 'uploadBanner']);
+                $router->get('/categories', [DigitalProductController::class, 'categories']);
+                $router->post('/categories/save', [DigitalProductController::class, 'saveCategory']);
+                $router->post('/categories/sort', [DigitalProductController::class, 'sortCategories']);
+                $router->post('/categories/drop', [DigitalProductController::class, 'deleteCategory']);
                 $router->post('/sort', [DigitalProductController::class, 'sort']);
                 $router->post('/status', [DigitalProductController::class, 'status']);
                 $router->post('/save', [DigitalProductController::class, 'save']);

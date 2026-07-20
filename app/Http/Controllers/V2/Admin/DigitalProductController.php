@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V2\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DigitalProductItem;
+use App\Models\DigitalProductCategory;
 use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,45 @@ class DigitalProductController extends Controller
         return $this->storeImage($request, 'digital-banners', 'banner');
     }
 
+    public function categories()
+    {
+        return $this->success(DigitalProductCategory::withCount('plans')->orderBy('sort')->orderBy('id')->get());
+    }
+
+    public function saveCategory(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'nullable|integer|exists:v2_digital_product_category,id',
+            'name' => 'required|string|max:50',
+            'enabled' => 'required|boolean',
+        ]);
+        $data['name'] = trim($data['name']);
+        if (DigitalProductCategory::where('name', $data['name'])->when($data['id'] ?? null, fn($query, $id) => $query->where('id', '<>', $id))->exists()) {
+            return $this->fail([422, '分类名称已存在']);
+        }
+        $category = !empty($data['id']) ? DigitalProductCategory::findOrFail($data['id']) : new DigitalProductCategory(['sort' => DigitalProductCategory::max('sort') + 1]);
+        $category->fill(['name' => $data['name'], 'enabled' => $data['enabled']])->save();
+        return $this->success($category->fresh()->loadCount('plans'));
+    }
+
+    public function sortCategories(Request $request)
+    {
+        $data = $request->validate(['ids' => 'required|array|max:100', 'ids.*' => 'required|integer']);
+        if (DigitalProductCategory::count() !== count(array_unique($data['ids'])) || DigitalProductCategory::whereIn('id', $data['ids'])->count() !== count(array_unique($data['ids']))) return $this->fail([422, '分类排序数据无效']);
+        DB::transaction(fn() => collect($data['ids'])->each(fn($id, $index) => DigitalProductCategory::where('id', $id)->update(['sort' => $index + 1])));
+        return $this->categories();
+    }
+
+    public function deleteCategory(Request $request)
+    {
+        $data = $request->validate(['id' => 'required|integer|exists:v2_digital_product_category,id']);
+        $category = DigitalProductCategory::withCount('plans')->findOrFail($data['id']);
+        if ($category->plans_count > 0) return $this->fail([422, '该分类下仍有商品，请先调整商品分类']);
+        if (DigitalProductCategory::count() <= 1) return $this->fail([422, '至少保留一个商品分类']);
+        $category->delete();
+        return $this->success(true);
+    }
+
     public function sort(Request $request)
     {
         $data = $request->validate(['ids' => 'required|array|max:1000', 'ids.*' => 'required|integer']);
@@ -63,6 +103,7 @@ class DigitalProductController extends Controller
     public function fetch(Request $request)
     {
         $plans = Plan::where('product_type', 'digital')
+            ->with('digitalCategory')
             ->withCount([
                 'digitalItems as stock_count' => fn($query) => $query->where('status', DigitalProductItem::AVAILABLE),
                 'digitalItems as sold_count' => fn($query) => $query->where('status', DigitalProductItem::SOLD),
@@ -75,6 +116,7 @@ class DigitalProductController extends Controller
             $rows = $stockByPackage->get($plan->id, collect());
             $common = (int) ($rows->firstWhere('package_key', '')?->aggregate ?? 0);
             $config = $plan->product_config ?: [];
+            $config['category'] = $plan->digitalCategory?->name ?? ($config['category'] ?? '数字商品');
             $config['packages'] = collect($config['packages'] ?? [])->map(function ($package) use ($rows, $common) {
                 $package['stock_count'] = (int) ($rows->firstWhere('package_key', (string) ($package['id'] ?? ''))?->aggregate ?? 0) + $common;
                 return $package;
@@ -96,6 +138,7 @@ class DigitalProductController extends Controller
             'product_config' => 'nullable|array',
             'product_config.delivery_type' => 'nullable|string|in:text,code,link,account',
             'product_config.category' => 'nullable|string|max:50',
+            'digital_category_id' => 'required|integer|exists:v2_digital_product_category,id',
             'product_config.image_url' => 'nullable|string|max:2048',
             'product_config.detail_markdown' => 'nullable|string|max:500000',
             'product_config.gallery' => 'nullable|array|max:20',
@@ -113,7 +156,10 @@ class DigitalProductController extends Controller
         $data['reset_traffic_method'] = Plan::RESET_TRAFFIC_NEVER;
         $data['group_id'] = null;
         $data['capacity_limit'] = null;
+        $category = DigitalProductCategory::where('id', $data['digital_category_id'])->where('enabled', true)->first();
+        if (!$category) return $this->fail([422, '请选择有效的商品分类']);
         $config = array_merge(['delivery_type' => 'code', 'category' => '数字商品', 'image_url' => '', 'detail_markdown' => '', 'gallery' => [], 'featured' => false, 'packages' => []], $data['product_config'] ?? []);
+        $config['category'] = $category->name;
         $config['gallery'] = collect($config['gallery'] ?? [])->map(fn($url) => trim((string) $url))->filter()->unique()->take(20)->values()->all();
         $config['packages'] = collect($config['packages'])->map(fn($package) => [
             'id' => preg_replace('/[^A-Za-z0-9_-]/', '-', (string) $package['id']),

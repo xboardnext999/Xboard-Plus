@@ -92,6 +92,7 @@ class Plan extends Model
         'tags',
         'product_type',
         'product_config',
+        'digital_category_id',
     ];
 
     protected $casts = [
@@ -105,6 +106,7 @@ class Plan extends Model
         'tags' => 'array',
         'product_config' => 'array',
         'reset_traffic_method' => 'integer',
+        'digital_category_id' => 'integer',
     ];
 
     /**
@@ -326,6 +328,11 @@ class Plan extends Model
     public function digitalItems(): HasMany
     {
         return $this->hasMany(DigitalProductItem::class, 'plan_id');
+    }
+
+    public function digitalCategory()
+    {
+        return $this->belongsTo(DigitalProductCategory::class, 'digital_category_id');
     }
 
     /**
