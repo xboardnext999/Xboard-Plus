@@ -30,6 +30,9 @@ const keyword = ref(""),
 const draggingId = ref(null),
     dragOverId = ref(null),
     sorting = ref(false);
+const faqDraggingId = ref(null),
+    faqDragOverId = ref(null),
+    faqSorting = ref(false);
 let dragSnapshot = [];
 let dragGhost = null;
 const toast = reactive({ text: "", type: "" });
@@ -307,6 +310,39 @@ async function dropFaq(item) {
         notify("常见问题已删除");
     } catch (e) {
         notify(e.message, "error");
+    }
+}
+function startFaqDrag(event, item) {
+    faqDraggingId.value = item.id;
+    faqDragOverId.value = null;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(item.id));
+}
+function finishFaqDrag() {
+    faqDraggingId.value = null;
+    faqDragOverId.value = null;
+}
+async function dropFaqAt(target) {
+    const sourceIndex = managedFaqs.value.findIndex((item) => item.id === faqDraggingId.value);
+    const targetIndex = managedFaqs.value.findIndex((item) => item.id === target.id);
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return finishFaqDrag();
+    const previous = managedFaqs.value.map((item) => ({ ...item }));
+    const next = [...managedFaqs.value];
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    next.forEach((item, index) => { item.sort = index + 1; });
+    managedFaqs.value = next;
+    faqSorting.value = true;
+    try {
+        await Promise.all(next.map((item) => post("/digital-products/faqs/save", item)));
+        if (!faqForm.id) faqForm.sort = next.length + 1;
+        notify("问题排序已保存");
+    } catch (e) {
+        managedFaqs.value = previous;
+        notify(e.message, "error");
+    } finally {
+        faqSorting.value = false;
+        finishFaqDrag();
     }
 }
 async function saveCategory() {
@@ -841,24 +877,18 @@ onMounted(load);
             </aside>
         </div>
 
-        <section id="digital-faq-panel" class="panel digital-faq-panel">
-            <div class="digital-faq-panel-head">
-                <div>
-                    <span class="digital-faq-panel-icon"><AppIcon name="BookOpen" :size="18" /></span>
-                    <div><h2>常见问题</h2><p>维护问题、答案、显示状态和前台排序。</p></div>
-                </div>
-                <span class="digital-faq-count">{{ managedFaqs.length }} 个问题</span>
-            </div>
-            <div class="digital-faq-layout">
-                <div class="digital-faq-form">
-                    <div class="digital-faq-form-title">
-                        <strong>{{ faqForm.id ? "编辑问题" : "添加问题" }}</strong>
-                        <span>{{ faqForm.id ? `正在编辑 #${faqForm.id}` : "创建新的帮助内容" }}</span>
+        <section id="digital-faq-panel" class="digital-faq-section-grid">
+            <article class="panel digital-faq-panel digital-faq-create-card">
+                <div class="digital-faq-panel-head">
+                    <div>
+                        <span class="digital-faq-panel-icon"><AppIcon name="Plus" :size="18" /></span>
+                        <div><h2>{{ faqForm.id ? "编辑问题" : "添加问题" }}</h2><p>{{ faqForm.id ? `正在编辑 #${faqForm.id}` : "创建新的帮助内容" }}</p></div>
                     </div>
+                </div>
+                <div class="digital-faq-form">
                     <label class="field"><span>问题标题 *</span><input v-model.trim="faqForm.title" maxlength="150" placeholder="例如：购买后如何交付？" /></label>
                     <label class="field"><span>问题内容 *</span><textarea v-model.trim="faqForm.content" rows="6" maxlength="5000" placeholder="输入清晰、简洁的答案内容"></textarea></label>
                     <div class="digital-faq-form-row">
-                        <label class="field"><span>排序</span><input v-model.number="faqForm.sort" type="number" min="0" max="9999" /></label>
                         <label class="field"><span>前台显示</span><ToggleSwitch v-model="faqForm.enabled" on-label="显示" off-label="隐藏" /></label>
                     </div>
                     <div class="modal-actions">
@@ -866,16 +896,34 @@ onMounted(load);
                         <button class="btn btn-primary" :disabled="faqSaving" @click="saveFaq">{{ faqSaving ? "保存中…" : faqForm.id ? "保存修改" : "添加问题" }}</button>
                     </div>
                 </div>
+            </article>
+            <article class="panel digital-faq-panel digital-faq-sort-card">
+                <div class="digital-faq-panel-head">
+                    <div>
+                        <span class="digital-faq-panel-icon"><AppIcon name="GripVertical" :size="18" /></span>
+                        <div><h2>问题排序</h2><p>拖动整行调整前台展示顺序。</p></div>
+                    </div>
+                    <span class="digital-faq-count">{{ faqSorting ? "保存中…" : `${managedFaqs.length} 个问题` }}</span>
+                </div>
                 <div class="digital-faq-manage-list">
-                    <article v-for="item in managedFaqs" :key="item.id" :class="{ muted: !item.enabled }">
-                        <span class="digital-faq-sort">{{ item.sort }}</span>
+                    <article
+                        v-for="item in managedFaqs"
+                        :key="item.id"
+                        draggable="true"
+                        :class="{ muted: !item.enabled, 'is-dragging': faqDraggingId === item.id, 'is-drag-over': faqDragOverId === item.id }"
+                        @dragstart="startFaqDrag($event, item)"
+                        @dragend="finishFaqDrag"
+                        @dragover.prevent="faqDragOverId = item.id"
+                        @drop.prevent="dropFaqAt(item)"
+                    >
+                        <span class="digital-faq-sort" title="按住整行拖动"><AppIcon name="GripVertical" :size="15" /></span>
                         <div><strong>{{ item.title }}</strong><p>{{ item.content }}</p></div>
                         <ToggleSwitch :model-value="item.enabled" on-label="显示" off-label="隐藏" @update:model-value="toggleFaq(item, $event)" />
                         <div class="digital-faq-actions"><button class="btn btn-ghost btn-sm" @click="editFaq(item)">编辑</button><button class="btn btn-danger btn-sm" @click="dropFaq(item)">删除</button></div>
                     </article>
                     <div v-if="!managedFaqs.length" class="settings-loading">暂无常见问题，请先在左侧添加。</div>
                 </div>
-            </div>
+            </article>
         </section>
 
         <div
