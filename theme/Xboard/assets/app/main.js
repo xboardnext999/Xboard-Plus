@@ -134,6 +134,7 @@ function siteLogoUrl() {
 }
 
 function currentTitle(name) {
+  if (name === 'digital-checkout') return '订单结算';
   return navItems.find((item) => item.key === name)?.label || '仪表盘';
 }
 
@@ -1940,114 +1941,32 @@ function digitalPackageOptions(plan = {}) {
 const DigitalProductCard = {
   props: {
     plan: { type: Object, required: true },
-    methods: { type: Array, default: () => [] },
+    onOpen: { type: Function, required: true },
   },
   setup(props) {
     const packages = digitalPackageOptions(props.plan);
-    const selectedPackage = ref(packages[0]?.key || '');
-    const selectedMethod = ref(props.methods[0]?.id ? String(props.methods[0].id) : '');
-    const couponCode = ref('');
-    const local = reactive({ quote: null, quoteError: '', quoteLoading: false, submitting: false });
-    let quoteTimer = null;
-    let quoteSeq = 0;
-
-    async function refreshQuote() {
-      if (!selectedPackage.value) return;
-      const seq = ++quoteSeq;
-      local.quoteLoading = true;
-      local.quoteError = '';
-      try {
-        const quote = await api.post('/user/order/quote', {
-          plan_id: props.plan.id,
-          period: selectedPackage.value,
-          coupon_code: couponCode.value.trim(),
-          method: selectedMethod.value,
-          subscription_mode: 'append',
-        });
-        if (seq === quoteSeq) local.quote = quote;
-      } catch (error) {
-        if (seq === quoteSeq) {
-          local.quote = null;
-          local.quoteError = error.message || '价格计算失败';
-        }
-      } finally {
-        if (seq === quoteSeq) local.quoteLoading = false;
-      }
-    }
-
-    watch(() => [selectedPackage.value, selectedMethod.value, couponCode.value], () => {
-      clearTimeout(quoteTimer);
-      quoteTimer = setTimeout(refreshQuote, 220);
-    }, { immediate: true });
-    onBeforeUnmount(() => clearTimeout(quoteTimer));
-
-    async function buy(event) {
-      event.preventDefault();
-      if (!selectedPackage.value) return;
-      local.submitting = true;
-      try {
-        const tradeNo = await api.post('/user/order/save', {
-          plan_id: props.plan.id,
-          period: selectedPackage.value,
-          coupon_code: couponCode.value.trim(),
-          subscription_mode: 'append',
-        });
-        toast('订单已创建');
-        go('orders', { trade_no: tradeNo, method: selectedMethod.value });
-      } catch (error) {
-        toast(error.message, 'error');
-      } finally {
-        local.submitting = false;
-      }
-    }
-
     return () => {
-      const selected = packages.find((item) => item.key === selectedPackage.value) || packages[0] || {};
-      const quote = local.quote || {};
-      const payAmount = quote.pay_amount ?? quote.total_amount ?? selected.price ?? 0;
-      const deliveryLabels = { text: '文本交付', code: '卡密交付', link: '下载链接', account: '账号信息' };
-      return h('form', { class: 'digital-product-card', onSubmit: buy }, [
-        h('div', { class: 'digital-product-top' }, [
-          h('span', { class: 'digital-product-type' }, deliveryLabels[props.plan.product_config?.delivery_type] || '自动交付'),
-          h('span', { class: ['digital-stock-badge', Number(props.plan.stock_count) > 0 ? '' : 'is-empty'] }, Number(props.plan.stock_count) > 0 ? `库存 ${props.plan.stock_count}` : '暂时缺货'),
+      const price = packages[0]?.price || 0;
+      const delivery = { text: '人工交付', code: '自动交付', link: '自动交付', account: '自动交付' }[props.plan.product_config?.delivery_type] || '自动交付';
+      const image = props.plan.product_config?.image_url;
+      return h('article', { class: 'store-product-card', onClick: () => props.onOpen(props.plan) }, [
+        h('div', { class: ['store-product-cover', image ? '' : 'is-placeholder'], style: image ? { backgroundImage: `url("${image}")` } : {} }, [
+          image ? null : h('span', String(props.plan.name || 'D').slice(0, 1).toUpperCase()),
+          h('em', props.plan.product_config?.category || '数字商品'),
         ]),
-        h('div', { class: 'digital-product-title' }, [
+        h('div', { class: 'store-product-body' }, [
+          h('small', `分类 · ${props.plan.product_config?.category || '数字商品'}`),
           h('h2', props.plan.name),
-          h('strong', money(selected.price || 0, currencySymbol())),
+          h('div', { class: 'store-product-badges' }, [
+            h('span', delivery),
+            h('span', { class: Number(props.plan.stock_count) > 0 ? 'ok' : 'off' }, Number(props.plan.stock_count) > 0 ? '有库存' : '已售罄'),
+          ]),
+          h('div', { class: 'store-product-summary', innerHTML: safeBody(props.plan.content || '支付完成后自动交付') }),
+          h('div', { class: 'store-product-footer' }, [
+            h('span', [h('small', '价格'), h('strong', money(price, currencySymbol()))]),
+            h('button', { type: 'button', disabled: Number(props.plan.stock_count) <= 0, onClick: (event) => { event.stopPropagation(); props.onOpen(props.plan); } }, '→'),
+          ]),
         ]),
-        h('div', { class: 'digital-product-description plan-content', innerHTML: safeBody(props.plan.content || '付款成功后自动交付') }),
-        h('label', ['选择商品', h('select', {
-          value: selectedPackage.value,
-          onChange: (event) => { selectedPackage.value = event.target.value; },
-        }, packages.map((item) => h('option', { value: item.key }, `${item.name} · ${money(item.price, currencySymbol())}`)))]),
-        h('label', ['优惠码', h('input', {
-          value: couponCode.value,
-          placeholder: '选填，输入后自动计算',
-          onInput: (event) => { couponCode.value = event.target.value; },
-        })]),
-        h('div', { class: 'plan-field' }, [
-          h('span', '支付方式'),
-          props.methods?.length ? h('div', { class: 'payment-methods digital-payment-methods' }, props.methods.map((method, index) => h('label', { class: 'payment-method' }, [
-            h('input', {
-              type: 'radio',
-              name: `digital-method-${props.plan.id}`,
-              value: method.id,
-              checked: String(selectedMethod.value || props.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0),
-              onChange: (event) => { selectedMethod.value = event.target.value; },
-            }),
-            method.icon ? h('img', { src: method.icon, alt: '' }) : h('span', { class: 'pay-icon' }, '¥'),
-            h('span', method.name || method.payment || `支付方式 ${method.id}`),
-          ]))) : emptyBlock('暂无可用支付方式'),
-        ]),
-        h('div', { class: 'digital-product-checkout' }, [
-          h('span', [h('small', '预计实付'), h('strong', local.quoteLoading ? '计算中…' : money(payAmount, currencySymbol()))]),
-          h('button', {
-            class: 'primary-button',
-            type: 'submit',
-            disabled: local.submitting || local.quoteLoading || Boolean(local.quoteError) || !selectedPackage.value || Number(props.plan.stock_count) <= 0 || !selectedMethod.value,
-          }, local.submitting ? '创建中…' : '立即购买'),
-        ]),
-        local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
       ]);
     };
   },
@@ -2055,27 +1974,123 @@ const DigitalProductCard = {
 
 const DigitalProductsPage = {
   setup() {
+    const selected = ref(null);
+    const selectedPackage = ref('');
     const local = useAsyncPage(async (page) => {
-      const [products, methods] = await Promise.all([
-        api.get('/user/plan/fetch', { product_type: 'digital' }),
-        api.get('/user/order/getPaymentMethod').catch(() => []),
-      ]);
+      const products = await api.get('/user/plan/fetch', { product_type: 'digital' });
       page.products = normalizeCollection(products);
-      page.methods = methods || [];
     });
+    function open(plan) {
+      selected.value = plan;
+      selectedPackage.value = digitalPackageOptions(plan)[0]?.key || '';
+    }
+    function checkout() {
+      if (!selected.value || !selectedPackage.value) return;
+      go('digital-checkout', { plan_id: selected.value.id, package: selectedPackage.value });
+    }
     return () => h('div', [
       pageError(local.error),
-      h('section', { class: 'digital-store-hero' }, [
-        h('div', [h('span', 'DIGITAL STORE'), h('h1', '数字商品'), h('p', '卡密、授权码、账号和下载链接，支付完成后自动交付。')]),
-        h('strong', `${(local.products || []).length} 件商品`),
+      h('section', {
+        class: 'store-banner',
+        style: (local.products || []).find((item) => item.product_config?.featured)?.product_config?.image_url
+          ? { backgroundImage: `linear-gradient(90deg,rgba(4,10,18,.78),rgba(4,10,18,.18)),url("${(local.products || []).find((item) => item.product_config?.featured).product_config.image_url}")` }
+          : {},
+      }, [
+        h('div', [h('span', '● DIGITAL STORE'), h('h1', '数字商品中心'), h('p', '精选数字资产，安全购买，支付完成后快速交付。'), h('a', { href: '#digital-products' }, '了解更多  →')]),
       ]),
-      h('div', { class: 'digital-product-grid' }, (local.products || []).map((plan) => h(DigitalProductCard, {
-        key: plan.id,
-        plan,
-        methods: local.methods || [],
-      }))),
+      h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('span', `${(local.products || []).length} 件商品`)]),
+      h('div', { class: 'store-product-grid' }, (local.products || []).map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open }))),
       local.ready && !(local.products || []).length ? emptyBlock('暂无可购买的数字商品') : null,
+      selected.value ? h('div', { class: 'store-modal-backdrop', onClick: (event) => { if (event.target === event.currentTarget) selected.value = null; } }, [
+        h('section', { class: 'store-quick-modal' }, [
+          h('div', { class: 'store-modal-head' }, [h('h2', '快速购买'), h('button', { type: 'button', onClick: () => { selected.value = null; } }, '×')]),
+          h('div', { class: 'store-modal-product' }, [
+            h('div', { class: ['store-modal-image', selected.value.product_config?.image_url ? '' : 'is-placeholder'], style: selected.value.product_config?.image_url ? { backgroundImage: `url("${selected.value.product_config.image_url}")` } : {} }, selected.value.product_config?.image_url ? [] : [h('span', selected.value.name.slice(0, 1))]),
+            h('div', [h('h2', selected.value.name), h('div', { class: 'store-product-badges' }, [h('span', selected.value.product_config?.delivery_type === 'text' ? '人工交付' : '自动交付'), h('span', { class: 'ok' }, '有库存')]), h('strong', money(digitalPackageOptions(selected.value).find((item) => item.key === selectedPackage.value)?.price || 0, currencySymbol()))]),
+          ]),
+          h('div', { class: 'store-modal-content' }, [
+            h('div', { class: 'store-modal-description', innerHTML: safeBody(selected.value.content || '支付完成后自动交付') }),
+            h('p', [h('span', '库存：'), h('strong', `● 剩余 ${selected.value.stock_count} 件`)]),
+            h('label', ['商品规格', h('select', { value: selectedPackage.value, onChange: (event) => { selectedPackage.value = event.target.value; } }, digitalPackageOptions(selected.value).map((item) => h('option', { value: item.key }, `${item.name} · ${money(item.price, currencySymbol())}`)))]),
+            h('div', { class: 'store-quantity' }, [h('span', '数量'), h('div', [h('button', { type: 'button', disabled: true }, '−'), h('strong', '1'), h('button', { type: 'button', disabled: true }, '+')])]),
+          ]),
+          h('div', { class: 'store-modal-actions' }, [h('button', { class: 'secondary-button', type: 'button', onClick: () => { selected.value = null; } }, '稍后购买'), h('button', { class: 'primary-button', type: 'button', onClick: checkout }, '立即购买')]),
+        ]),
+      ]) : null,
     ]);
+  },
+};
+
+const DigitalCheckoutPage = {
+  setup() {
+    const couponCode = ref('');
+    const selectedMethod = ref('');
+    const local = useAsyncPage(async (page) => {
+      const [plan, methods] = await Promise.all([
+        api.get('/user/plan/fetch', { id: state.route.query.plan_id }),
+        api.get('/user/order/getPaymentMethod').catch(() => []),
+      ]);
+      page.plan = plan;
+      page.methods = methods || [];
+      page.package = digitalPackageOptions(plan).find((item) => item.key === state.route.query.package) || digitalPackageOptions(plan)[0];
+      selectedMethod.value = page.methods[0]?.id ? String(page.methods[0].id) : '';
+      page.quote = null;
+      page.submitting = false;
+    });
+    let quoteTimer = null;
+    async function refreshQuote() {
+      if (!local.plan || !local.package || !selectedMethod.value) return;
+      try {
+        local.quote = await api.post('/user/order/quote', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), method: selectedMethod.value, subscription_mode: 'append' });
+        local.quoteError = '';
+      } catch (error) {
+        local.quoteError = error.message;
+      }
+    }
+    watch(() => [couponCode.value, selectedMethod.value, local.package?.key], () => { clearTimeout(quoteTimer); quoteTimer = setTimeout(refreshQuote, 220); });
+    onBeforeUnmount(() => clearTimeout(quoteTimer));
+    async function submit() {
+      if (!local.plan || !local.package || !selectedMethod.value) return;
+      local.submitting = true;
+      try {
+        const tradeNo = await api.post('/user/order/save', { plan_id: local.plan.id, period: local.package.key, coupon_code: couponCode.value.trim(), subscription_mode: 'append' });
+        toast('订单已创建，请完成支付');
+        go('orders', { trade_no: tradeNo, method: selectedMethod.value });
+      } catch (error) {
+        toast(error.message, 'error');
+      } finally {
+        local.submitting = false;
+      }
+    }
+    return () => {
+      const plan = local.plan || {};
+      const pkg = local.package || {};
+      const quote = local.quote || {};
+      const original = quote.original_amount ?? pkg.price ?? 0;
+      const pay = quote.pay_amount ?? quote.total_amount ?? original;
+      return h('div', { class: 'store-checkout-page' }, [
+        pageError(local.error),
+        h('div', { class: 'store-checkout-title' }, [h('h1', '订单结算'), h('p', '确认订单信息并提交')]),
+        h('div', { class: 'store-checkout-steps' }, [h('span', { class: 'active' }, '1  订单结算'), h('i'), h('span', '2  发起支付')]),
+        h('div', { class: 'store-checkout-layout' }, [
+          h('main', [
+            h('section', { class: 'store-checkout-panel' }, [h('h2', '订单商品'), h('div', { class: 'store-checkout-product' }, [h('div', { class: 'store-checkout-thumb', style: plan.product_config?.image_url ? { backgroundImage: `url("${plan.product_config.image_url}")` } : {} }, plan.product_config?.image_url ? [] : [h('span', String(plan.name || 'D').slice(0, 1))]), h('div', [h('h3', plan.name || '数字商品'), h('p', `数量：1`), h('p', `规格：${pkg.name || '-'}`), h('strong', money(pkg.price || 0, currencySymbol()))])])]),
+            h('section', { class: 'store-checkout-panel' }, [h('h2', '优惠券'), h('input', { value: couponCode.value, placeholder: '输入优惠券代码（可选）', onInput: (event) => { couponCode.value = event.target.value; } })]),
+            h('section', { class: 'store-checkout-panel' }, [h('h2', '购买方式'), h('div', { class: 'store-buy-mode' }, [h('span', { class: 'active' }, '登录会员购买')])]),
+          ]),
+          h('aside', { class: 'store-checkout-panel store-checkout-summary' }, [
+            h('h2', '提交订单'),
+            h('p', '订单金额以服务端计算为准'),
+            h('div', [quoteLine('商品数量', '1'), quoteLine('原始金额', money(original, currencySymbol())), quoteLine('优惠券', money(quote.discount_amount || 0, currencySymbol())), quoteLine('余额抵扣', money(quote.balance_amount || 0, currencySymbol()))]),
+            h('div', { class: 'store-checkout-total' }, [h('span', '应付金额（预估）'), h('strong', money(pay, currencySymbol()))]),
+            h('h3', '支付方式'),
+            local.methods?.length ? h('div', { class: 'payment-methods digital-payment-methods' }, local.methods.map((method, index) => h('label', { class: 'payment-method' }, [h('input', { type: 'radio', name: 'checkout-method', value: method.id, checked: String(selectedMethod.value || local.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0), onChange: (event) => { selectedMethod.value = event.target.value; } }), method.icon ? h('img', { src: method.icon, alt: '' }) : h('span', { class: 'pay-icon' }, '¥'), h('span', method.name || method.payment)]))) : emptyBlock('暂无可用支付方式'),
+            local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
+            h('button', { class: 'primary-button', type: 'button', disabled: local.submitting || !selectedMethod.value || Boolean(local.quoteError), onClick: submit }, local.submitting ? '提交中…' : '提交订单并支付'),
+          ]),
+        ]),
+      ]);
+    };
   },
 };
 
@@ -2726,6 +2741,7 @@ const routeComponents = {
   subscribe: SubscribePage,
   plans: PlansPage,
   digital: DigitalProductsPage,
+  'digital-checkout': DigitalCheckoutPage,
   orders: OrdersPage,
   recharge: RechargePage,
   profile: ProfilePage,

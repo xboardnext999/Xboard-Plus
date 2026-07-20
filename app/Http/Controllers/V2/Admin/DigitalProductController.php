@@ -31,6 +31,9 @@ class DigitalProductController extends Controller
             'show' => 'boolean', 'sell' => 'boolean', 'sort' => 'integer|min:0',
             'product_config' => 'nullable|array',
             'product_config.delivery_type' => 'nullable|string|in:text,code,link,account',
+            'product_config.category' => 'nullable|string|max:50',
+            'product_config.image_url' => 'nullable|string|max:2048',
+            'product_config.featured' => 'nullable|boolean',
             'product_config.packages' => 'nullable|array|max:50',
             'product_config.packages.*.id' => 'required|string|max:64',
             'product_config.packages.*.name' => 'required|string|max:100',
@@ -41,7 +44,7 @@ class DigitalProductController extends Controller
         $data['reset_traffic_method'] = Plan::RESET_TRAFFIC_NEVER;
         $data['group_id'] = null;
         $data['capacity_limit'] = null;
-        $config = array_merge(['delivery_type' => 'text', 'packages' => []], $data['product_config'] ?? []);
+        $config = array_merge(['delivery_type' => 'text', 'category' => '数字商品', 'image_url' => '', 'featured' => false, 'packages' => []], $data['product_config'] ?? []);
         $config['packages'] = collect($config['packages'])->map(fn($package) => [
             'id' => preg_replace('/[^A-Za-z0-9_-]/', '-', (string) $package['id']),
             'name' => trim($package['name']),
