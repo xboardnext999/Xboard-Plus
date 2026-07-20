@@ -39,7 +39,11 @@ COPY .docker/php/zz-xboard.ini /usr/local/etc/php/conf.d/zz-xboard.ini
 RUN composer install --no-cache --no-dev --no-security-blocking \
     && php artisan storage:link \
     && chown -R www:www /www \
-    && chmod -R 775 /www \
+    && find /www -type d -exec chmod 755 {} + \
+    && find /www/storage /www/bootstrap/cache -type d -exec chmod 775 {} + \
+    && find /www -type f -exec chmod 644 {} + \
+    && find /www/storage /www/bootstrap/cache -type f -exec chmod 664 {} + \
+    && chmod 640 /www/.env 2>/dev/null || true \
     && mkdir -p /data \
     && chown redis:redis /data
     

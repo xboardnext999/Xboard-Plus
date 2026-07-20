@@ -83,7 +83,7 @@ export async function getEnvelope(path, params = {}) {
   const json = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403) window.dispatchEvent(new CustomEvent('admin:unauthorized'));
   if (response.status === 423) window.dispatchEvent(new CustomEvent('admin:locked', { detail: json.state || 'locked' }));
-  if (!response.ok || json.status === 'fail') throw new Error(json.message || '请求失败');
+  if (!response.ok || json.status === 'fail' || (json.code && Number(json.code) !== 0)) throw new Error(json.message || '请求失败');
   return json;
 }
 
