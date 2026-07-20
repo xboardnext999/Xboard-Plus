@@ -46,6 +46,19 @@
   width: min(1120px, 94vw);
 }
 
+.digital-quick-panel .digital-quick-grid {
+  gap: 8px;
+}
+
+.digital-quick-panel .digital-quick-grid button {
+  min-height: 50px;
+  padding: 8px 12px;
+}
+
+.digital-quick-panel .digital-quick-grid button:last-child {
+  grid-column: 1 / -1;
+}
+
 .digital-faq-layout {
   display: grid;
   grid-template-columns: minmax(300px, .72fr) minmax(0, 1.28fr);
