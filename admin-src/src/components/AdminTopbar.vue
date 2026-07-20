@@ -5,7 +5,7 @@ import AppIcon from './AppIcon.vue';
 import { titleByPath } from '../config/menu';
 import { flatMenus } from '../config/menu';
 
-const emit = defineEmits(['toggle-sidebar']);
+const emit = defineEmits(['toggle-sidebar', 'lock']);
 
 const route = useRoute();
 const router = useRouter();
@@ -47,6 +47,7 @@ function go(item) { search.value = ''; searchOpen.value = false; router.push(ite
       <button class="icon-button" type="button" :title="isDark ? '白天模式' : '暗黑模式'" @click="toggleTheme">
         <AppIcon :name="isDark ? 'Sun' : 'Moon'" :size="18" />
       </button>
+      <button class="icon-button" type="button" title="立即锁定后台" @click="emit('lock')"><AppIcon name="Lock" :size="17" /></button>
       <button class="profile-button" type="button" title="退出登录" @click="logout">
         <span class="avatar">A</span>
         <span>admin</span>

@@ -22,6 +22,7 @@ use App\Http\Controllers\V2\Admin\SystemController;
 use App\Http\Controllers\V2\Admin\ThemeController;
 use App\Http\Controllers\V2\Admin\TrafficResetController;
 use App\Http\Controllers\V2\Admin\NodeSyncDiagnosticController;
+use App\Http\Controllers\V2\Admin\AdminLockController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class AdminRoute
@@ -30,8 +31,14 @@ class AdminRoute
     {
         $router->group([
             'prefix' => '{secure_path}',
-            'middleware' => ['admin.path', 'admin', 'log'],
+            'middleware' => ['admin.path', 'admin', 'admin.lock', 'log'],
         ], function ($router) {
+            $router->group(['prefix' => 'admin-lock'], function ($router) {
+                $router->get('/status', [AdminLockController::class, 'status']);
+                $router->post('/unlock', [AdminLockController::class, 'unlock']);
+                $router->post('/lock', [AdminLockController::class, 'lock']);
+                $router->get('/summary', [AdminLockController::class, 'summary']);
+            });
             // Config
             $router->group([
                 'prefix' => 'config'

@@ -74,6 +74,7 @@ class Kernel extends HttpKernel
         'user' => \App\Http\Middleware\User::class,
         'admin' => \App\Http\Middleware\Admin::class,
         'admin.path' => \App\Http\Middleware\ValidateAdminPath::class,
+        'admin.lock' => \App\Http\Middleware\AdminLock::class,
         'client' => \App\Http\Middleware\Client::class,
         'staff' => \App\Http\Middleware\Staff::class,
         'log' => \App\Http\Middleware\RequestLog::class,
