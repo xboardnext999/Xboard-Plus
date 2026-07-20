@@ -2122,9 +2122,9 @@ const DigitalProductsPage = {
       h('div', { class: 'store-product-grid' }, visibleProducts().map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open, onAdd: addToCart, onDetail: openDetail }))),
       local.ready && !visibleProducts().length ? emptyBlock(selectedCategory.value === 'all' ? '暂无可购买的数字商品' : '该分类暂无商品') : null,
       h('section', { class: 'store-faq-section' }, [
-        h('div', { class: 'store-faq-heading' }, [h('div', [h('small', 'HELP CENTER'), h('h2', '常见问题'), h('p', '关于购买、支付和数字商品交付的常见说明。')]), h('span', `${storeFaqs.length} 个问题`)]),
+        h('div', { class: 'store-faq-heading' }, [h('div', { class: 'store-faq-heading-icon' }, '?'), h('div', [h('small', 'HELP CENTER'), h('h2', '常见问题'), h('p', '关于购买、支付和数字商品交付的常见说明。')]), h('span', `${storeFaqs.length} 个问题`), h('a', { href: '#/tickets' }, '仍有疑问？提交工单 →')]),
         h('div', { class: 'store-faq-list' }, storeFaqs.map((item, index) => h('article', { class: faqOpen.value === index ? 'active' : '' }, [
-          h('button', { type: 'button', onClick: () => { faqOpen.value = faqOpen.value === index ? -1 : index; } }, [h('span', item[0]), h('b', faqOpen.value === index ? '−' : '+')]),
+          h('button', { type: 'button', onClick: () => { faqOpen.value = faqOpen.value === index ? -1 : index; } }, [h('i', String(index + 1).padStart(2, '0')), h('span', item[0]), h('b', faqOpen.value === index ? '−' : '+')]),
           faqOpen.value === index ? h('p', item[1]) : null,
         ]))),
       ]),
