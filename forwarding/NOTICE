@@ -1,7 +1,12 @@
-Xboard Forwarding Core
+Xboard Plus Forwarding Core
 
-This product includes software derived from the go-gost node source distributed
-with bqlpfy/flux-panel under the Apache License, Version 2.0.
+This distribution contains modified third-party components licensed under the
+Apache License, Version 2.0. Required copyright, license, and attribution
+notices are preserved in this file and in LICENSE.
 
-The distribution path, installer, service name, and release workflow have been
-changed for integration with Xboard Plus.
+The distribution path, installer, service name, and release workflow are
+maintained by Xboard Plus.
+
+Upstream attribution: the included forwarding engine is derived from the
+go-gost node source distributed in bqlpfy/flux-panel. This attribution is
+retained to comply with the applicable open-source license.

@@ -1,4 +1,4 @@
-module github.com/go-gost/gost
+module github.com/xboardnext999/Xboard-Plus/forwarding/core
 
 go 1.25.12
 
