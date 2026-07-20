@@ -15,11 +15,11 @@ const (
 )
 
 type metadata struct {
-	readBufferSize         int
-	readQueueSize          int
-	backlog                int
-	keepalive              bool
-	ttl                    time.Duration
+	readBufferSize int
+	readQueueSize  int
+	backlog        int
+	keepalive      bool
+	ttl            time.Duration
 }
 
 func (l *udpListener) parseMetadata(md mdata.Metadata) (err error) {

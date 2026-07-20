@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/go-gost/core/metadata"
-	mdutil "github.com/go-gost/x/metadata/util"
 	"github.com/go-gost/core/selector"
+	mdutil "github.com/go-gost/x/metadata/util"
 )
 
 type failFilter[T any] struct {

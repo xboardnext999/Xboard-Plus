@@ -54,10 +54,10 @@ var needWrap = false
 
 // SetProtocolBlock sets protocol blocking switches and recomputes wrapper need
 func SetProtocolBlock(httpOn int, tlsOn int, socksOn int) {
-    isHttp = httpOn
-    isTls = tlsOn
-    isSocks = socksOn
-    needWrap = isTls+isSocks+isHttp > 0
+	isHttp = httpOn
+	isTls = tlsOn
+	isSocks = socksOn
+	needWrap = isTls+isSocks+isHttp > 0
 }
 
 type Option func(opts *options)
@@ -320,6 +320,15 @@ func (s *defaultService) Close() error {
 }
 
 func (s *defaultService) execCmds(phase string, cmds []string) {
+	// Remote service definitions must not execute shell hooks unless the node
+	// operator explicitly opts in. This prevents a leaked panel credential from
+	// becoming arbitrary command execution on every connected node.
+	if os.Getenv("XBOARD_ALLOW_COMMAND_HOOKS") != "1" {
+		if len(cmds) > 0 {
+			s.options.logger.Warnf("[%s] command hooks ignored (set XBOARD_ALLOW_COMMAND_HOOKS=1 to enable)", phase)
+		}
+		return
+	}
 	for _, cmd := range cmds {
 		cmd := strings.TrimSpace(cmd)
 		if cmd == "" {

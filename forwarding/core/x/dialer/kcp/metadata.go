@@ -5,8 +5,8 @@ import (
 	"time"
 
 	mdata "github.com/go-gost/core/metadata"
-	mdutil "github.com/go-gost/x/metadata/util"
 	kcp_util "github.com/go-gost/x/internal/util/kcp"
+	mdutil "github.com/go-gost/x/metadata/util"
 )
 
 type metadata struct {

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPOSITORY="xboardnext999/Xboard-Plus"
-RELEASE_TAG="2.0.7-beta"
+RELEASE_TAG="1.0.0"
 INSTALL_DIR="/etc/xboard-forwarding"
 SERVICE_NAME="xboard-forwarding"
 PANEL_ADDR=""
@@ -43,9 +43,31 @@ DOWNLOAD_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/
 
 download_core() {
   local target="$1"
+  local checksum_file expected
+  checksum_file="$(mktemp)"
+  curl --fail --location --retry 3 --connect-timeout 15 \
+    "https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/checksums.txt" \
+    --output "$checksum_file"
   curl --fail --location --retry 3 --connect-timeout 15 "$DOWNLOAD_URL" --output "$target"
   test -s "$target"
+  expected="$(awk -v name="gost-${ARCH}" '$2 == name { print $1 }' "$checksum_file")"
+  if [[ ! "$expected" =~ ^[0-9a-fA-F]{64}$ ]]; then
+    rm -f "$checksum_file"
+    echo "无法获取节点核心校验值。" >&2
+    return 1
+  fi
+  echo "${expected}  ${target}" | sha256sum --check --status
+  rm -f "$checksum_file"
   chmod 0755 "$target"
+}
+
+json_escape() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\n'/\\n}"
+  value="${value//$'\r'/\\r}"
+  printf '%s' "$value"
 }
 
 uninstall_core() {
@@ -73,12 +95,16 @@ install_core() {
     exit 1
   fi
 
+  local escaped_addr escaped_secret
+  escaped_addr="$(json_escape "$PANEL_ADDR")"
+  escaped_secret="$(json_escape "$NODE_SECRET")"
+
   mkdir -p "$INSTALL_DIR"
   download_core "${INSTALL_DIR}/agent"
   cat > "${INSTALL_DIR}/config.json" <<EOF
 {
-  "addr": "${PANEL_ADDR}",
-  "secret": "${NODE_SECRET}",
+  "addr": "${escaped_addr}",
+  "secret": "${escaped_secret}",
   "http": 0,
   "tls": 1,
   "socks": 0
@@ -100,6 +126,11 @@ ExecStart=${INSTALL_DIR}/agent
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=${INSTALL_DIR}
+UMask=0077
 LimitNOFILE=1048576
 
 [Install]

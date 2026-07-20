@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync" // 新增：用于管理连接状态的互斥锁
@@ -21,7 +25,6 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
 	psnet "github.com/shirou/gopsutil/v3/net"
-	"os"
 )
 
 // SystemInfo 系统信息结构体
@@ -213,18 +216,20 @@ func (w *WebSocketReporter) connect() error {
 	}
 
 	// 使用最新的配置重新构建 URL
-	currentURL := "ws://" + w.addr + "/system-info?type=1&secret=" + w.secret + "&version=" + w.version +
-		"&http=" + strconv.Itoa(cfg.Http) + "&tls=" + strconv.Itoa(cfg.Tls) + "&socks=" + strconv.Itoa(cfg.Socks)
+	currentURL := buildWebSocketURL(w.addr, w.secret, w.version, cfg.Http, cfg.Tls, cfg.Socks)
 
 	u, err := url.Parse(currentURL)
 	if err != nil {
 		return fmt.Errorf("解析URL失败: %v", err)
 	}
 
-	dialer := websocket.DefaultDialer
+	dialer := *websocket.DefaultDialer
 	dialer.HandshakeTimeout = 10 * time.Second
+	dialer.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 
-	conn, _, err := dialer.Dial(u.String(), nil)
+	headers := http.Header{}
+	headers.Set("Authorization", "Bearer "+w.secret)
+	conn, _, err := dialer.Dial(u.String(), headers)
 	if err != nil {
 		return fmt.Errorf("连接WebSocket失败: %v", err)
 	}
@@ -446,9 +451,14 @@ func (w *WebSocketReporter) handleReceivedMessage(messageType int, message []byt
 			defer gzipReader.Close()
 
 			var decompressedData bytes.Buffer
-			if _, err := decompressedData.ReadFrom(gzipReader); err != nil {
+			const maxCommandSize = 8 << 20
+			if _, err := decompressedData.ReadFrom(io.LimitReader(gzipReader, maxCommandSize+1)); err != nil {
 				fmt.Printf("❌ 解压数据失败: %v\n", err)
 				w.sendErrorResponse("DecompressError", fmt.Sprintf("解压失败: %v", err))
+				return
+			}
+			if decompressedData.Len() > maxCommandSize {
+				w.sendErrorResponse("DecompressError", "解压后的命令超过 8 MiB 限制")
 				return
 			}
 
@@ -494,7 +504,7 @@ func (w *WebSocketReporter) routeCommand(cmd CommandMessage) {
 		return
 	}
 
-	fmt.Println("🔔 收到命令: ", string(jsonBytes))
+	fmt.Printf("🔔 收到命令: type=%s requestId=%s size=%d\n", cmd.Type, cmd.RequestId, len(jsonBytes))
 	var err error
 	var response CommandResponse
 
@@ -870,7 +880,7 @@ func updateLocalConfigJSON(httpVal int, tlsVal int, socksVal int) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0600)
 }
 
 // handleCall 处理服务端的call回调消息
@@ -1043,9 +1053,9 @@ func getMemoryInfo() MemoryInfo {
 func StartWebSocketReporterWithConfig(addr string, secret string, http int, tls int, socks int, version string) *WebSocketReporter {
 
 	// 构建初始 WebSocket URL
-	fullURL := "ws://" + addr + "/system-info?type=1&secret=" + secret + "&version=" + version + "&http=" + strconv.Itoa(http) + "&tls=" + strconv.Itoa(tls) + "&socks=" + strconv.Itoa(socks)
+	fullURL := buildWebSocketURL(addr, secret, version, http, tls, socks)
 
-	fmt.Printf("🔗 WebSocket连接URL: %s\n", fullURL)
+	fmt.Printf("🔗 正在连接管理端: %s\n", addr)
 
 	reporter := NewWebSocketReporter(fullURL, secret)
 	// 保存 addr, secret, version 供重连时使用
@@ -1054,6 +1064,31 @@ func StartWebSocketReporterWithConfig(addr string, secret string, http int, tls 
 	reporter.version = version
 	reporter.Start()
 	return reporter
+}
+
+func buildWebSocketURL(addr, secret, version string, httpEnabled, tlsEnabled, socksEnabled int) string {
+	addr = strings.TrimSpace(addr)
+	scheme := "ws"
+	switch {
+	case strings.HasPrefix(addr, "https://"):
+		scheme, addr = "wss", strings.TrimPrefix(addr, "https://")
+	case strings.HasPrefix(addr, "http://"):
+		scheme, addr = "ws", strings.TrimPrefix(addr, "http://")
+	case strings.HasPrefix(addr, "wss://"):
+		scheme, addr = "wss", strings.TrimPrefix(addr, "wss://")
+	case strings.HasPrefix(addr, "ws://"):
+		addr = strings.TrimPrefix(addr, "ws://")
+	}
+	u := &url.URL{Scheme: scheme, Host: strings.TrimRight(addr, "/"), Path: "/system-info"}
+	query := u.Query()
+	query.Set("type", "1")
+	query.Set("secret", secret) // Kept for compatibility; Authorization is also sent.
+	query.Set("version", version)
+	query.Set("http", strconv.Itoa(httpEnabled))
+	query.Set("tls", strconv.Itoa(tlsEnabled))
+	query.Set("socks", strconv.Itoa(socksEnabled))
+	u.RawQuery = query.Encode()
+	return u.String()
 }
 
 // handleTcpPing 处理TCP ping诊断命令

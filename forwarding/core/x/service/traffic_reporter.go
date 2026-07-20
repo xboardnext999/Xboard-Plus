@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 var httpReportURL string
 var configReportURL string
+var reportSecret string
 var httpAESCrypto *crypto.AESCrypto // 新增：HTTP上报加密器
 
 // TrafficReportItem 流量报告项（压缩格式）
@@ -27,8 +29,10 @@ type TrafficReportItem struct {
 }
 
 func SetHTTPReportURL(addr string, secret string) {
-	httpReportURL = "http://" + addr + "/flow/upload?secret=" + secret
-	configReportURL = "http://" + addr + "/flow/config?secret=" + secret
+	reportSecret = secret
+	baseURL := normalizeReportBaseURL(addr)
+	httpReportURL = reportURL(baseURL, "/flow/upload", secret)
+	configReportURL = reportURL(baseURL, "/flow/config", secret)
 
 	// 创建 AES 加密器
 	var err error
@@ -39,6 +43,32 @@ func SetHTTPReportURL(addr string, secret string) {
 	} else {
 		fmt.Printf("🔐 HTTP AES 加密器创建成功\n")
 	}
+}
+
+func normalizeReportBaseURL(addr string) string {
+	addr = strings.TrimRight(strings.TrimSpace(addr), "/")
+	switch {
+	case strings.HasPrefix(addr, "ws://"):
+		return "http://" + strings.TrimPrefix(addr, "ws://")
+	case strings.HasPrefix(addr, "wss://"):
+		return "https://" + strings.TrimPrefix(addr, "wss://")
+	case strings.HasPrefix(addr, "http://"), strings.HasPrefix(addr, "https://"):
+		return addr
+	default:
+		return "http://" + addr
+	}
+}
+
+func reportURL(baseURL, path, secret string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return baseURL + path
+	}
+	u.Path = strings.TrimRight(u.Path, "/") + path
+	query := u.Query()
+	query.Set("secret", secret) // Kept for compatibility; Authorization is also sent.
+	u.RawQuery = query.Encode()
+	return u.String()
 }
 
 // sendTrafficReport 发送流量报告到HTTP接口
@@ -80,6 +110,7 @@ func sendTrafficReport(ctx context.Context, reportItems TrafficReportItem) (bool
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "GOST-Traffic-Reporter/1.0")
+	req.Header.Set("Authorization", "Bearer "+reportSecret)
 
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -156,6 +187,7 @@ func sendConfigReport(ctx context.Context) (bool, error) {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Config-Reporter/1.0")
+	req.Header.Set("Authorization", "Bearer "+reportSecret)
 
 	client := &http.Client{
 		Timeout: 10 * time.Second, // 配置上报可以稍长一些

@@ -38,6 +38,9 @@ func LoadConfig(configPath string) (*Config, error) {
 	if config.Addr == "" {
 		return nil, fmt.Errorf("服务器地址不能为空")
 	}
+	if config.Secret == "" {
+		return nil, fmt.Errorf("节点密钥不能为空")
+	}
 
 	return &config, nil
 }

@@ -9,11 +9,11 @@
 ## 安装
 
 ```bash
-curl -L https://github.com/xboardnext999/Xboard-Plus/releases/download/2.0.7-beta/install.sh -o ./install.sh && chmod +x ./install.sh && ./install.sh -a PANEL_HOST:PORT -s NODE_SECRET
+curl -L https://github.com/xboardnext999/Xboard-Plus/releases/download/1.0.0/install.sh -o ./install.sh && chmod +x ./install.sh && ./install.sh -a PANEL_HOST:PORT -s NODE_SECRET
 ```
 
 安装脚本及 `gost-amd64`、`gost-arm64` 二进制只从 `xboardnext999/Xboard-Plus` 获取。
 
 ## 来源与许可
 
-节点核心基于 `bqlpfy/flux-panel` 中的 `go-gost` 源码，按 Apache License 2.0 使用和修改。完整许可见 [LICENSE](LICENSE)。
+本项目包含按 Apache License 2.0 使用和修改的开源组件。完整许可及法定声明见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)。
