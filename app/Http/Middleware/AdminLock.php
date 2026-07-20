@@ -13,8 +13,8 @@ class AdminLock
         $path = $request->path();
         if (str_ends_with($path, '/admin-lock/status') || str_ends_with($path, '/admin-lock/unlock') || str_ends_with($path, '/admin-lock/lock')) return $next($request);
         $scope = $this->lock->scope($request);
-        if (str_ends_with($path, '/admin-lock/summary') && in_array($scope, ['simple', 'full'], true)) return $next($request);
-        if ($scope === 'full') return $next($request);
-        return response()->json(['message' => 'Access verification required', 'lock_scope' => $scope], 423);
+        if (str_ends_with($path, '/admin-lock/summary') && in_array($scope, ['a', 'b'], true)) return $next($request);
+        if ($scope === 'b') return $next($request);
+        return response()->json(['message' => 'Access verification required', 'state' => $scope], 423);
     }
 }

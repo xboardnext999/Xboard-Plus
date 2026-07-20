@@ -7,8 +7,6 @@ use Closure;
 
 class RequestLog
 {
-    private const SENSITIVE_KEYS = ['password', 'token', 'secret', 'key', 'api_key'];
-
     public function handle($request, Closure $next)
     {
         if ($request->method() !== 'POST') {
@@ -24,7 +22,8 @@ class RequestLog
             }
 
             $action = $this->resolveAction($request->path());
-            $data = collect($request->all())->except(self::SENSITIVE_KEYS)->toArray();
+            $data = $this->sanitize($request->all());
+            $data['_response_status'] = $response->getStatusCode();
 
             AdminAuditLog::insert([
                 'admin_id' => $admin->id,
@@ -43,6 +42,18 @@ class RequestLog
         return $response;
     }
 
+    private function sanitize(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (preg_match('/(^|_)(password|token|secret|private_key|api_key)($|_)/i', (string) $key)) {
+                $data[$key] = '[REDACTED]';
+            } elseif (is_array($value)) {
+                $data[$key] = $this->sanitize($value);
+            }
+        }
+        return $data;
+    }
+
     private function resolveAction(string $path): string
     {
         // api/v2/{secure_path}/user/update → user.update
@@ -57,4 +68,3 @@ class RequestLog
         return $resource . '.' . $method;
     }
 }
-

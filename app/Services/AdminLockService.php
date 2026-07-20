@@ -30,10 +30,15 @@ class AdminLockService
         $version = (string) admin_setting('admin_lock_version', '1');
         return 'admin_lock:' . $version . ':' . $userId . ':' . hash('sha256', (string) $request->bearerToken());
     }
-    public function scope(Request $request): string { return $this->enabled() ? (string) Cache::get($this->key($request), 'locked') : 'full'; }
+    public function scope(Request $request): string
+    {
+        if (!$this->enabled()) return 'b';
+        $scope = (string) Cache::get($this->key($request), 'locked');
+        return in_array($scope, ['a', 'b'], true) ? $scope : 'locked';
+    }
     public function unlock(Request $request, string $password): ?string
     {
-        $scope = $this->verifyFull($password) ? 'full' : ($this->verifySimple($password) ? 'simple' : null);
+        $scope = $this->verifyFull($password) ? 'b' : ($this->verifySimple($password) ? 'a' : null);
         if ($scope) Cache::put($this->key($request), $scope, $this->ttl());
         return $scope;
     }

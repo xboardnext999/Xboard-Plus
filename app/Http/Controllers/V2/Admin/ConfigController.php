@@ -15,7 +15,13 @@ use Illuminate\Support\Str;
 
 class ConfigController extends Controller
 {
+    private const SECRET_MASK = '••••••••';
+    private const SECRET_KEYS = ['server_token', 'email_password', 'telegram_bot_token', 'recaptcha_key', 'recaptcha_v3_secret_key', 'turnstile_secret_key'];
 
+    private function maskedSecret(string $key): string
+    {
+        return blank(admin_setting($key)) ? '' : self::SECRET_MASK;
+    }
 
     public function getEmailTemplate()
     {
@@ -145,7 +151,7 @@ class ConfigController extends Controller
                 'frontend_background_url' => admin_setting('frontend_background_url'),
             ],
             'server' => [
-                'server_token' => admin_setting('server_token'),
+                'server_token' => $this->maskedSecret('server_token'),
                 'server_pull_interval' => admin_setting('server_pull_interval', 60),
                 'server_push_interval' => admin_setting('server_push_interval', 60),
                 'device_limit_mode' => (int) admin_setting('device_limit_mode', 0),
@@ -156,14 +162,14 @@ class ConfigController extends Controller
                 'email_host' => admin_setting('email_host'),
                 'email_port' => admin_setting('email_port'),
                 'email_username' => admin_setting('email_username'),
-                'email_password' => admin_setting('email_password'),
+                'email_password' => $this->maskedSecret('email_password'),
                 'email_encryption' => admin_setting('email_encryption'),
                 'email_from_address' => admin_setting('email_from_address'),
                 'remind_mail_enable' => (bool) admin_setting('remind_mail_enable', false),
             ],
             'telegram' => [
                 'telegram_bot_enable' => (bool) admin_setting('telegram_bot_enable', 0),
-                'telegram_bot_token' => admin_setting('telegram_bot_token'),
+                'telegram_bot_token' => $this->maskedSecret('telegram_bot_token'),
                 'telegram_webhook_url' => admin_setting('telegram_webhook_url'),
                 'telegram_discuss_link' => admin_setting('telegram_discuss_link')
             ],
@@ -184,12 +190,12 @@ class ConfigController extends Controller
                 'email_gmail_limit_enable' => (bool) admin_setting('email_gmail_limit_enable', 0),
                 'captcha_enable' => (bool) admin_setting('captcha_enable', 0),
                 'captcha_type' => admin_setting('captcha_type', 'recaptcha'),
-                'recaptcha_key' => admin_setting('recaptcha_key', ''),
+                'recaptcha_key' => $this->maskedSecret('recaptcha_key'),
                 'recaptcha_site_key' => admin_setting('recaptcha_site_key', ''),
-                'recaptcha_v3_secret_key' => admin_setting('recaptcha_v3_secret_key', ''),
+                'recaptcha_v3_secret_key' => $this->maskedSecret('recaptcha_v3_secret_key'),
                 'recaptcha_v3_site_key' => admin_setting('recaptcha_v3_site_key', ''),
                 'recaptcha_v3_score_threshold' => admin_setting('recaptcha_v3_score_threshold', 0.5),
-                'turnstile_secret_key' => admin_setting('turnstile_secret_key', ''),
+                'turnstile_secret_key' => $this->maskedSecret('turnstile_secret_key'),
                 'turnstile_site_key' => admin_setting('turnstile_site_key', ''),
                 'register_limit_by_ip_enable' => (bool) admin_setting('register_limit_by_ip_enable', 0),
                 'register_limit_count' => admin_setting('register_limit_count', 3),
@@ -228,6 +234,9 @@ class ConfigController extends Controller
         ];
 
         foreach ($data as $k => $v) {
+            if (in_array($k, self::SECRET_KEYS, true) && ($v === self::SECRET_MASK || $v === '' || $v === null)) {
+                continue;
+            }
             if (isset($templateKeys[$k])) {
                 SubscribeTemplate::setContent($templateKeys[$k], $v);
                 continue;

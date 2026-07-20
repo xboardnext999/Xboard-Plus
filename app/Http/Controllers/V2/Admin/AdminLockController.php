@@ -36,22 +36,22 @@ class AdminLockController extends Controller
         return $this->success([
             'enabled' => $this->lock->enabled(),
             'ttl_minutes' => (int) ($this->lock->ttl() / 60),
-            'simple_password_set' => $this->lock->hasSimplePassword(),
-            'full_password_set' => $this->lock->hasFullPassword(),
+            'password_a_set' => $this->lock->hasSimplePassword(),
+            'password_b_set' => $this->lock->hasFullPassword(),
         ]);
     }
     public function updateSettings(Request $request)
     {
         $data = $request->validate([
             'enabled' => 'required|boolean', 'ttl_minutes' => 'required|integer|min:5|max:10080',
-            'current_full_password' => 'required|string|max:128',
-            'simple_password' => 'nullable|string|min:8|max:128', 'full_password' => 'nullable|string|min:12|max:128',
+            'current_password' => 'required|string|max:128',
+            'password_a' => 'nullable|string|min:8|max:128', 'password_b' => 'nullable|string|min:12|max:128',
         ]);
-        if (!$this->lock->verifyFull((string) $data['current_full_password'])) throw ValidationException::withMessages(['current_full_password' => '当前访问密码 B 不正确']);
-        $simple = (string) ($data['simple_password'] ?? ''); $full = (string) ($data['full_password'] ?? '');
+        if (!$this->lock->verifyFull((string) $data['current_password'])) throw ValidationException::withMessages(['current_password' => '当前访问密码 B 不正确']);
+        $simple = (string) ($data['password_a'] ?? ''); $full = (string) ($data['password_b'] ?? '');
         if ($simple !== '' && $full !== '' && hash_equals($simple, $full)) throw ValidationException::withMessages(['full_password' => '两个访问密码不能相同']);
-        if ($simple !== '' && $full === '' && $this->lock->verifyFull($simple)) throw ValidationException::withMessages(['simple_password' => '访问密码 A 不能与访问密码 B 相同']);
-        if ($full !== '' && $simple === '' && $this->lock->verifySimple($full)) throw ValidationException::withMessages(['full_password' => '访问密码 B 不能与访问密码 A 相同']);
+        if ($simple !== '' && $full === '' && $this->lock->verifyFull($simple)) throw ValidationException::withMessages(['password_a' => '访问密码 A 不能与访问密码 B 相同']);
+        if ($full !== '' && $simple === '' && $this->lock->verifySimple($full)) throw ValidationException::withMessages(['password_b' => '访问密码 B 不能与访问密码 A 相同']);
         $settings = ['admin_lock_enabled' => $data['enabled'] ? 1 : 0, 'admin_lock_ttl' => (int) $data['ttl_minutes'] * 60, 'admin_lock_version' => bin2hex(random_bytes(12))];
         if ($simple !== '') $settings['admin_lock_simple_hash'] = Hash::make($simple);
         if ($full !== '') $settings['admin_lock_full_hash'] = Hash::make($full);

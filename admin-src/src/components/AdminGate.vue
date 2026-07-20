@@ -7,7 +7,7 @@ const emit = defineEmits(['scope']);
 const password = ref(''), busy = ref(false), error = ref(''), summary = reactive({});
 async function unlock() { if (!password.value) return; busy.value = true; error.value = ''; try { const data = await post('/admin-lock/unlock', { password: password.value }); password.value = ''; emit('scope', data.scope); } catch (e) { error.value = e.message; } finally { busy.value = false; } }
 async function lock() { await post('/admin-lock/lock'); emit('scope', 'locked'); }
-async function loadSummary() { if (props.scope === 'simple') try { Object.assign(summary, await get('/admin-lock/summary')); } catch (e) { error.value = e.message; } }
+async function loadSummary() { if (props.scope === 'a') try { Object.assign(summary, await get('/admin-lock/summary')); } catch (e) { error.value = e.message; } }
 onMounted(loadSummary);
 watch(() => props.scope, loadSummary);
 </script>
