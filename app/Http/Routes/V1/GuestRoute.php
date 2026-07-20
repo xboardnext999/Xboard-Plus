@@ -18,6 +18,7 @@ class GuestRoute
             $router->get('/plan/fetch', [PlanController::class, 'fetch']);
             $router->get('/plan/digital-banner', [PlanController::class, 'digitalBanner']);
             $router->get('/plan/digital-categories', [PlanController::class, 'digitalCategories']);
+            $router->get('/plan/digital-faqs', [PlanController::class, 'digitalFaqs']);
             // Telegram
             $router->post('/telegram/webhook', [TelegramController::class, 'webhook']);
             // Payment

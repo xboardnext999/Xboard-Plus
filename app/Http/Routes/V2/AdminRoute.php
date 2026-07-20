@@ -73,6 +73,9 @@ class AdminRoute
                 $router->post('/categories/save', [DigitalProductController::class, 'saveCategory']);
                 $router->post('/categories/sort', [DigitalProductController::class, 'sortCategories']);
                 $router->post('/categories/drop', [DigitalProductController::class, 'deleteCategory']);
+                $router->get('/faqs', [DigitalProductController::class, 'faqs']);
+                $router->post('/faqs/save', [DigitalProductController::class, 'saveFaq']);
+                $router->post('/faqs/drop', [DigitalProductController::class, 'deleteFaq']);
                 $router->post('/sort', [DigitalProductController::class, 'sort']);
                 $router->post('/status', [DigitalProductController::class, 'status']);
                 $router->post('/save', [DigitalProductController::class, 'save']);

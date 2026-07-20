@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V2\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DigitalProductItem;
 use App\Models\DigitalProductCategory;
+use App\Models\DigitalProductFaq;
 use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +77,33 @@ class DigitalProductController extends Controller
         if ($category->plans_count > 0) return $this->fail([422, '该分类下仍有商品，请先调整商品分类']);
         if (DigitalProductCategory::count() <= 1) return $this->fail([422, '至少保留一个商品分类']);
         $category->delete();
+        return $this->success(true);
+    }
+
+    public function faqs()
+    {
+        return $this->success(DigitalProductFaq::orderBy('sort')->orderBy('id')->get());
+    }
+
+    public function saveFaq(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'nullable|integer|exists:v2_digital_product_faq,id',
+            'title' => 'required|string|max:150',
+            'content' => 'required|string|max:5000',
+            'enabled' => 'required|boolean',
+            'sort' => 'required|integer|min:0|max:9999',
+        ]);
+        $faq = !empty($data['id']) ? DigitalProductFaq::findOrFail($data['id']) : new DigitalProductFaq();
+        unset($data['id']);
+        $faq->fill($data)->save();
+        return $this->success($faq->fresh());
+    }
+
+    public function deleteFaq(Request $request)
+    {
+        $data = $request->validate(['id' => 'required|integer|exists:v2_digital_product_faq,id']);
+        DigitalProductFaq::where('id', $data['id'])->delete();
         return $this->success(true);
     }
 

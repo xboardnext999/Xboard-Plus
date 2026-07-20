@@ -41,3 +41,68 @@
     grid-column: auto;
   }
 }
+
+.digital-faq-modal {
+  width: min(1120px, 94vw);
+}
+
+.digital-faq-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, .72fr) minmax(0, 1.28fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.digital-faq-form {
+  align-self: start;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-soft);
+  padding: 18px;
+}
+
+.digital-faq-form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.digital-faq-form-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: end;
+  gap: 14px;
+}
+
+.digital-faq-manage-list {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  max-height: 560px;
+  overflow: auto;
+}
+
+.digital-faq-manage-list article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card-bg);
+  padding: 13px;
+}
+
+.digital-faq-manage-list article.muted { opacity: .62; }
+.digital-faq-manage-list article > div:nth-child(2) { min-width: 0; }
+.digital-faq-manage-list strong { display: block; overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.digital-faq-manage-list p { display: -webkit-box; overflow: hidden; margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.digital-faq-sort { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: rgba(108, 92, 231, .09); color: var(--primary); font-size: 11px; font-weight: 800; }
+.digital-faq-actions { display: flex; gap: 6px; }
+
+@media (max-width: 900px) {
+  .digital-faq-layout { grid-template-columns: 1fr; }
+  .digital-faq-manage-list { max-height: none; }
+  .digital-faq-manage-list article { grid-template-columns: 34px minmax(0, 1fr); }
+  .digital-faq-manage-list article > .toggle-switch,
+  .digital-faq-actions { grid-column: 2; }
+}

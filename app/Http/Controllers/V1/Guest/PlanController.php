@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PlanResource;
 use App\Models\Plan;
 use App\Models\DigitalProductCategory;
+use App\Models\DigitalProductFaq;
 use App\Services\PlanService;
 use Auth;
 use Illuminate\Http\Request;
@@ -40,5 +41,11 @@ class PlanController extends Controller
                 ->where('product_type', 'digital')->where('show', true)->where('sell', true)])
             ->orderBy('sort')->orderBy('id')->get(['id', 'name']);
         return $this->success($categories);
+    }
+
+    public function digitalFaqs()
+    {
+        return $this->success(DigitalProductFaq::where('enabled', true)
+            ->orderBy('sort')->orderBy('id')->get(['id', 'title', 'content']));
     }
 }

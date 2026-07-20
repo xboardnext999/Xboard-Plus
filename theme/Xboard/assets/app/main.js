@@ -2014,17 +2014,13 @@ const DigitalProductsPage = {
     const serviceTab = ref('notice');
     const orderQuery = ref('');
     const faqOpen = ref(0);
-    const storeFaqs = [
-      ['购买后如何交付？', '自动交付商品会在支付完成后写入订单详情；人工交付商品请留意订单状态和站内通知。'],
-      ['在哪里查看已购买内容？', '在订单查询中输入订单号，或进入“我的订单”打开对应订单，即可查看交付内容。'],
-      ['支付成功但没有收到商品？', '请先刷新订单详情。若仍未显示，请保留订单号并通过工单联系管理员处理。'],
-    ];
     const local = useAsyncPage(async (page) => {
-      const [products, banner, categories, notices] = await Promise.all([
+      const [products, banner, categories, notices, faqs] = await Promise.all([
         api.get('/user/plan/fetch', { product_type: 'digital' }),
         api.get('/guest/plan/digital-banner').catch(() => ({})),
         api.get('/guest/plan/digital-categories').catch(() => []),
         api.get('/user/notice/fetch', { current: 1 }).catch(() => ({ data: [] })),
+        api.get('/guest/plan/digital-faqs').catch(() => []),
       ]);
       const productRows = normalizeCollection(products);
       const bannerData = banner || {};
@@ -2041,6 +2037,7 @@ const DigitalProductsPage = {
       page.banner = bannerData;
       page.categories = normalizeCollection(categories);
       page.notices = normalizeCollection(notices.data || notices).slice(0, 3);
+      page.faqs = normalizeCollection(faqs);
     });
     function visibleProducts() {
       if (selectedCategory.value === 'all') return local.products || [];
@@ -2123,9 +2120,9 @@ const DigitalProductsPage = {
       local.ready && !visibleProducts().length ? emptyBlock(selectedCategory.value === 'all' ? '暂无可购买的数字商品' : '该分类暂无商品') : null,
       h('section', { class: 'store-faq-section' }, [
         h('div', { class: 'store-faq-heading' }, [h('small', 'HELP CENTER'), h('h2', '常见问题'), h('p', '购买、支付与商品交付的常见说明')]),
-        h('div', { class: 'store-faq-list' }, storeFaqs.map((item, index) => h('article', { class: faqOpen.value === index ? 'active' : '' }, [
-          h('button', { type: 'button', onClick: () => { faqOpen.value = faqOpen.value === index ? -1 : index; } }, [h('i', String(index + 1).padStart(2, '0')), h('span', item[0]), h('b', faqOpen.value === index ? '−' : '+')]),
-          faqOpen.value === index ? h('p', item[1]) : null,
+        h('div', { class: 'store-faq-list' }, (local.faqs || []).map((item, index) => h('article', { class: faqOpen.value === index ? 'active' : '' }, [
+          h('button', { type: 'button', onClick: () => { faqOpen.value = faqOpen.value === index ? -1 : index; } }, [h('i', String(index + 1).padStart(2, '0')), h('span', item.title), h('b', faqOpen.value === index ? '−' : '+')]),
+          faqOpen.value === index ? h('p', item.content) : null,
         ]))),
         h('div', { class: 'store-faq-footer' }, [h('span', '没有找到答案？'), h('a', { href: '#/tickets' }, '提交工单')]),
       ]),

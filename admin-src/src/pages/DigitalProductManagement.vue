@@ -12,10 +12,14 @@ const rows = ref([]),
     showForm = ref(false),
     showBannerForm = ref(false),
     showCategoryEditor = ref(false),
-    showCategoryManager = ref(false);
+    showCategoryManager = ref(false),
+    showFaqManager = ref(false);
 const managedCategories = ref([]),
     categorySaving = ref(false);
 const categoryForm = reactive({ id: null, name: "", enabled: true });
+const managedFaqs = ref([]),
+    faqSaving = ref(false);
+const faqForm = reactive({ id: null, title: "", content: "", enabled: true, sort: 0 });
 const savingBanner = ref(false),
     uploadingBanner = ref(false),
     uploadingCover = ref(false);
@@ -194,13 +198,15 @@ async function toggleSelling(row, enabled) {
 async function load() {
     loading.value = true;
     try {
-        const [data, bannerData, categoryData] = await Promise.all([
+        const [data, bannerData, categoryData, faqData] = await Promise.all([
             get("/digital-products/fetch"),
             get("/digital-products/banner"),
             get("/digital-products/categories"),
+            get("/digital-products/faqs"),
         ]);
         rows.value = Array.isArray(data) ? data : [];
         managedCategories.value = Array.isArray(categoryData) ? categoryData : [];
+        managedFaqs.value = Array.isArray(faqData) ? faqData : [];
         Object.assign(banner, bannerData || {});
     } catch (e) {
         notify(e.message, "error");
@@ -249,6 +255,54 @@ function openCategory(item = null) {
 }
 function openCategoryManager() {
     showCategoryManager.value = true;
+}
+function openFaq(item = null) {
+    Object.assign(faqForm, {
+        id: item?.id || null,
+        title: item?.title || "",
+        content: item?.content || "",
+        enabled: item?.enabled ?? true,
+        sort: item?.sort ?? managedFaqs.value.length + 1,
+    });
+    showFaqManager.value = true;
+}
+async function saveFaq() {
+    if (!faqForm.title.trim()) return notify("请输入问题标题", "error");
+    if (!faqForm.content.trim()) return notify("请输入问题内容", "error");
+    faqSaving.value = true;
+    try {
+        await post("/digital-products/faqs/save", faqForm);
+        managedFaqs.value = await get("/digital-products/faqs");
+        Object.assign(faqForm, { id: null, title: "", content: "", enabled: true, sort: managedFaqs.value.length + 1 });
+        notify("常见问题已保存");
+    } catch (e) {
+        notify(e.message, "error");
+    } finally {
+        faqSaving.value = false;
+    }
+}
+async function editFaq(item) {
+    Object.assign(faqForm, { id: item.id, title: item.title, content: item.content, enabled: item.enabled, sort: item.sort });
+}
+async function toggleFaq(item, enabled) {
+    try {
+        await post("/digital-products/faqs/save", { ...item, enabled });
+        item.enabled = enabled;
+        notify(enabled ? "问题已显示" : "问题已隐藏");
+    } catch (e) {
+        notify(e.message, "error");
+    }
+}
+async function dropFaq(item) {
+    if (!window.confirm(`确认删除“${item.title}”？`)) return;
+    try {
+        await post("/digital-products/faqs/drop", { id: item.id });
+        managedFaqs.value = managedFaqs.value.filter((entry) => entry.id !== item.id);
+        if (faqForm.id === item.id) Object.assign(faqForm, { id: null, title: "", content: "", enabled: true, sort: managedFaqs.value.length + 1 });
+        notify("常见问题已删除");
+    } catch (e) {
+        notify(e.message, "error");
+    }
 }
 async function saveCategory() {
     if (!categoryForm.name.trim()) return notify("请输入分类名称", "error");
@@ -536,6 +590,10 @@ onMounted(load);
                     >
                         <i><AppIcon name="ClipboardList" :size="17" /></i><span
                             >交付记录</span
+                        >
+                    </button><button @click="openFaq()">
+                        <i><AppIcon name="BookOpen" :size="17" /></i><span
+                            >常见问题</span
                         >
                     </button>
                 </div>
@@ -1215,6 +1273,41 @@ onMounted(load);
                         </div>
                     </div>
                     <div v-if="!managedCategories.length" class="settings-loading">暂无分类</div>
+                </div>
+            </section>
+        </div>
+        <div
+            v-if="showFaqManager"
+            class="modal-backdrop"
+            @click.self="showFaqManager = false"
+        >
+            <section class="modal-card digital-faq-modal">
+                <div class="panel-head">
+                    <div><h2>常见问题</h2><p>维护问题、答案、显示状态和前台排序。</p></div>
+                    <button class="btn btn-ghost" @click="showFaqManager = false">关闭</button>
+                </div>
+                <div class="digital-faq-layout">
+                    <div class="digital-faq-form">
+                        <label class="field"><span>问题标题 *</span><input v-model.trim="faqForm.title" maxlength="150" placeholder="例如：购买后如何交付？" /></label>
+                        <label class="field"><span>问题内容 *</span><textarea v-model.trim="faqForm.content" rows="7" maxlength="5000" placeholder="输入清晰、简洁的答案内容"></textarea></label>
+                        <div class="digital-faq-form-row">
+                            <label class="field"><span>排序</span><input v-model.number="faqForm.sort" type="number" min="0" max="9999" /></label>
+                            <label class="field"><span>前台显示</span><ToggleSwitch v-model="faqForm.enabled" on-label="显示" off-label="隐藏" /></label>
+                        </div>
+                        <div class="modal-actions">
+                            <button v-if="faqForm.id" class="btn btn-ghost" @click="openFaq()">取消编辑</button>
+                            <button class="btn btn-primary" :disabled="faqSaving" @click="saveFaq">{{ faqSaving ? "保存中…" : faqForm.id ? "保存修改" : "添加问题" }}</button>
+                        </div>
+                    </div>
+                    <div class="digital-faq-manage-list">
+                        <article v-for="item in managedFaqs" :key="item.id" :class="{ muted: !item.enabled }">
+                            <span class="digital-faq-sort">{{ item.sort }}</span>
+                            <div><strong>{{ item.title }}</strong><p>{{ item.content }}</p></div>
+                            <ToggleSwitch :model-value="item.enabled" on-label="显示" off-label="隐藏" @update:model-value="toggleFaq(item, $event)" />
+                            <div class="digital-faq-actions"><button class="btn btn-ghost btn-sm" @click="editFaq(item)">编辑</button><button class="btn btn-danger btn-sm" @click="dropFaq(item)">删除</button></div>
+                        </article>
+                        <div v-if="!managedFaqs.length" class="settings-loading">暂无常见问题</div>
+                    </div>
                 </div>
             </section>
         </div>
