@@ -2012,10 +2012,11 @@ const DigitalProductsPage = {
     const cartOpen = ref(false);
     const selectedCategory = ref('all');
     const local = useAsyncPage(async (page) => {
-      const [products, banner, categories] = await Promise.all([
+      const [products, banner, categories, notices] = await Promise.all([
         api.get('/user/plan/fetch', { product_type: 'digital' }),
         api.get('/guest/plan/digital-banner').catch(() => ({})),
         api.get('/guest/plan/digital-categories').catch(() => []),
+        api.get('/user/notice/fetch', { current: 1 }).catch(() => ({ data: [] })),
       ]);
       const productRows = normalizeCollection(products);
       const bannerData = banner || {};
@@ -2031,6 +2032,7 @@ const DigitalProductsPage = {
       page.products = productRows;
       page.banner = bannerData;
       page.categories = normalizeCollection(categories);
+      page.notices = normalizeCollection(notices.data || notices).slice(0, 3);
     });
     function visibleProducts() {
       if (selectedCategory.value === 'all') return local.products || [];
@@ -2072,14 +2074,25 @@ const DigitalProductsPage = {
     }
     return () => h('div', [
       pageError(local.error),
-      local.ready ? h('section', {
-        class: 'store-banner',
-        style: (local.banner?.image_url || (local.products || []).find((item) => item.product_config?.featured)?.product_config?.image_url)
-          ? { backgroundImage: `linear-gradient(90deg,rgba(4,10,18,.78),rgba(4,10,18,.18)),url("${local.banner?.image_url || (local.products || []).find((item) => item.product_config?.featured).product_config.image_url}")` }
-          : {},
-      }, [
-        h('div', [h('span', '● DIGITAL STORE'), h('h1', local.banner?.title || '数字商品中心'), h('p', local.banner?.subtitle || '精选数字资产，安全购买，支付完成后快速交付。'), local.banner?.button_text !== '' ? h('a', { href: local.banner?.link_url || '#digital-products' }, `${local.banner?.button_text || '了解更多'}  →`) : null]),
-      ]) : h('section', { class: 'store-banner store-banner-loading', 'aria-label': 'Banner 加载中' }),
+      h('div', { class: 'store-hero-grid' }, [
+        local.ready ? h('section', {
+          class: 'store-banner',
+          style: (local.banner?.image_url || (local.products || []).find((item) => item.product_config?.featured)?.product_config?.image_url)
+            ? { backgroundImage: `linear-gradient(90deg,rgba(4,10,18,.78),rgba(4,10,18,.18)),url("${local.banner?.image_url || (local.products || []).find((item) => item.product_config?.featured).product_config.image_url}")` }
+            : {},
+        }, [
+          h('div', [h('span', '● DIGITAL STORE'), h('h1', local.banner?.title || '数字商品中心'), h('p', local.banner?.subtitle || '精选数字资产，安全购买，支付完成后快速交付。'), local.banner?.button_text !== '' ? h('a', { href: local.banner?.link_url || '#digital-products' }, `${local.banner?.button_text || '了解更多'}  →`) : null]),
+        ]) : h('section', { class: 'store-banner store-banner-loading', 'aria-label': 'Banner 加载中' }),
+        h('aside', { class: 'store-notice-panel' }, [
+          h('header', [h('div', [h('small', 'STORE NOTICE'), h('h2', '最新公告')]), h('span', '公告')]),
+          h('div', { class: 'store-notice-list' }, (local.notices || []).length
+            ? local.notices.map((notice) => h('article', { key: notice.id }, [
+              h('div', [h('i'), h('h3', notice.title || '站点公告')]),
+              h('div', { class: 'store-notice-content', innerHTML: safeBody(notice.content || notice.body || '') }),
+            ]))
+            : [h('article', { class: 'is-empty' }, [h('div', [h('i'), h('h3', '暂无公告')]), h('p', '新的站点通知会显示在这里。')])]),
+        ]),
+      ]),
       h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('div', { class: 'store-heading-actions' }, [h('span', `${visibleProducts().length} 件商品`), h('button', { type: 'button', class: 'store-cart-button', onClick: () => { cartOpen.value = true; } }, `🛒 购物车 ${digitalCart.value.reduce((sum, item) => sum + item.quantity, 0)}`)])]),
       h('nav', { class: 'store-category-nav', 'aria-label': '商品分类' }, [
         h('button', { type: 'button', class: selectedCategory.value === 'all' ? 'active' : '', onClick: () => { selectedCategory.value = 'all'; } }, [h('span', '全部商品'), h('small', String((local.products || []).length))]),
