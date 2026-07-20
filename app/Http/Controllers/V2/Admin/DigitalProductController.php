@@ -89,7 +89,7 @@ class DigitalProductController extends Controller
         $data['reset_traffic_method'] = Plan::RESET_TRAFFIC_NEVER;
         $data['group_id'] = null;
         $data['capacity_limit'] = null;
-        $config = array_merge(['delivery_type' => 'text', 'category' => '数字商品', 'image_url' => '', 'featured' => false, 'packages' => []], $data['product_config'] ?? []);
+        $config = array_merge(['delivery_type' => 'code', 'category' => '数字商品', 'image_url' => '', 'featured' => false, 'packages' => []], $data['product_config'] ?? []);
         $config['packages'] = collect($config['packages'])->map(fn($package) => [
             'id' => preg_replace('/[^A-Za-z0-9_-]/', '-', (string) $package['id']),
             'name' => trim($package['name']),
