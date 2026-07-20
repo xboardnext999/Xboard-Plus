@@ -2092,9 +2092,9 @@ const DigitalProductsPage = {
           h('div', [h('span', '● DIGITAL STORE'), h('h1', local.banner?.title || '数字商品中心'), h('p', local.banner?.subtitle || '精选数字资产，安全购买，支付完成后快速交付。'), local.banner?.button_text !== '' ? h('a', { href: local.banner?.link_url || '#digital-products' }, `${local.banner?.button_text || '了解更多'}  →`) : null]),
         ]) : h('section', { class: 'store-banner store-banner-loading', 'aria-label': 'Banner 加载中' }),
         h('aside', { class: 'store-notice-panel' }, [
-          h('header', [h('div', [h('small', 'STORE SERVICE'), h('h2', serviceTab.value === 'notice' ? '最新公告' : serviceTab.value === 'order' ? '订单查询' : '常见问题')])]),
+          h('header', [h('div', [h('small', 'STORE SERVICE'), h('h2', serviceTab.value === 'notice' ? '最新公告' : '订单查询')])]),
           h('nav', { class: 'store-service-tabs' }, [
-            ['notice', '公告'], ['order', '查单'], ['faq', '常见问题'],
+            ['notice', '公告'], ['order', '查单'],
           ].map(([key, label]) => h('button', { type: 'button', class: serviceTab.value === key ? 'active' : '', onClick: () => { serviceTab.value = key; } }, label))),
           serviceTab.value === 'notice' ? h('div', { class: 'store-notice-list' }, (local.notices || []).length
             ? local.notices.map((notice) => h('article', { key: notice.id }, [
@@ -2112,10 +2112,6 @@ const DigitalProductsPage = {
             ]),
             h('a', { href: '#/orders' }, '查看我的全部订单 →'),
           ]) : null,
-          serviceTab.value === 'faq' ? h('div', { class: 'store-faq-list' }, storeFaqs.map((item, index) => h('article', { class: faqOpen.value === index ? 'active' : '' }, [
-            h('button', { type: 'button', onClick: () => { faqOpen.value = faqOpen.value === index ? -1 : index; } }, [h('span', item[0]), h('b', faqOpen.value === index ? '−' : '+')]),
-            faqOpen.value === index ? h('p', item[1]) : null,
-          ]))) : null,
         ]),
       ]),
       h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('div', { class: 'store-heading-actions' }, [h('span', `${visibleProducts().length} 件商品`), h('button', { type: 'button', class: 'store-cart-button', onClick: () => { cartOpen.value = true; } }, `🛒 购物车 ${digitalCart.value.reduce((sum, item) => sum + item.quantity, 0)}`)])]),
@@ -2125,6 +2121,13 @@ const DigitalProductsPage = {
       ]),
       h('div', { class: 'store-product-grid' }, visibleProducts().map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open, onAdd: addToCart, onDetail: openDetail }))),
       local.ready && !visibleProducts().length ? emptyBlock(selectedCategory.value === 'all' ? '暂无可购买的数字商品' : '该分类暂无商品') : null,
+      h('section', { class: 'store-faq-section' }, [
+        h('div', { class: 'store-faq-heading' }, [h('div', [h('small', 'HELP CENTER'), h('h2', '常见问题'), h('p', '关于购买、支付和数字商品交付的常见说明。')]), h('span', `${storeFaqs.length} 个问题`)]),
+        h('div', { class: 'store-faq-list' }, storeFaqs.map((item, index) => h('article', { class: faqOpen.value === index ? 'active' : '' }, [
+          h('button', { type: 'button', onClick: () => { faqOpen.value = faqOpen.value === index ? -1 : index; } }, [h('span', item[0]), h('b', faqOpen.value === index ? '−' : '+')]),
+          faqOpen.value === index ? h('p', item[1]) : null,
+        ]))),
+      ]),
       selected.value ? h('div', { class: 'store-modal-backdrop', onClick: (event) => { if (event.target === event.currentTarget) selected.value = null; } }, [
         h('section', { class: 'store-quick-modal' }, [
           h('div', { class: 'store-modal-head' }, [h('h2', '快速购买'), h('button', { type: 'button', onClick: () => { selected.value = null; } }, '×')]),

@@ -1,6 +1,6 @@
 .store-service-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
   margin: 14px 0 2px;
   border-radius: 12px;
@@ -59,3 +59,39 @@
 .store-faq-list button { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; border: 0; background: transparent; padding: 11px 12px; color: var(--text); font-size: 12px; font-weight: 750; text-align: left; cursor: pointer; }
 .store-faq-list button b { color: var(--primary); font-size: 17px; }
 .store-faq-list p { margin: 0; padding: 0 12px 12px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+
+.store-faq-section {
+  margin-top: 56px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--card-bg);
+  box-shadow: var(--surface-shadow);
+  padding: 28px;
+}
+
+.store-faq-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.store-faq-heading small { color: var(--primary); font-size: 10px; font-weight: 900; letter-spacing: .12em; }
+.store-faq-heading h2 { margin: 6px 0 5px; color: var(--text); font-size: 24px; }
+.store-faq-heading p { margin: 0; color: var(--muted); font-size: 13px; }
+.store-faq-heading > span { border-radius: 999px; background: var(--panel-soft); padding: 7px 11px; color: var(--muted); font-size: 11px; }
+.store-faq-section .store-faq-list { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; overflow: visible; padding: 0; }
+.store-faq-section .store-faq-list article { background: var(--panel-soft); }
+.store-faq-section .store-faq-list button { min-height: 48px; padding: 13px 14px; }
+.store-faq-section .store-faq-list p { padding: 0 14px 14px; }
+
+@media (max-width: 900px) {
+  .store-faq-section { margin-top: 36px; padding: 22px; }
+  .store-faq-section .store-faq-list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .store-faq-heading { flex-direction: column; }
+  .store-faq-heading h2 { font-size: 21px; }
+}
