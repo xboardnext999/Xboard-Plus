@@ -66,6 +66,9 @@ class AdminRoute
             });
             $router->group(['prefix' => 'digital-products'], function ($router) {
                 $router->get('/fetch', [DigitalProductController::class, 'fetch']);
+                $router->get('/banner', [DigitalProductController::class, 'banner']);
+                $router->post('/banner/save', [DigitalProductController::class, 'saveBanner']);
+                $router->post('/banner/upload', [DigitalProductController::class, 'uploadBanner']);
                 $router->post('/save', [DigitalProductController::class, 'save']);
                 $router->get('/stock', [DigitalProductController::class, 'stock']);
                 $router->get('/deliveries', [DigitalProductController::class, 'deliveries']);

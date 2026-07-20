@@ -22,4 +22,13 @@ class PlanController extends Controller
         $plan = $this->planService->getAvailablePlans($request->input('product_type', 'subscription'));
         return $this->success(PlanResource::collection($plan));
     }
+
+    public function digitalBanner()
+    {
+        return $this->success(admin_setting('digital_store_banner', [
+            'image_url' => '', 'title' => '数字商品中心',
+            'subtitle' => '精选数字资产，安全购买，支付完成后快速交付。',
+            'button_text' => '了解更多', 'link_url' => '#digital-products',
+        ]));
+    }
 }

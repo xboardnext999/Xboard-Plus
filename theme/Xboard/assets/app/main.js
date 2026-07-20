@@ -1980,8 +1980,12 @@ const DigitalProductsPage = {
     const selected = ref(null);
     const selectedPackage = ref('');
     const local = useAsyncPage(async (page) => {
-      const products = await api.get('/user/plan/fetch', { product_type: 'digital' });
+      const [products, banner] = await Promise.all([
+        api.get('/user/plan/fetch', { product_type: 'digital' }),
+        api.get('/guest/plan/digital-banner').catch(() => ({})),
+      ]);
       page.products = normalizeCollection(products);
+      page.banner = banner || {};
     });
     function open(plan) {
       selected.value = plan;
@@ -1996,11 +2000,11 @@ const DigitalProductsPage = {
       pageError(local.error),
       h('section', {
         class: 'store-banner',
-        style: (local.products || []).find((item) => item.product_config?.featured)?.product_config?.image_url
-          ? { backgroundImage: `linear-gradient(90deg,rgba(4,10,18,.78),rgba(4,10,18,.18)),url("${(local.products || []).find((item) => item.product_config?.featured).product_config.image_url}")` }
+        style: (local.banner?.image_url || (local.products || []).find((item) => item.product_config?.featured)?.product_config?.image_url)
+          ? { backgroundImage: `linear-gradient(90deg,rgba(4,10,18,.78),rgba(4,10,18,.18)),url("${local.banner?.image_url || (local.products || []).find((item) => item.product_config?.featured).product_config.image_url}")` }
           : {},
       }, [
-        h('div', [h('span', '● DIGITAL STORE'), h('h1', '数字商品中心'), h('p', '精选数字资产，安全购买，支付完成后快速交付。'), h('a', { href: '#digital-products' }, '了解更多  →')]),
+        h('div', [h('span', '● DIGITAL STORE'), h('h1', local.banner?.title || '数字商品中心'), h('p', local.banner?.subtitle || '精选数字资产，安全购买，支付完成后快速交付。'), local.banner?.button_text !== '' ? h('a', { href: local.banner?.link_url || '#digital-products' }, `${local.banner?.button_text || '了解更多'}  →`) : null]),
       ]),
       h('div', { class: 'store-section-heading', id: 'digital-products' }, [h('div', [h('h1', '精选商品'), h('p', '探索我们精心挑选的优质数字资产系列。')]), h('span', `${(local.products || []).length} 件商品`)]),
       h('div', { class: 'store-product-grid' }, (local.products || []).map((plan) => h(DigitalProductCard, { key: plan.id, plan, onOpen: open }))),

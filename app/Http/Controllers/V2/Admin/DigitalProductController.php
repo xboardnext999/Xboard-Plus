@@ -12,6 +12,33 @@ use Illuminate\Support\Str;
 
 class DigitalProductController extends Controller
 {
+    private function defaultBanner(): array
+    {
+        return ['image_url' => '', 'title' => '数字商品中心', 'subtitle' => '精选数字资产，安全购买，支付完成后快速交付。', 'button_text' => '了解更多', 'link_url' => '#digital-products'];
+    }
+
+    public function banner()
+    {
+        return $this->success(array_merge($this->defaultBanner(), (array) admin_setting('digital_store_banner', [])));
+    }
+
+    public function saveBanner(Request $request)
+    {
+        $data = $request->validate([
+            'image_url' => 'nullable|string|max:2048', 'title' => 'required|string|max:100',
+            'subtitle' => 'nullable|string|max:255', 'button_text' => 'nullable|string|max:30',
+            'link_url' => 'nullable|string|max:2048',
+        ]);
+        $banner = array_merge($this->defaultBanner(), $data);
+        admin_setting(['digital_store_banner' => $banner]);
+        return $this->success($banner);
+    }
+
+    public function uploadBanner(Request $request)
+    {
+        return $this->storeImage($request, 'digital-banners', 'banner');
+    }
+
     public function fetch(Request $request)
     {
         $plans = Plan::where('product_type', 'digital')
@@ -83,14 +110,19 @@ class DigitalProductController extends Controller
 
     public function uploadCover(Request $request)
     {
+        return $this->storeImage($request, 'digital-products', 'product');
+    }
+
+    private function storeImage(Request $request, string $directory, string $prefix)
+    {
         $request->validate(['file' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120']);
         $file = $request->file('file');
         if (!$file || !$file->isValid()) return $this->fail([400, '图片上传失败']);
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'webp');
-        $filename = 'product_' . time() . '_' . Str::random(10) . '.' . $extension;
-        $path = Storage::disk('public')->putFileAs('digital-products', $file, $filename);
+        $filename = $prefix . '_' . time() . '_' . Str::random(10) . '.' . $extension;
+        $path = Storage::disk('public')->putFileAs($directory, $file, $filename);
         if (!$path) return $this->fail([400, '图片上传失败']);
-        return $this->success(['url' => '/storage/digital-products/' . $filename]);
+        return $this->success(['url' => '/storage/' . $directory . '/' . $filename]);
     }
 
     public function stock(Request $request)
