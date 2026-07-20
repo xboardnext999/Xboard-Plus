@@ -243,7 +243,8 @@ class OrderService
         DB::transaction(function () use ($order, $plan) {
             $this->user = User::lockForUpdate()->find($order->user_id);
             $subscriptionService = app(SubscriptionService::class);
-            if ($order->period !== Plan::PERIOD_RESET_TRAFFIC) {
+            $isForwarding = $plan?->isForwarding();
+            if (!$isForwarding && $order->period !== Plan::PERIOD_RESET_TRAFFIC) {
                 $subscriptionService->ensureLegacySubscription($this->user);
             }
 
@@ -256,16 +257,19 @@ class OrderService
                     ->update(['status' => Order::STATUS_DISCOUNTED]);
             }
 
-            match ((string) $order->period) {
-                Plan::PERIOD_ONETIME => $this->buyByOneTime($plan),
-                Plan::PERIOD_RESET_TRAFFIC => app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER),
-                default => $this->buyByPeriod($order, $plan),
-            };
+            if ($isForwarding) {
+                $this->buyForwardingPlan($order, $plan);
+            } else {
+                match ((string) $order->period) {
+                    Plan::PERIOD_ONETIME => $this->buyByOneTime($plan),
+                    Plan::PERIOD_RESET_TRAFFIC => app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER),
+                    default => $this->buyByPeriod($order, $plan),
+                };
 
-            $this->setSpeedLimit($plan->speed_limit);
-            $this->setDeviceLimit($plan->device_limit);
-
-            $subscriptionService->openFromOrder($this->user, $plan, $order);
+                $this->setSpeedLimit($plan->speed_limit);
+                $this->setDeviceLimit($plan->device_limit);
+                $subscriptionService->openFromOrder($this->user, $plan, $order);
+            }
 
             if (!$this->user->save()) {
                 throw new \RuntimeException('用户信息保存失败');
@@ -299,6 +303,14 @@ class OrderService
     public function setOrderType(User $user, ?string $subscriptionMode = null)
     {
         $order = $this->order;
+        $plan = Plan::find($order->plan_id);
+        if ($plan?->isForwarding()) {
+            $tunnelId = (int) data_get($plan->product_config, 'tunnel_id');
+            $active = $tunnelId && DB::table('flux_user_tunnels')->where('user_id', $user->id)->where('tunnel_id', $tunnelId)
+                ->where('enabled', true)->where(function ($query) { $query->whereNull('expires_at')->orWhere('expires_at', '>', time()); })->exists();
+            $order->type = $active ? Order::TYPE_RENEWAL : Order::TYPE_NEW_PURCHASE;
+            return;
+        }
         if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
             $order->type = Order::TYPE_RESET_TRAFFIC;
         } else if (in_array($subscriptionMode, ['append', 'multi'], true)) {
@@ -524,6 +536,41 @@ class OrderService
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
         $this->user->expired_at = NULL;
+    }
+
+    private function buyForwardingPlan(Order $order, Plan $plan): void
+    {
+        $config = $plan->product_config ?? [];
+        $tunnelId = (int) ($config['tunnel_id'] ?? 0);
+        if (!$tunnelId || !DB::table('flux_tunnels')->where('id', $tunnelId)->where('enabled', true)->exists()) {
+            throw new ApiException('转发套餐绑定的隧道不可用');
+        }
+        $now = time();
+        $current = DB::table('flux_user_tunnels')->where('user_id', $this->user->id)->where('tunnel_id', $tunnelId)->first();
+        $baseExpiry = $current?->expires_at && (int) $current->expires_at > $now ? (int) $current->expires_at : $now;
+        $expiry = $order->period === Plan::PERIOD_ONETIME ? null : $this->getTime($order->period, $baseExpiry);
+        $trafficGb = (float) ($config['traffic_limit_gb'] ?? $plan->transfer_enable ?? 0);
+        $trafficLimit = $trafficGb > 0 ? (int) round($trafficGb * 1073741824) : 0;
+        $payload = [
+            'speed_limit_id' => !empty($config['speed_limit_id']) ? (int) $config['speed_limit_id'] : null,
+            'forward_limit' => max(1, (int) ($config['forward_limit'] ?? 1)),
+            'traffic_limit' => $trafficLimit,
+            'reset_at' => $now,
+            'expires_at' => $expiry,
+            'enabled' => true,
+            'updated_at' => now(),
+        ];
+        if ($current) {
+            DB::table('flux_user_tunnels')->where('id', $current->id)->update($payload);
+        } else {
+            DB::table('flux_user_tunnels')->insert($payload + [
+                'user_id' => $this->user->id,
+                'tunnel_id' => $tunnelId,
+                'upload_bytes' => 0,
+                'download_bytes' => 0,
+                'created_at' => now(),
+            ]);
+        }
     }
 
     /**

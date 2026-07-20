@@ -89,7 +89,9 @@ class Plan extends Model
         'capacity_limit',
         'sell',
         'device_limit',
-        'tags'
+        'tags',
+        'product_type',
+        'product_config',
     ];
 
     protected $casts = [
@@ -101,6 +103,7 @@ class Plan extends Model
         'prices' => 'array',
         'transfer_price' => 'integer',
         'tags' => 'array',
+        'product_config' => 'array',
         'reset_traffic_method' => 'integer',
     ];
 
@@ -352,5 +355,10 @@ class Plan extends Model
     public function order(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function isForwarding(): bool
+    {
+        return ($this->product_type ?? 'subscription') === 'forwarding';
     }
 }

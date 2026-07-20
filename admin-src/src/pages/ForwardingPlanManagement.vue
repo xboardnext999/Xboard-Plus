@@ -1,0 +1,42 @@
+<script setup>
+import { computed, onMounted, reactive, ref } from 'vue';
+import AppIcon from '../components/AppIcon.vue';
+import ToggleSwitch from '../components/ToggleSwitch.vue';
+import { get, post } from '../services/http';
+
+const PERIODS = [['monthly', '月付'], ['quarterly', '季付'], ['half_yearly', '半年付'], ['yearly', '年付'], ['onetime', '一次性']];
+const rows = ref([]), options = ref({ tunnels: [], limits: [] }), loading = ref(true), saving = ref(false), showForm = ref(false), keyword = ref('');
+const toast = reactive({ text: '', type: '' });
+const form = reactive(defaultForm());
+function defaultForm() { return { id: null, name: '', content: '', transfer_enable: 100, prices: {}, show: true, sell: true, renew: true, capacity_limit: null, product_type: 'forwarding', product_config: { tunnel_id: '', speed_limit_id: '', forward_limit: 1, traffic_limit_gb: 100 } }; }
+const filtered = computed(() => rows.value.filter((row) => !keyword.value.trim() || `${row.name} ${row.content || ''}`.toLowerCase().includes(keyword.value.trim().toLowerCase())));
+const tunnelName = (id) => options.value.tunnels.find((item) => Number(item.id) === Number(id))?.name || `隧道 #${id}`;
+const limitName = (id) => options.value.limits.find((item) => Number(item.id) === Number(id))?.name || '不限速';
+function notify(text, type = '') { toast.text = text; toast.type = type; clearTimeout(notify.timer); notify.timer = setTimeout(() => { toast.text = ''; }, 2600); }
+async function load() { loading.value = true; try { const [plans, flux] = await Promise.all([get('/plan/fetch?product_type=forwarding'), get('/forwarding/options')]); rows.value = Array.isArray(plans) ? plans : []; options.value = flux || { tunnels: [], limits: [] }; } catch (error) { notify(error.message, 'error'); } finally { loading.value = false; } }
+function open(row = null) { Object.assign(form, defaultForm(), row ? { ...row, prices: { ...(row.prices || {}) }, product_config: { ...defaultForm().product_config, ...(row.product_config || {}) } } : {}); showForm.value = true; }
+function close() { showForm.value = false; Object.assign(form, defaultForm()); }
+async function save() {
+  const prices = Object.fromEntries(Object.entries(form.prices).filter(([, value]) => Number(value) > 0));
+  if (!form.name.trim()) return notify('请输入套餐名称', 'error');
+  if (!form.product_config.tunnel_id) return notify('请选择绑定隧道', 'error');
+  if (!Number(form.transfer_enable) || Number(form.transfer_enable) < 1) return notify('流量额度必须大于 0 GB', 'error');
+  if (!Object.keys(prices).length) return notify('请至少设置一个销售周期价格', 'error');
+  saving.value = true;
+  try { await post('/plan/save', { ...form, product_type: 'forwarding', group_id: null, reset_traffic_method: 2, product_config: { ...form.product_config, forward_limit: Math.max(1, Number(form.product_config.forward_limit || 1)), traffic_limit_gb: Number(form.product_config.traffic_limit_gb || form.transfer_enable) }, prices }); notify(form.id ? '转发套餐已更新' : '转发套餐已创建'); close(); await load(); } catch (error) { notify(error.message, 'error'); } finally { saving.value = false; }
+}
+async function setToggle(row, field, value) { const previous = row[field]; row[field] = value; try { await post('/plan/update', { id: row.id, [field]: value }); notify('状态已更新'); } catch (error) { row[field] = previous; notify(error.message, 'error'); } }
+async function remove(row) { if (!window.confirm(`确定删除转发套餐「${row.name}」？`)) return; try { await post('/plan/drop', { id: row.id }); notify('转发套餐已删除'); await load(); } catch (error) { notify(error.message, 'error'); } }
+onMounted(load);
+</script>
+
+<template>
+  <section class="page-stack forwarding-plans-page">
+    <div class="page-heading page-heading-row"><div><h1>转发套餐</h1><p>独立销售转发服务。用户购买后会自动获得对应隧道的流量、限速和转发数量授权。</p></div><button class="btn btn-primary" @click="open()"><AppIcon name="Plus" :size="16" />新建转发套餐</button></div>
+    <div class="stat-grid"><article class="stat-card"><span>套餐数量</span><strong>{{ rows.length }}</strong></article><article class="stat-card"><span>销售中</span><strong>{{ rows.filter((row) => row.show && row.sell).length }}</strong></article><article class="stat-card"><span>绑定隧道</span><strong>{{ new Set(rows.map((row) => row.product_config?.tunnel_id).filter(Boolean)).size }}</strong></article><article class="stat-card"><span>已授权用户</span><strong>{{ rows.reduce((sum, row) => sum + Number(row.active_users_count || 0), 0) }}</strong></article></div>
+    <div class="forwarding-plans-toolbar"><label class="filter-input"><span>搜索</span><input v-model="keyword" placeholder="套餐名称或说明" /></label><button class="btn btn-ghost" :disabled="loading" @click="load"><AppIcon name="RefreshCw" :size="15" />刷新</button></div>
+    <div v-if="loading" class="panel settings-loading">正在加载转发套餐…</div><div v-else-if="!filtered.length" class="panel settings-loading">暂无转发套餐，点击右上角新建</div>
+    <div v-else class="forwarding-plan-grid"><article v-for="row in filtered" :key="row.id" class="panel forwarding-plan-card"><div class="forwarding-plan-head"><div><span class="plan-group">{{ tunnelName(row.product_config?.tunnel_id) }}</span><h2>{{ row.name }}</h2><small>#{{ row.id }} · {{ limitName(row.product_config?.speed_limit_id) }}</small></div><span class="status-pill" :class="{ off: !row.sell }">{{ row.sell ? '销售中' : '已停售' }}</span></div><p>{{ row.content || '未填写套餐说明' }}</p><div class="forwarding-plan-rights"><span><small>流量额度</small><strong>{{ row.transfer_enable }} GB</strong></span><span><small>转发数量</small><strong>{{ row.product_config?.forward_limit || 1 }}</strong></span><span><small>有效用户</small><strong>{{ row.active_users_count || 0 }}</strong></span></div><div class="plan-prices"><span v-for="period in PERIODS" :key="period[0]" v-show="row.prices?.[period[0]]"><small>{{ period[1] }}</small><strong>¥ {{ Number(row.prices[period[0]]).toFixed(2) }}</strong></span></div><div class="plan-actions"><ToggleSwitch :model-value="row.sell" on-label="允许购买" off-label="停止购买" @update:model-value="setToggle(row, 'sell', $event)" /><button class="btn btn-ghost btn-sm" @click="open(row)">编辑</button><button class="btn btn-danger btn-sm" @click="remove(row)">删除</button></div></article></div>
+    <div v-if="showForm" class="modal-backdrop" @click.self="close"><section class="modal-card forwarding-plan-modal"><div class="panel-head"><div><h2>{{ form.id ? '编辑转发套餐' : '新建转发套餐' }}</h2><p>价格单位为元，购买成功后按配置自动开通转发授权。</p></div><button class="btn btn-ghost" @click="close">关闭</button></div><div class="smart-form"><label class="field field-wide"><span>套餐名称 *</span><input v-model.trim="form.name" maxlength="100" placeholder="例如：入门转发 100GB" /></label><label class="field field-wide"><span>套餐说明</span><textarea v-model="form.content" rows="3" placeholder="说明线路、适用场景和售后规则" /></label><label class="field"><span>绑定隧道 *</span><select v-model="form.product_config.tunnel_id"><option value="">请选择隧道</option><option v-for="item in options.tunnels" :key="item.id" :value="item.id">{{ item.name }}</option></select></label><label class="field"><span>限速策略</span><select v-model="form.product_config.speed_limit_id"><option value="">不限速</option><option v-for="item in options.limits" :key="item.id" :value="item.id">{{ item.name }} · {{ item.speed_mbps }} Mbps</option></select></label><label class="field"><span>流量额度（GB） *</span><input v-model.number="form.transfer_enable" type="number" min="1" /></label><label class="field"><span>转发数量</span><input v-model.number="form.product_config.forward_limit" type="number" min="1" /></label><label class="field"><span>授权流量（GB）</span><input v-model.number="form.product_config.traffic_limit_gb" type="number" min="0" /><small>0 表示使用上方流量额度</small></label><label class="field"><span>展示状态</span><ToggleSwitch v-model="form.show" on-label="已展示" off-label="已隐藏" /></label><label class="field"><span>购买状态</span><ToggleSwitch v-model="form.sell" on-label="允许购买" off-label="停止购买" /></label></div><h3 class="plan-form-title">销售周期价格 *</h3><div class="price-editor"><label v-for="period in PERIODS" :key="period[0]"><span>{{ period[1] }}</span><input v-model.number="form.prices[period[0]]" type="number" min="0" step="0.01" placeholder="留空不销售" /></label></div><div class="modal-actions"><button class="btn btn-ghost" @click="close">取消</button><button class="btn btn-primary" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存套餐' }}</button></div></section></div><div v-if="toast.text" class="toast" :class="{ error: toast.type === 'error' }">{{ toast.text }}</div>
+  </section>
+</template>

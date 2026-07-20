@@ -23,9 +23,10 @@ class PlanService
      *
      * @return Collection
      */
-    public function getAvailablePlans(): Collection
+    public function getAvailablePlans(?string $productType = 'subscription'): Collection
     {
-        return Plan::where('show', true)
+        return Plan::when($productType, fn ($query) => $query->where('product_type', $productType))
+            ->where('show', true)
             ->where('sell', true)
             ->orderBy('sort')
             ->get()
@@ -73,6 +74,11 @@ class PlanService
             throw new ApiException(__('Subscription plan does not exist'));
         }
 
+        if ($this->plan->isForwarding()) {
+            $this->validateForwardingPurchase($user, $period);
+            return;
+        }
+
         // 转换周期格式为新版格式
         $periodKey = self::getPeriodKey($period);
         $price = $this->plan->prices[$periodKey] ?? null;
@@ -91,6 +97,17 @@ class PlanService
         }
 
         $this->validatePlanAvailability($user);
+    }
+
+    protected function validateForwardingPurchase(User $user, string $period): void
+    {
+        $periodKey = self::getPeriodKey($period);
+        if ($periodKey === Plan::PERIOD_RESET_TRAFFIC) throw new ApiException('转发套餐不支持流量重置周期');
+        if (!isset(($this->plan->prices ?? [])[$periodKey]) || (float) $this->plan->prices[$periodKey] <= 0) throw new ApiException(__('This payment period cannot be purchased, please choose another period'));
+        $config = $this->plan->product_config ?? [];
+        if (empty($config['tunnel_id'])) throw new ApiException('该转发套餐尚未配置隧道');
+        if (!$this->plan->show || !$this->plan->sell) throw new ApiException(__('This subscription has been sold out, please choose another subscription'));
+        if (!$this->hasCapacity($this->plan)) throw new ApiException(__('Current product is sold out'));
     }
 
     /**

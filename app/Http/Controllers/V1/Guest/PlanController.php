@@ -19,7 +19,7 @@ class PlanController extends Controller
     }
     public function fetch(Request $request)
     {
-        $plan = $this->planService->getAvailablePlans();
+        $plan = $this->planService->getAvailablePlans($request->input('product_type', 'subscription'));
         return $this->success(PlanResource::collection($plan));
     }
 }

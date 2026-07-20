@@ -16,7 +16,8 @@ class PlanController extends Controller
 {
     public function fetch(Request $request)
     {
-        $plans = Plan::orderBy('sort', 'ASC')
+        $plans = Plan::when($request->filled('product_type'), fn ($query) => $query->where('product_type', $request->input('product_type')))
+            ->orderBy('sort', 'ASC')
             ->with([
                 'group:id,name'
             ])
@@ -31,12 +32,40 @@ class PlanController extends Controller
             ])
             ->get();
 
+        if ($request->input('product_type') === 'forwarding') {
+            $plans->each(function (Plan $plan): void {
+                $tunnelId = (int) data_get($plan->product_config, 'tunnel_id');
+                $active = $tunnelId > 0
+                    ? DB::table('flux_user_tunnels')
+                        ->where('tunnel_id', $tunnelId)
+                        ->where('enabled', true)
+                        ->where(function ($query) {
+                            $query->whereNull('expires_at')->orWhere('expires_at', '>', time());
+                        })
+                        ->count()
+                    : 0;
+                $plan->setAttribute('active_users_count', $active);
+                $plan->setAttribute('users_count', $active);
+            });
+        }
+
         return $this->success($plans);
     }
 
     public function save(PlanSave $request)
     {
         $params = $request->validated();
+        $params['product_type'] = $params['product_type'] ?? 'subscription';
+        if ($params['product_type'] === 'forwarding') {
+            $config = $params['product_config'] ?? [];
+            if (empty($config['tunnel_id'])) return $this->fail([422, '转发套餐必须绑定隧道']);
+            $params['group_id'] = null;
+            $params['reset_traffic_method'] = Plan::RESET_TRAFFIC_NEVER;
+            // 传统套餐的容量字段不适用于转发授权；0 在旧逻辑中代表“售罄”，这里统一为不限。
+            if (empty($params['capacity_limit'])) $params['capacity_limit'] = null;
+        } else {
+            $params['product_config'] = null;
+        }
         
         if ($request->input('id')) {
             $plan = Plan::find($request->input('id'));

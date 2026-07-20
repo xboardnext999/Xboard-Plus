@@ -52,6 +52,7 @@ export const menuGroups = [
     title: '流量转发',
     items: [
       { title: '转发概览', path: '/forwarding/dashboard', icon: 'ChartNoAxesCombined' },
+      { title: '转发套餐', path: '/forwarding/plans', icon: 'Store' },
       { title: '转发规则', path: '/forwarding/forwards', icon: 'Shuffle' },
       { title: '隧道管理', path: '/forwarding/tunnels', icon: 'Waypoints' },
       { title: '转发节点', path: '/forwarding/nodes', icon: 'Network' },
