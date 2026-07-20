@@ -311,7 +311,6 @@ async function dropFaq(item) {
     }
 }
 function startFaqDrag(event, item) {
-    faqDraggingId.value = item.id;
     faqDragOverId.value = null;
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(item.id));
@@ -324,6 +323,9 @@ function startFaqDrag(event, item) {
     document.body.appendChild(clone);
     faqDragGhost = clone;
     event.dataTransfer.setDragImage(clone, 34, rect.height / 2);
+    requestAnimationFrame(() => {
+        faqDraggingId.value = item.id;
+    });
 }
 function finishFaqDrag() {
     faqDraggingId.value = null;
