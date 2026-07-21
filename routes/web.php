@@ -98,13 +98,19 @@ Route::get('/', function (Request $request) {
             'custom_html' => '',
         ], $themeService->getConfig($theme) ?: []);
 
+        $assetVersion = app(UpdateService::class)->getCurrentVersion();
+        $mainAssetPath = $themeService->getThemePath($theme) . '/assets/app/main.js';
+        if (File::exists($mainAssetPath)) {
+            $assetVersion .= '-' . File::lastModified($mainAssetPath);
+        }
+
         $frontendSettings = [
             'title' => admin_setting('app_name', 'Xboard Plus'),
             'assets_path' => '/theme-runtime/' . $theme . '/assets',
             'theme' => [
                 'color' => $themeConfig['theme_color'],
             ],
-            'version' => app(UpdateService::class)->getCurrentVersion(),
+            'version' => $assetVersion,
             'background_url' => $themeConfig['background_url'],
             'description' => admin_setting('app_description', 'Xboard Plus is best!'),
             'i18n' => [
