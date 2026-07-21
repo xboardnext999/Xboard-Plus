@@ -2416,6 +2416,16 @@ const OrderDetailPage = {
     }
 
     return () => {
+      if (!local.ready) {
+        return h('section', { class: 'order-detail-loading', 'aria-label': '正在加载订单详情' }, [
+          h('div', { class: 'order-loading-back' }),
+          h('div', { class: 'order-loading-summary' }),
+          h('div', { class: 'order-loading-grid' }, [h('div'), h('div')]),
+        ]);
+      }
+      if (local.error && !local.order) {
+        return h('section', { class: 'order-detail-error' }, [pageError(local.error), h('a', { class: 'secondary-button', href: '#/orders' }, '返回订单列表')]);
+      }
       const order = local.order || {};
       const completed = Number(order.status) === 3;
       const isDigital = order.plan?.product_type === 'digital';
@@ -2430,12 +2440,12 @@ const OrderDetailPage = {
       const productDescription = selectedPackage?.description || order.plan?.content || '';
       const statusStep = Number(order.status) === 3 ? 4 : (Number(order.status) === 1 ? 3 : 1);
       const progressItems = [
-        ['提交订单', order.created_at],
-        ['支付成功', completed || Number(order.status) === 1 ? order.updated_at || order.created_at : null],
-        ['处理完成', completed ? order.updated_at || order.created_at : null],
-        ['已完成', completed ? order.updated_at || order.created_at : null],
+        ['提交订单', order.created_at, '▣'],
+        ['支付成功', completed || Number(order.status) === 1 ? order.updated_at || order.created_at : null, '¥'],
+        ['处理完成', completed ? order.updated_at || order.created_at : null, '◇'],
+        ['已完成', completed ? order.updated_at || order.created_at : null, '✓'],
       ];
-      const infoRow = (label, value, accent = false) => h('div', { class: 'order-info-row' }, [h('span', label), h('strong', { class: accent ? 'is-accent' : '' }, value)]);
+      const infoRow = (label, value, tone = '') => h('div', { class: 'order-info-row' }, [h('span', label), h('strong', { class: tone ? `is-${tone}` : '' }, value)]);
       return h('section', { class: 'order-detail-page' }, [
         pageError(local.error),
         h('header', { class: 'order-detail-title' }, [
@@ -2470,7 +2480,7 @@ const OrderDetailPage = {
             h('section', { class: 'order-detail-card order-progress-card' }, [
               h('h3', '订单状态'),
               h('div', { class: 'order-progress' }, progressItems.map((item, index) => h('div', { class: ['order-progress-item', index < statusStep ? 'is-done' : ''] }, [
-                h('div', { class: 'order-progress-mark' }, index === 3 && completed ? '✓' : String(index + 1)),
+                h('div', { class: 'order-progress-mark' }, item[2]),
                 h('strong', item[0]),
                 h('span', item[1] ? time(item[1]) : '等待处理'),
               ]))),
@@ -2512,9 +2522,9 @@ const OrderDetailPage = {
               infoRow('订单号', order.trade_no || props.tradeNo),
               infoRow('支付方式', paymentName),
               infoRow('商品金额', money(paidAmount + discountAmount, currencySymbol())),
-              infoRow('优惠金额', discountAmount ? `-${money(discountAmount, currencySymbol())}` : money(0, currencySymbol()), discountAmount > 0),
+              infoRow('优惠金额', discountAmount ? `-${money(discountAmount, currencySymbol())}` : money(0, currencySymbol()), discountAmount > 0 ? 'discount' : ''),
               balanceAmount > 0 ? infoRow('余额抵扣', `-${money(balanceAmount, currencySymbol())}`) : null,
-              infoRow(completed ? '支付金额' : '待付金额', money(completed ? paidAmount : order.total_amount, currencySymbol()), true),
+              infoRow(completed ? '支付金额' : '待付金额', money(completed ? paidAmount : order.total_amount, currencySymbol()), 'accent'),
               infoRow('订单类型', isDigital ? '数字商品' : '订阅套餐'),
             ].filter(Boolean)),
             h('section', { class: 'order-detail-card order-security-card' }, [
