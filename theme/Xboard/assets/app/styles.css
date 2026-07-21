@@ -2736,7 +2736,7 @@ td {
 .order-delivery-fields button { width: 28px; height: 28px; border: 0; border-radius: 8px; background: var(--card-bg); color: var(--muted); cursor: pointer; }
 .order-delivery-fields button:hover { color: var(--primary-strong); }
 
-.order-info-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--line); padding: 12px 0; }
+.order-info-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 10px 0; }
 .order-info-row:last-child { border-bottom: 0; padding-bottom: 0; }
 .order-info-row span { flex: none; color: var(--muted); font-size: 12px; }
 .order-info-row strong { overflow-wrap: anywhere; color: var(--muted); font-size: 12px; font-weight: 600; text-align: right; }
