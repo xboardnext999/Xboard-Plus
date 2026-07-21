@@ -2689,26 +2689,32 @@ td {
 .order-progress.is-complete::before { width: 24px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.08) 58%, rgba(255,255,255,.3)); mix-blend-mode: soft-light; animation: order-progress-trail 13s cubic-bezier(.4, 0, .2, 1) infinite; }
 .order-progress.is-complete::after { width: 2px; height: 2px; margin-top: 0; border-radius: 50%; background: rgba(250,255,252,.88); box-shadow: 0 0 3px rgba(67, 165, 116, .18); animation: order-progress-particle 13s cubic-bezier(.4, 0, .2, 1) infinite; }
 @keyframes order-progress-particle {
-  0%, 4% { left: 12.5%; opacity: 0; }
-  9% { opacity: .58; }
-  54% { opacity: .58; }
-  61%, 100% { left: 87.5%; opacity: 0; }
+  0%, 9% { left: 12.5%; opacity: 0; }
+  11%, 19% { opacity: .58; }
+  21%, 25% { opacity: 0; }
+  27%, 38% { opacity: .58; }
+  40%, 44% { opacity: 0; }
+  46%, 56% { opacity: .58; }
+  58%, 100% { left: 87.5%; opacity: 0; }
 }
 @keyframes order-progress-trail {
-  0%, 4% { left: calc(12.5% - 24px); opacity: 0; }
-  10% { opacity: .24; }
-  53% { opacity: .24; }
-  61%, 100% { left: calc(87.5% - 24px); opacity: 0; }
+  0%, 9% { left: calc(12.5% - 24px); opacity: 0; }
+  11%, 19% { opacity: .24; }
+  21%, 25% { opacity: 0; }
+  27%, 38% { opacity: .24; }
+  40%, 44% { opacity: 0; }
+  46%, 56% { opacity: .24; }
+  58%, 100% { left: calc(87.5% - 24px); opacity: 0; }
 }
 .order-progress-item { position: relative; display: grid; justify-items: center; gap: 8px; color: var(--muted); text-align: center; }
 .order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 18px; left: calc(50% + 22px); width: calc(100% - 44px); height: 2px; background: var(--line); content: ''; }
 .order-progress-item.is-done:not(:last-child)::after { background: #a5d8bf; }
 .order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--panel-soft); color: var(--muted); font-size: 13px; font-weight: 900; }
-.order-progress.is-complete .order-progress-mark::before { position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(from 205deg, transparent 0 78%, rgba(244,255,249,.18) 84%, rgba(238,255,247,.72) 91%, transparent 97%); opacity: 0; content: ''; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); animation: order-progress-orbit 13s cubic-bezier(.4, 0, .2, 1) infinite; }
-.order-progress.is-complete .order-progress-item:nth-child(1) .order-progress-mark::before { animation-delay: .4s; }
-.order-progress.is-complete .order-progress-item:nth-child(2) .order-progress-mark::before { animation-delay: 2.9s; }
-.order-progress.is-complete .order-progress-item:nth-child(3) .order-progress-mark::before { animation-delay: 5.4s; }
-.order-progress.is-complete .order-progress-item:nth-child(4) .order-progress-mark::before { animation-delay: 7.9s; }
+.order-progress.is-complete .order-progress-mark::before { position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(from 205deg, transparent 0 76%, rgba(165,216,191,.12) 82%, rgba(245,255,250,.72) 90%, rgba(165,216,191,.18) 95%, transparent 100%); opacity: 0; content: ''; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); animation: order-progress-orbit 13s cubic-bezier(.4, 0, .2, 1) infinite; }
+.order-progress.is-complete .order-progress-item:nth-child(1) .order-progress-mark::before { animation-delay: 0s; }
+.order-progress.is-complete .order-progress-item:nth-child(2) .order-progress-mark::before { animation-delay: 2.35s; }
+.order-progress.is-complete .order-progress-item:nth-child(3) .order-progress-mark::before { animation-delay: 4.8s; }
+.order-progress.is-complete .order-progress-item:nth-child(4) .order-progress-mark::before { animation-delay: 7.3s; }
 @keyframes order-progress-orbit {
   0% { transform: rotate(-26deg); opacity: 0; }
   1.5% { opacity: .5; }
