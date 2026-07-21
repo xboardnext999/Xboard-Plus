@@ -104,7 +104,11 @@ class OrderService
                 $orderService->applyCoupon($couponCode);
             }
 
-            $orderService->setVipDiscount($user);
+            // Digital goods keep their independently configured selling price.
+            // Subscription membership discounts only apply to subscription plans.
+            if (!$plan->isDigital()) {
+                $orderService->setVipDiscount($user);
+            }
             $orderService->setOrderType($user, $subscriptionMode);
             $orderService->setInvite(user: $user);
 
@@ -166,7 +170,9 @@ class OrderService
         }
 
         $discountAmountBeforeVip = (int) $order->discount_amount;
-        $orderService->setVipDiscount($user);
+        if (!$plan->isDigital()) {
+            $orderService->setVipDiscount($user);
+        }
         $vipDiscountAmount = max(0, (int) $order->discount_amount - $discountAmountBeforeVip);
         $orderService->setOrderType($user, $subscriptionMode);
 
