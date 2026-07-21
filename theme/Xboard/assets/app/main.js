@@ -2372,7 +2372,7 @@ function digitalDeliveryFields(content) {
     const match = line.match(/^([^:：]{1,30})[:：]\s*(.+)$/);
     return match ? { label: match[1], value: match[2] } : null;
   }).filter(Boolean);
-  return rows.length ? rows : [{ label: '交付内容', value: raw }];
+  return rows.length ? rows : [{ label: '内容', value: raw }];
 }
 
 function orderProgressIcon(type) {
@@ -2498,7 +2498,7 @@ const OrderDetailPage = {
               (order.digital_delivery || []).length ? h('div', { class: 'order-delivery-section' }, [
                 h('div', { class: 'order-delivery-heading' }, [h('div', [h('h4', '交付信息'), h('p', `共 ${(order.digital_delivery || []).length} 项内容，请及时保存。`)]), h('span', '已交付')]),
                 ...(order.digital_delivery || []).map((item, index) => h('div', { class: 'order-delivery-content' }, [
-                  h('div', [h('strong', `交付内容 ${index + 1}`), h('span', time(item.delivered_at))]),
+                  h('div', [h('strong', `交付凭证 ${index + 1}`), h('span', time(item.delivered_at))]),
                   h('div', { class: 'order-delivery-fields' }, digitalDeliveryFields(item.content).map((field) => h('div', [
                     h('span', field.label),
                     h('strong', field.value),
@@ -2506,7 +2506,6 @@ const OrderDetailPage = {
                   ]))),
                   h('button', { class: 'secondary-button', type: 'button', onClick: () => copyText(item.content).then(() => toast('全部交付内容已复制')) }, '复制全部'),
                 ])),
-                h('p', { class: 'order-delivery-tip' }, 'ⓘ 请妥善保管以上信息，避免泄露给他人。'),
               ]) : (completed && isDigital ? h('div', { class: 'success-box' }, '交付内容正在生成，请稍后刷新。') : null),
             ]),
           ]),
