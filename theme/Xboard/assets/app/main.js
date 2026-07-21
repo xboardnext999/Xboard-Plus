@@ -2419,7 +2419,6 @@ const OrderDetailPage = {
       if (!local.ready) {
         return h('section', { class: 'order-detail-loading', 'aria-label': '正在加载订单详情' }, [
           h('div', { class: 'order-loading-back' }),
-          h('div', { class: 'order-loading-summary' }),
           h('div', { class: 'order-loading-grid' }, [h('div'), h('div')]),
         ]);
       }
@@ -2451,19 +2450,6 @@ const OrderDetailPage = {
         h('header', { class: 'order-detail-title' }, [
           h('a', { href: '#/orders', 'aria-label': '返回订单列表' }, '←'),
           h('span', '返回列表'),
-        ]),
-        h('section', { class: 'order-summary-card' }, [
-          h('div', { class: ['order-summary-image', productImage ? '' : 'is-placeholder'], style: productImage ? { backgroundImage: `url(${productImage})` } : null }, productImage ? null : (order.plan?.name || '商').slice(0, 1)),
-          h('div', { class: 'order-summary-copy' }, [
-            h('div', [h('h2', order.plan?.name || '订单商品'), h('span', { class: ['badge', completed ? 'ok' : ''] }, statusText(order.status, orderStatus))]),
-            h('p', [h('span', '订单号：'), h('b', order.trade_no || props.tradeNo), h('button', { type: 'button', class: 'order-copy-icon', onClick: () => copyText(order.trade_no || props.tradeNo).then(() => toast('订单号已复制')) }, '⧉')]),
-            h('p', [h('span', '创建时间：'), time(order.created_at)]),
-          ]),
-          h('div', { class: 'order-summary-amount' }, [
-            h('strong', money(completed ? paidAmount : order.total_amount, currencySymbol())),
-            h('span', '共 1 件商品'),
-            completed ? h('a', { class: 'secondary-button', href: '#/tickets' }, '申请售后') : null,
-          ]),
         ]),
         Number(order.status) === 0 ? h('div', { class: 'checkout-box', 'data-checkout': props.tradeNo }, [
           h('h3', '支付订单'),
@@ -2520,6 +2506,7 @@ const OrderDetailPage = {
             h('section', { class: 'order-detail-card' }, [
               h('h3', '订单信息'),
               infoRow('订单号', order.trade_no || props.tradeNo),
+              infoRow('创建时间', time(order.created_at)),
               infoRow('支付方式', paymentName),
               infoRow('商品金额', money(paidAmount + discountAmount, currencySymbol())),
               infoRow('优惠金额', discountAmount ? `-${money(discountAmount, currencySymbol())}` : money(0, currencySymbol()), discountAmount > 0 ? 'discount' : ''),
