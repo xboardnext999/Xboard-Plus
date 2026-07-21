@@ -2622,10 +2622,6 @@ const OrderDetailPage = {
             ].filter(Boolean)),
           ]),
         ]),
-        h('footer', { class: 'order-detail-footer' }, [
-          h('a', { class: 'secondary-button', href: '#/orders' }, '返回列表'),
-          isDigital ? h('a', { class: 'primary-button', href: '#/digital' }, '再次购买') : null,
-        ].filter(Boolean)),
       ]);
     };
   },
