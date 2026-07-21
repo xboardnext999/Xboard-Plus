@@ -2704,6 +2704,17 @@ td {
 .order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 18px; left: calc(50% + 22px); width: calc(100% - 44px); height: 2px; background: var(--line); content: ''; }
 .order-progress-item.is-done:not(:last-child)::after { background: #a5d8bf; }
 .order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--panel-soft); color: var(--muted); font-size: 13px; font-weight: 900; }
+.order-progress.is-complete .order-progress-mark::before { position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(from 205deg, transparent 0 78%, rgba(244,255,249,.18) 84%, rgba(238,255,247,.72) 91%, transparent 97%); opacity: 0; content: ''; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); animation: order-progress-orbit 13s cubic-bezier(.4, 0, .2, 1) infinite; }
+.order-progress.is-complete .order-progress-item:nth-child(1) .order-progress-mark::before { animation-delay: .4s; }
+.order-progress.is-complete .order-progress-item:nth-child(2) .order-progress-mark::before { animation-delay: 2.9s; }
+.order-progress.is-complete .order-progress-item:nth-child(3) .order-progress-mark::before { animation-delay: 5.4s; }
+.order-progress.is-complete .order-progress-item:nth-child(4) .order-progress-mark::before { animation-delay: 7.9s; }
+@keyframes order-progress-orbit {
+  0% { transform: rotate(-26deg); opacity: 0; }
+  1.5% { opacity: .5; }
+  6% { transform: rotate(154deg); opacity: .42; }
+  10%, 100% { transform: rotate(205deg); opacity: 0; }
+}
 .order-progress-mark svg { width: 19px; height: 19px; }
 .order-progress-item.is-done .order-progress-mark { background: rgba(80, 201, 139, .13); color: #43b97c; }
 .order-progress-item:last-child.is-done .order-progress-mark { background: rgba(80, 201, 139, .15); box-shadow: 0 0 0 5px rgba(80, 201, 139, .045); color: #43ad76; }
@@ -2783,7 +2794,8 @@ td {
   .order-loading-grid > div { animation: none; }
   .order-progress.is-complete::before,
   .order-progress.is-complete::after { display: none; }
-  .order-progress.is-complete .order-progress-mark { animation: none!important; }
+  .order-progress.is-complete .order-progress-mark,
+  .order-progress.is-complete .order-progress-mark::before { animation: none!important; }
 }
 
 @media (max-width: 980px) {
@@ -2804,7 +2816,8 @@ td {
   .order-progress { grid-template-columns: 1fr; gap: 14px; }
   .order-progress.is-complete::before,
   .order-progress.is-complete::after { display: none; }
-  .order-progress.is-complete .order-progress-mark { animation: none; }
+  .order-progress.is-complete .order-progress-mark,
+  .order-progress.is-complete .order-progress-mark::before { animation: none; }
   .order-progress-item { grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; justify-items: start; text-align: left; }
   .order-progress-item:not(:last-child)::after { top: 38px; bottom: -14px; left: 18px; width: 2px; height: auto; }
   .order-product-line { grid-template-columns: auto minmax(0, 1fr); }
