@@ -2684,43 +2684,24 @@ td {
 .order-detail-card > h3 { margin: 0 0 18px; color: var(--text); font-size: 17px; }
 
 .order-progress { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); }
-.order-progress.is-complete::before,
-.order-progress.is-complete::after { position: absolute; z-index: 2; top: 17px; pointer-events: none; content: ''; will-change: left, opacity; }
-.order-progress.is-complete::before { width: 24px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.08) 58%, rgba(255,255,255,.3)); mix-blend-mode: soft-light; animation: order-progress-trail 13s cubic-bezier(.4, 0, .2, 1) infinite; }
-.order-progress.is-complete::after { width: 2px; height: 2px; margin-top: 0; border-radius: 50%; background: rgba(250,255,252,.88); box-shadow: 0 0 3px rgba(67, 165, 116, .18); animation: order-progress-particle 13s cubic-bezier(.4, 0, .2, 1) infinite; }
-@keyframes order-progress-particle {
-  0%, 9% { left: 12.5%; opacity: 0; }
-  11%, 19% { opacity: .58; }
-  21%, 25% { opacity: 0; }
-  27%, 38% { opacity: .58; }
-  40%, 44% { opacity: 0; }
-  46%, 56% { opacity: .58; }
-  58%, 100% { left: 87.5%; opacity: 0; }
-}
-@keyframes order-progress-trail {
-  0%, 9% { left: calc(12.5% - 24px); opacity: 0; }
-  11%, 19% { opacity: .24; }
-  21%, 25% { opacity: 0; }
-  27%, 38% { opacity: .24; }
-  40%, 44% { opacity: 0; }
-  46%, 56% { opacity: .24; }
-  58%, 100% { left: calc(87.5% - 24px); opacity: 0; }
+.order-progress-flow { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.order-progress-flow path { fill: none; vector-effect: non-scaling-stroke; }
+.order-progress-flow-base { stroke: #a5d8bf; stroke-width: 1.5; }
+.order-progress-flow-trail,
+.order-progress-flow-head { stroke-linecap: round; will-change: stroke-dashoffset, opacity; animation: order-progress-flow 13s cubic-bezier(.45, 0, .2, 1) infinite; }
+.order-progress-flow-trail { stroke: rgba(105, 203, 156, .28); stroke-width: 2.4; stroke-dasharray: 2.4 97.6; filter: drop-shadow(0 0 1.5px rgba(91, 190, 143, .12)); }
+.order-progress-flow-head { stroke: rgba(244, 255, 249, .9); stroke-width: 2.1; stroke-dasharray: .22 99.78; filter: drop-shadow(0 0 2px rgba(67, 165, 116, .2)); }
+@keyframes order-progress-flow {
+  0%, 7% { stroke-dashoffset: 0; opacity: 0; }
+  10% { opacity: .72; }
+  64% { stroke-dashoffset: -100; opacity: .72; }
+  69%, 100% { stroke-dashoffset: -100; opacity: 0; }
 }
 .order-progress-item { position: relative; display: grid; justify-items: center; gap: 8px; color: var(--muted); text-align: center; }
 .order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 18px; left: calc(50% + 22px); width: calc(100% - 44px); height: 2px; background: var(--line); content: ''; }
 .order-progress-item.is-done:not(:last-child)::after { background: #a5d8bf; }
+.order-progress.is-complete .order-progress-item:not(:last-child)::after { display: none; }
 .order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--panel-soft); color: var(--muted); font-size: 13px; font-weight: 900; }
-.order-progress.is-complete .order-progress-mark::before { position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(from 205deg, transparent 0 76%, rgba(165,216,191,.12) 82%, rgba(245,255,250,.72) 90%, rgba(165,216,191,.18) 95%, transparent 100%); opacity: 0; content: ''; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0); animation: order-progress-orbit 13s cubic-bezier(.4, 0, .2, 1) infinite; }
-.order-progress.is-complete .order-progress-item:nth-child(1) .order-progress-mark::before { animation-delay: 0s; }
-.order-progress.is-complete .order-progress-item:nth-child(2) .order-progress-mark::before { animation-delay: 2.35s; }
-.order-progress.is-complete .order-progress-item:nth-child(3) .order-progress-mark::before { animation-delay: 4.8s; }
-.order-progress.is-complete .order-progress-item:nth-child(4) .order-progress-mark::before { animation-delay: 7.3s; }
-@keyframes order-progress-orbit {
-  0% { transform: rotate(-26deg); opacity: 0; }
-  1.5% { opacity: .5; }
-  6% { transform: rotate(154deg); opacity: .42; }
-  10%, 100% { transform: rotate(205deg); opacity: 0; }
-}
 .order-progress-mark svg { width: 19px; height: 19px; }
 .order-progress-item.is-done .order-progress-mark { background: rgba(80, 201, 139, .13); color: #43b97c; }
 .order-progress-item:last-child.is-done .order-progress-mark { background: rgba(80, 201, 139, .15); box-shadow: 0 0 0 5px rgba(80, 201, 139, .045); color: #43ad76; }
@@ -2798,10 +2779,8 @@ td {
   .order-loading-back,
   .order-loading-summary,
   .order-loading-grid > div { animation: none; }
-  .order-progress.is-complete::before,
-  .order-progress.is-complete::after { display: none; }
-  .order-progress.is-complete .order-progress-mark,
-  .order-progress.is-complete .order-progress-mark::before { animation: none!important; }
+  .order-progress-flow-trail,
+  .order-progress-flow-head { display: none; animation: none!important; }
 }
 
 @media (max-width: 980px) {
@@ -2820,12 +2799,10 @@ td {
   .order-detail-aside { grid-template-columns: 1fr; }
   .order-detail-card { padding: 16px; }
   .order-progress { grid-template-columns: 1fr; gap: 14px; }
-  .order-progress.is-complete::before,
-  .order-progress.is-complete::after { display: none; }
-  .order-progress.is-complete .order-progress-mark,
-  .order-progress.is-complete .order-progress-mark::before { animation: none; }
+  .order-progress-flow { display: none; }
   .order-progress-item { grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; justify-items: start; text-align: left; }
   .order-progress-item:not(:last-child)::after { top: 38px; bottom: -14px; left: 18px; width: 2px; height: auto; }
+  .order-progress.is-complete .order-progress-item:not(:last-child)::after { display: block; }
   .order-product-line { grid-template-columns: auto minmax(0, 1fr); }
   .order-product-line > div:last-child { grid-column: 2; justify-items: start; }
   .order-product-specs > div { grid-template-columns: 110px minmax(0, 1fr); }

@@ -2397,6 +2397,70 @@ function orderProgressIcon(type) {
   return h('svg', common, [h('circle', { cx: '12', cy: '12', r: '9' }), h('path', { d: 'm8 12 2.6 2.6L16.5 9' })]);
 }
 
+const OrderProgressFlow = {
+  setup() {
+    const svg = ref(null);
+    const geometry = reactive({ width: 0, height: 0, path: '' });
+    let observer = null;
+    let frame = 0;
+
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const element = svg.value;
+        const container = element?.parentElement;
+        if (!container) return;
+        const bounds = container.getBoundingClientRect();
+        const marks = [...container.querySelectorAll('.order-progress-mark')];
+        if (marks.length < 2 || !bounds.width || !bounds.height) return;
+        const points = marks.map((mark) => {
+          const rect = mark.getBoundingClientRect();
+          return {
+            x: rect.left - bounds.left + rect.width / 2,
+            y: rect.top - bounds.top + rect.height / 2,
+            radius: rect.width / 2 + 3,
+          };
+        });
+        let path = '';
+        points.forEach((point, index) => {
+          const left = point.x - point.radius;
+          const right = point.x + point.radius;
+          const top = point.y - point.radius;
+          if (index === 0) path += `M ${left} ${point.y}`;
+          else path += ` L ${left} ${point.y}`;
+          path += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${top}`;
+          path += ` A ${point.radius} ${point.radius} 0 0 1 ${right} ${point.y}`;
+        });
+        geometry.width = bounds.width;
+        geometry.height = bounds.height;
+        geometry.path = path;
+      });
+    };
+
+    onMounted(() => {
+      measure();
+      observer = new ResizeObserver(measure);
+      if (svg.value?.parentElement) observer.observe(svg.value.parentElement);
+    });
+    onBeforeUnmount(() => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    });
+
+    return () => h('svg', {
+      ref: svg,
+      class: 'order-progress-flow',
+      viewBox: `0 0 ${geometry.width || 1} ${geometry.height || 1}`,
+      preserveAspectRatio: 'none',
+      'aria-hidden': 'true',
+    }, geometry.path ? [
+      h('path', { class: 'order-progress-flow-base', d: geometry.path, pathLength: 100 }),
+      h('path', { class: 'order-progress-flow-trail', d: geometry.path, pathLength: 100 }),
+      h('path', { class: 'order-progress-flow-head', d: geometry.path, pathLength: 100 }),
+    ] : null);
+  },
+};
+
 const OrderDetailPage = {
   props: {
     tradeNo: { type: String, required: true },
@@ -2487,11 +2551,14 @@ const OrderDetailPage = {
           h('main', { class: 'order-detail-main' }, [
             h('section', { class: 'order-detail-card order-progress-card' }, [
               h('h3', '订单状态'),
-              h('div', { class: ['order-progress', completed ? 'is-complete' : ''] }, progressItems.map((item, index) => h('div', { class: ['order-progress-item', index < statusStep ? 'is-done' : ''] }, [
-                h('div', { class: 'order-progress-mark' }, orderProgressIcon(item[2])),
-                h('strong', item[0]),
-                h('span', item[1] ? time(item[1]) : '等待处理'),
-              ]))),
+              h('div', { class: ['order-progress', completed ? 'is-complete' : ''] }, [
+                completed ? h(OrderProgressFlow) : null,
+                ...progressItems.map((item, index) => h('div', { class: ['order-progress-item', index < statusStep ? 'is-done' : ''] }, [
+                  h('div', { class: 'order-progress-mark' }, orderProgressIcon(item[2])),
+                  h('strong', item[0]),
+                  h('span', item[1] ? time(item[1]) : '等待处理'),
+                ])),
+              ]),
             ]),
             h('section', { class: 'order-detail-card order-product-section' }, [
               h('h3', '商品信息'),
