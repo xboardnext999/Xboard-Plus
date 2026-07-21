@@ -2734,7 +2734,6 @@ td {
 .order-delivery-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .order-delivery-heading h3 { margin: 0 0 5px; color: var(--text); font-size: 17px; }
 .order-delivery-heading p { margin: 0; color: var(--muted); font-size: 12px; }
-.order-delivery-heading > span { border-radius: 999px; background: rgba(35, 185, 101, .1); padding: 5px 9px; color: #20a85b; font-size: 11px; font-weight: 800; }
 .order-delivery-list { display: grid; gap: 10px; margin-top: 16px; }
 .order-delivery-content { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; border: 0; border-radius: 11px; background: var(--panel-soft); padding: 14px 16px; }
 .order-delivery-copy { display: grid; min-width: 0; gap: 4px; }

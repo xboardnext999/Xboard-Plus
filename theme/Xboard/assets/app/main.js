@@ -2584,7 +2584,6 @@ const OrderDetailPage = {
             (order.digital_delivery || []).length ? h('section', { class: 'order-detail-card order-delivery-card' }, [
               h('div', { class: 'order-delivery-heading' }, [
                 h('div', [h('h3', '交付信息'), h('p', `共 ${(order.digital_delivery || []).length} 项`)]),
-                h('span', '已交付'),
               ]),
               h('div', { class: 'order-delivery-list' }, (order.digital_delivery || []).map((item, index) => {
                 const file = digitalDeliveryFile(item.content);
