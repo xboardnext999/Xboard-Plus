@@ -2755,7 +2755,7 @@ td {
 .order-info-row span { flex: none; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 1.5; }
 .order-info-row strong { overflow-wrap: anywhere; color: var(--text); font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1.5; text-align: right; }
 .order-info-row.is-accent { margin-top: 4px; padding-top: 14px; }
-.order-info-row.is-accent span { color: var(--text); font-size: 14px; font-weight: 700; }
+.order-info-row.is-accent span { color: var(--muted); font-size: 14px; font-weight: 500; }
 .order-info-row strong.is-accent { color: var(--text); font-size: 23px; font-weight: 900; letter-spacing: -.02em; }
 .order-info-row strong.is-discount { color: #18a85a; }
 .order-info-row strong.is-mono { font-family: inherit; font-size: 14px; font-variant-numeric: tabular-nums; letter-spacing: 0; }
