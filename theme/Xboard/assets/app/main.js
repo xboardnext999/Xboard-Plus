@@ -2535,7 +2535,10 @@ const OrderDetailPage = {
         ['处理完成', completed ? order.updated_at || order.created_at : null, 'process'],
         ['已完成', completed ? order.updated_at || order.created_at : null, 'complete'],
       ];
-      const infoRow = (label, value, tone = '') => h('div', { class: ['order-info-row', tone ? `is-${tone}` : ''] }, [h('span', label), h('strong', { class: tone ? `is-${tone}` : '' }, value)]);
+      const infoRow = (label, value, tone = '') => h('div', { class: ['order-info-row', tone ? `is-${tone}` : ''] }, [
+        h('span', { style: tone === 'accent' ? { color: 'var(--muted)', fontWeight: '500' } : null }, label),
+        h('strong', { class: tone ? `is-${tone}` : '' }, value),
+      ]);
       return h('section', { class: 'order-detail-page' }, [
         pageError(local.error),
         h('header', { class: 'order-detail-title' }, [
