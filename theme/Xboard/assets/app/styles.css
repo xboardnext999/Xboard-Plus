@@ -2681,7 +2681,7 @@ td {
 .order-detail-main,
 .order-detail-aside { display: grid; align-content: start; gap: 18px; }
 .order-detail-card { border: 1px solid var(--line); border-radius: 15px; background: var(--card-bg); box-shadow: var(--surface-shadow); padding: 20px; }
-.order-detail-card > h3 { margin: 0 0 18px; color: var(--text); font-size: 16px; }
+.order-detail-card > h3 { margin: 0 0 18px; color: var(--text); font-size: 17px; }
 
 .order-progress { display: grid; grid-template-columns: repeat(4, 1fr); }
 .order-progress-item { position: relative; display: grid; justify-items: center; gap: 8px; color: var(--muted); text-align: center; }
@@ -2691,13 +2691,15 @@ td {
 .order-progress-mark svg { width: 19px; height: 19px; }
 .order-progress-item.is-done .order-progress-mark { background: rgba(80, 201, 139, .13); color: #43b97c; }
 .order-progress-item:last-child.is-done .order-progress-mark { background: rgba(80, 201, 139, .17); box-shadow: 0 0 0 7px rgba(80, 201, 139, .08); color: #39ad70; }
-.order-progress-item strong { color: var(--text); font-size: 13px; }
-.order-progress-item span { font-size: 11px; font-variant-numeric: tabular-nums; }
+.order-progress-item strong { color: var(--text); font-size: 14px; }
+.order-progress-item span { font-size: 12px; font-variant-numeric: tabular-nums; }
 
 .order-product-line { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; }
 .order-product-line > div:nth-child(2),
 .order-product-line > div:last-child { display: grid; gap: 4px; }
-.order-product-line span { color: var(--muted); font-size: 12px; }
+.order-product-line strong,
+.order-product-line b { font-size: 14px; }
+.order-product-line span { color: var(--muted); font-size: 13px; }
 .order-product-line > div:last-child { justify-items: end; }
 .order-product-description { margin-top: 20px; }
 .order-product-description > div { color: var(--muted); font-size: 12px; line-height: 1.7; }
@@ -2707,7 +2709,7 @@ td {
 .order-product-specs > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); border-radius: 8px; }
 .order-product-specs span,
 .order-product-specs strong,
-.order-product-spec-value { padding: 9px 12px; font-size: 12px; }
+.order-product-spec-value { padding: 9px 12px; font-size: 13px; }
 .order-product-specs span { color: var(--muted); }
 .order-product-specs strong { color: var(--muted); font-weight: 500; }
 .order-product-spec-value { max-height: 86px; overflow: auto; color: var(--text); }
@@ -2716,16 +2718,16 @@ td {
 
 .order-delivery-card { padding: 20px; }
 .order-delivery-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
-.order-delivery-heading h3 { margin: 0 0 5px; color: var(--text); font-size: 16px; }
-.order-delivery-heading p { margin: 0; color: var(--muted); font-size: 11px; }
+.order-delivery-heading h3 { margin: 0 0 5px; color: var(--text); font-size: 17px; }
+.order-delivery-heading p { margin: 0; color: var(--muted); font-size: 12px; }
 .order-delivery-heading > span { border-radius: 999px; background: rgba(35, 185, 101, .1); padding: 5px 9px; color: #20a85b; font-size: 11px; font-weight: 800; }
 .order-delivery-list { display: grid; gap: 10px; margin-top: 16px; }
 .order-delivery-content { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; border: 0; border-radius: 11px; background: var(--panel-soft); padding: 14px 16px; }
 .order-delivery-copy { display: grid; min-width: 0; gap: 4px; }
-.order-delivery-copy strong { overflow: hidden; color: var(--text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.order-delivery-copy strong { overflow: hidden; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .order-delivery-content.is-simple .order-delivery-copy strong { overflow-wrap: anywhere; line-height: 1.6; text-overflow: clip; white-space: normal; }
 .order-delivery-copy span { color: var(--muted); font-size: 11px; }
-.order-delivery-action { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; border: 0; border-radius: 9px; background: var(--card-bg); padding: 0 11px; box-shadow: 0 1px 3px rgba(15,23,42,.06); color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; text-decoration: none; transition: color .16s ease, background .16s ease, transform .16s ease; }
+.order-delivery-action { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; border: 0; border-radius: 9px; background: var(--card-bg); padding: 0 11px; box-shadow: 0 1px 3px rgba(15,23,42,.06); color: var(--muted); font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; text-decoration: none; transition: color .16s ease, background .16s ease, transform .16s ease; }
 .order-delivery-action:hover { transform: translateY(-1px); color: var(--primary-strong); }
 .order-delivery-content > .order-delivery-fields { display: grid; grid-column: 1 / -1; gap: 0; width: 100%; margin: 2px 0 0; padding: 8px 0 0; }
 .order-delivery-fields > div { display: grid; grid-template-columns: minmax(90px, .35fr) minmax(0, 1fr) 28px; align-items: center; gap: 10px; margin: 0; border-bottom: 1px dashed var(--line); padding: 8px 0; }
@@ -2737,11 +2739,11 @@ td {
 
 .order-info-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 10px 0; }
 .order-info-row:last-child { border-bottom: 0; padding-bottom: 0; }
-.order-info-row span { flex: none; color: var(--muted); font-size: 12px; }
-.order-info-row strong { overflow-wrap: anywhere; color: var(--muted); font-size: 12px; font-weight: 600; text-align: right; }
-.order-info-row strong.is-accent { color: var(--primary-strong); font-size: 14px; }
+.order-info-row span { flex: none; color: var(--muted); font-size: 13px; }
+.order-info-row strong { overflow-wrap: anywhere; color: var(--muted); font-size: 13px; font-weight: 600; text-align: right; }
+.order-info-row strong.is-accent { color: var(--primary-strong); font-size: 15px; }
 .order-info-row strong.is-discount { color: #18a85a; }
-.order-info-row strong.is-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; }
+.order-info-row strong.is-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
 .order-log-list { display: grid; gap: 0; }
 .order-log-list > div { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; padding: 0 0 22px; }
 .order-log-list > div:last-child { padding-bottom: 0; }
