@@ -2686,27 +2686,19 @@ td {
 .order-progress { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); }
 .order-progress.is-complete::before,
 .order-progress.is-complete::after { position: absolute; z-index: 2; top: 17px; pointer-events: none; content: ''; will-change: left, opacity; }
-.order-progress.is-complete::before { width: 68px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, transparent 0%, rgba(93, 214, 155, .035) 24%, rgba(93, 214, 155, .12) 62%, rgba(116, 235, 176, .34) 100%); filter: blur(.35px); animation: order-progress-trail 6.2s cubic-bezier(.45, 0, .55, 1) infinite; }
-.order-progress.is-complete::after { width: 6px; height: 6px; margin-top: -2px; border: 1px solid rgba(255,255,255,.9); border-radius: 50%; background: #8ae3b5; box-shadow: 0 0 0 2px rgba(88, 211, 150, .09), 0 0 7px rgba(87, 211, 149, .56), 0 0 15px rgba(87, 211, 149, .18); animation: order-progress-particle 6.2s cubic-bezier(.45, 0, .55, 1) infinite; }
-.order-progress.is-complete .order-progress-item.is-done .order-progress-mark { animation: order-progress-node 6.2s ease-in-out infinite; }
-.order-progress.is-complete .order-progress-item:nth-child(2) .order-progress-mark { animation-delay: 2.06s; }
-.order-progress.is-complete .order-progress-item:nth-child(3) .order-progress-mark { animation-delay: 4.12s; }
-.order-progress.is-complete .order-progress-item:nth-child(4) .order-progress-mark { animation-delay: 6.18s; }
+.order-progress.is-complete::before { width: 36px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.12) 52%, rgba(255,255,255,.52)); mix-blend-mode: soft-light; animation: order-progress-trail 8.4s cubic-bezier(.4, 0, .2, 1) infinite; }
+.order-progress.is-complete::after { width: 3px; height: 3px; margin-top: 0; border-radius: 50%; background: rgba(239,255,247,.9); box-shadow: 0 0 4px rgba(66, 181, 124, .26); animation: order-progress-particle 8.4s cubic-bezier(.4, 0, .2, 1) infinite; }
 @keyframes order-progress-particle {
-  0%, 7% { left: 12.5%; opacity: 0; }
-  14% { opacity: .9; }
-  86% { opacity: .9; }
-  93%, 100% { left: 87.5%; opacity: 0; }
+  0%, 10% { left: 12.5%; opacity: 0; }
+  17% { opacity: .72; }
+  83% { opacity: .72; }
+  90%, 100% { left: 87.5%; opacity: 0; }
 }
 @keyframes order-progress-trail {
-  0%, 7% { left: calc(12.5% - 68px); opacity: 0; }
-  16% { opacity: .7; }
-  84% { opacity: .7; }
-  93%, 100% { left: calc(87.5% - 68px); opacity: 0; }
-}
-@keyframes order-progress-node {
-  0%, 12%, 100% { transform: scale(1); box-shadow: none; }
-  4% { transform: scale(1.035); box-shadow: 0 0 0 5px rgba(80, 201, 139, .055); }
+  0%, 10% { left: calc(12.5% - 36px); opacity: 0; }
+  19% { opacity: .42; }
+  81% { opacity: .42; }
+  90%, 100% { left: calc(87.5% - 36px); opacity: 0; }
 }
 .order-progress-item { position: relative; display: grid; justify-items: center; gap: 8px; color: var(--muted); text-align: center; }
 .order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 18px; left: calc(50% + 22px); width: calc(100% - 44px); height: 2px; background: var(--line); content: ''; }
