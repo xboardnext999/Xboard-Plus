@@ -2426,10 +2426,14 @@ const OrderProgressFlow = {
           const left = point.x - point.radius;
           const right = point.x + point.radius;
           const top = point.y - point.radius;
+          const bottom = point.y + point.radius;
           if (index === 0) path += `M ${left} ${point.y}`;
           else path += ` L ${left} ${point.y}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${top}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${right} ${point.y}`;
+          path += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${bottom}`;
+          path += ` A ${point.radius} ${point.radius} 0 0 1 ${left} ${point.y}`;
+          path += ` L ${right} ${point.y}`;
         });
         geometry.width = bounds.width;
         geometry.height = bounds.height;
