@@ -2741,7 +2741,7 @@ td {
 .order-info-row strong { overflow-wrap: anywhere; color: var(--muted); font-size: 12px; font-weight: 600; text-align: right; }
 .order-info-row strong.is-accent { color: var(--primary-strong); font-size: 14px; }
 .order-info-row strong.is-discount { color: #18a85a; }
-.order-info-row:first-of-type strong { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; }
+.order-info-row strong.is-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; }
 .order-log-list { display: grid; gap: 0; }
 .order-log-list > div { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; padding: 0 0 22px; }
 .order-log-list > div:last-child { padding-bottom: 0; }
