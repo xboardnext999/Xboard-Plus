@@ -2750,15 +2750,15 @@ td {
 .order-delivery-fields button { width: 28px; height: 28px; border: 0; border-radius: 8px; background: var(--card-bg); color: var(--muted); cursor: pointer; }
 .order-delivery-fields button:hover { color: var(--primary-strong); }
 
-.order-info-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 10px 0; }
+.order-info-row { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 18px; padding: 8px 0; }
 .order-info-row:last-child { border-bottom: 0; padding-bottom: 0; }
-.order-info-row span { flex: none; color: var(--muted); font-size: 13px; }
-.order-info-row strong { overflow-wrap: anywhere; color: var(--muted); font-size: 13px; font-weight: 600; text-align: right; }
+.order-info-row span { flex: none; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 1.5; }
+.order-info-row strong { overflow-wrap: anywhere; color: var(--text); font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1.5; text-align: right; }
 .order-info-row.is-accent { margin-top: 4px; padding-top: 14px; }
 .order-info-row.is-accent span { color: var(--text); font-size: 14px; font-weight: 700; }
 .order-info-row strong.is-accent { color: var(--text); font-size: 23px; font-weight: 900; letter-spacing: -.02em; }
 .order-info-row strong.is-discount { color: #18a85a; }
-.order-info-row strong.is-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+.order-info-row strong.is-mono { font-family: inherit; font-size: 14px; font-variant-numeric: tabular-nums; letter-spacing: 0; }
 .order-log-list { display: grid; gap: 0; }
 .order-log-list > div { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; padding: 0 0 22px; }
 .order-log-list > div:last-child { padding-bottom: 0; }
