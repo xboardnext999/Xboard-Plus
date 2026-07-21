@@ -2508,17 +2508,17 @@ const OrderDetailPage = {
             ]),
             (order.digital_delivery || []).length ? h('section', { class: 'order-detail-card order-delivery-card' }, [
               h('div', { class: 'order-delivery-heading' }, [
-                h('div', [h('h3', '交付物'), h('p', `共 ${(order.digital_delivery || []).length} 项内容，请及时保存。`)]),
+                h('div', [h('h3', '交付信息'), h('p', `共 ${(order.digital_delivery || []).length} 项`)]),
                 h('span', '已交付'),
               ]),
               h('div', { class: 'order-delivery-list' }, (order.digital_delivery || []).map((item, index) => {
                 const file = digitalDeliveryFile(item.content);
                 const fields = digitalDeliveryFields(item.content);
                 return h('article', { class: 'order-delivery-content' }, [
-                  h('div', { class: 'order-delivery-icon', 'aria-hidden': 'true' }, file ? '▤' : '⌘'),
+                  h('div', { class: 'order-delivery-icon', 'aria-hidden': 'true' }, file ? '▤' : '▧'),
                   h('div', { class: 'order-delivery-copy' }, [
-                    h('strong', file ? (file.name || `交付文件 ${index + 1}`) : `交付内容 ${index + 1}`),
-                    h('span', file ? file.meta : (fields[0]?.label || '数字内容')),
+                    h('strong', file ? (file.name || `交付文件 ${index + 1}`) : ((order.digital_delivery || []).length > 1 ? `内容 ${index + 1}` : '交付内容')),
+                    file ? h('span', file.meta) : null,
                   ]),
                   h('time', time(item.delivered_at)),
                   file

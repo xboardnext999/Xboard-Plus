@@ -2720,9 +2720,9 @@ td {
 .order-delivery-heading p { margin: 0; color: var(--muted); font-size: 11px; }
 .order-delivery-heading > span { border-radius: 999px; background: rgba(35, 185, 101, .1); padding: 5px 9px; color: #20a85b; font-size: 11px; font-weight: 800; }
 .order-delivery-list { display: grid; gap: 10px; margin-top: 16px; }
-.order-delivery-content { position: relative; display: grid; grid-template-columns: 42px minmax(0, 1fr) auto auto; align-items: center; gap: 14px; border: 1px solid transparent; border-radius: 12px; background: var(--panel-soft); padding: 13px 14px; transition: border-color .18s ease, background .18s ease; }
+.order-delivery-content { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--panel-soft) 58%, var(--card-bg)); padding: 12px 14px; transition: border-color .18s ease, background .18s ease; }
 .order-delivery-content:hover { border-color: rgba(108, 92, 231, .25); }
-.order-delivery-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; background: rgba(108, 92, 231, .11); color: var(--primary-strong); font-size: 18px; font-weight: 800; }
+.order-delivery-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: rgba(108, 92, 231, .08); color: var(--primary-strong); font-size: 16px; font-weight: 800; }
 .order-delivery-copy { display: grid; min-width: 0; gap: 4px; }
 .order-delivery-copy strong { overflow: hidden; color: var(--text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .order-delivery-copy span,
@@ -2785,7 +2785,7 @@ td {
   .order-product-line { grid-template-columns: auto minmax(0, 1fr); }
   .order-product-line > div:last-child { grid-column: 2; justify-items: start; }
   .order-product-specs > div { grid-template-columns: 110px minmax(0, 1fr); }
-  .order-delivery-content { grid-template-columns: 42px minmax(0, 1fr) auto; }
+  .order-delivery-content { grid-template-columns: 38px minmax(0, 1fr) auto; }
   .order-delivery-content > time { grid-column: 2; }
   .order-delivery-action { grid-column: 3; grid-row: 1 / span 2; }
   .order-delivery-content > .order-delivery-fields { grid-column: 1 / -1; }
