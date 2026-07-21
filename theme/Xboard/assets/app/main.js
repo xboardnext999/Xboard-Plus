@@ -2400,7 +2400,7 @@ function orderProgressIcon(type) {
 const OrderProgressFlow = {
   setup() {
     const svg = ref(null);
-    const geometry = reactive({ width: 0, height: 0, centerY: 0, path: '' });
+    const geometry = reactive({ width: 0, height: 0, path: '' });
     let observer = null;
     let frame = 0;
 
@@ -2427,17 +2427,17 @@ const OrderProgressFlow = {
           const right = point.x + point.radius;
           const top = point.y - point.radius;
           const bottom = point.y + point.radius;
-          if (index === 0) path += `M ${left} ${point.y}`;
-          else path += ` L ${left} ${point.y}`;
+          const previous = points[index - 1];
+          const lineStart = index === 0 ? 0 : previous.x + previous.radius;
+          path += ` M ${lineStart} ${point.y} L ${left} ${point.y}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${top}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${right} ${point.y}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${bottom}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${left} ${point.y}`;
-          path += ` L ${right} ${point.y}`;
+          if (index === points.length - 1) path += ` M ${right} ${point.y} L ${bounds.width} ${point.y}`;
         });
         geometry.width = bounds.width;
         geometry.height = bounds.height;
-        geometry.centerY = points[0].y;
         geometry.path = path;
       });
     };
@@ -2459,7 +2459,6 @@ const OrderProgressFlow = {
       preserveAspectRatio: 'none',
       'aria-hidden': 'true',
     }, geometry.path ? [
-      h('line', { class: 'order-progress-flow-center', x1: 0, y1: geometry.centerY, x2: geometry.width, y2: geometry.centerY }),
       h('path', { class: 'order-progress-flow-base', d: geometry.path, pathLength: 100 }),
       h('path', { class: 'order-progress-flow-trail', d: geometry.path, pathLength: 100 }),
       h('path', { class: 'order-progress-flow-head', d: geometry.path, pathLength: 100 }),
