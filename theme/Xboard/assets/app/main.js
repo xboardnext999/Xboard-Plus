@@ -2514,17 +2514,18 @@ const OrderDetailPage = {
               h('div', { class: 'order-delivery-list' }, (order.digital_delivery || []).map((item, index) => {
                 const file = digitalDeliveryFile(item.content);
                 const fields = digitalDeliveryFields(item.content);
-                return h('article', { class: 'order-delivery-content' }, [
+                const simpleText = !file && fields.length === 1 && fields[0]?.label === '内容';
+                return h('article', { class: ['order-delivery-content', simpleText ? 'is-simple' : ''] }, [
                   h('div', { class: 'order-delivery-icon', 'aria-hidden': 'true' }, file ? '▤' : '▧'),
                   h('div', { class: 'order-delivery-copy' }, [
-                    h('strong', file ? (file.name || `交付文件 ${index + 1}`) : ((order.digital_delivery || []).length > 1 ? `内容 ${index + 1}` : '交付内容')),
+                    h('strong', file ? (file.name || `交付文件 ${index + 1}`) : (simpleText ? fields[0].value : ((order.digital_delivery || []).length > 1 ? `内容 ${index + 1}` : '交付内容'))),
                     file ? h('span', file.meta) : null,
                   ]),
                   h('time', time(item.delivered_at)),
                   file
                     ? h('a', { class: 'secondary-button order-delivery-action', href: file.url, target: '_blank', rel: 'noopener noreferrer', download: '' }, '↓ 下载')
                     : h('button', { class: 'secondary-button order-delivery-action', type: 'button', onClick: () => copyText(item.content).then(() => toast('交付内容已复制')) }, '复制'),
-                  file ? null : h('div', { class: 'order-delivery-fields' }, fields.map((field) => h('div', [
+                  file || simpleText ? null : h('div', { class: 'order-delivery-fields' }, fields.map((field) => h('div', [
                     h('span', field.label),
                     h('strong', field.value),
                     h('button', { type: 'button', title: `复制${field.label}`, onClick: () => copyText(field.value).then(() => toast(`${field.label}已复制`)) }, '⧉'),
