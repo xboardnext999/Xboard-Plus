@@ -2686,6 +2686,7 @@ td {
 .order-progress { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); }
 .order-progress-flow { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .order-progress-flow path { fill: none; vector-effect: non-scaling-stroke; }
+.order-progress-flow-center { stroke: #a5d8bf; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .order-progress-flow-base { stroke: #a5d8bf; stroke-width: 1.5; }
 .order-progress-flow-trail,
 .order-progress-flow-head { stroke-linecap: round; will-change: stroke-dashoffset, opacity; animation: order-progress-flow 13s cubic-bezier(.45, 0, .2, 1) infinite; }

@@ -2400,7 +2400,7 @@ function orderProgressIcon(type) {
 const OrderProgressFlow = {
   setup() {
     const svg = ref(null);
-    const geometry = reactive({ width: 0, height: 0, path: '' });
+    const geometry = reactive({ width: 0, height: 0, centerY: 0, path: '' });
     let observer = null;
     let frame = 0;
 
@@ -2433,6 +2433,7 @@ const OrderProgressFlow = {
         });
         geometry.width = bounds.width;
         geometry.height = bounds.height;
+        geometry.centerY = points[0].y;
         geometry.path = path;
       });
     };
@@ -2454,6 +2455,7 @@ const OrderProgressFlow = {
       preserveAspectRatio: 'none',
       'aria-hidden': 'true',
     }, geometry.path ? [
+      h('line', { class: 'order-progress-flow-center', x1: 0, y1: geometry.centerY, x2: geometry.width, y2: geometry.centerY }),
       h('path', { class: 'order-progress-flow-base', d: geometry.path, pathLength: 100 }),
       h('path', { class: 'order-progress-flow-trail', d: geometry.path, pathLength: 100 }),
       h('path', { class: 'order-progress-flow-head', d: geometry.path, pathLength: 100 }),
