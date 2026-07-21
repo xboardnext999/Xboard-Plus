@@ -2375,6 +2375,14 @@ function digitalDeliveryFields(content) {
   return rows.length ? rows : [{ label: '交付内容', value: raw }];
 }
 
+function orderProgressIcon(type) {
+  const common = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' };
+  if (type === 'submit') return h('svg', common, [h('rect', { x: '6', y: '4', width: '12', height: '16', rx: '2' }), h('path', { d: 'M9 4.5V3h6v1.5M9 9h6M9 13h4' })]);
+  if (type === 'payment') return h('svg', common, [h('rect', { x: '3', y: '6', width: '18', height: '13', rx: '2.5' }), h('path', { d: 'M3 10h18M16 15h2' })]);
+  if (type === 'process') return h('svg', common, [h('path', { d: 'm12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z' }), h('path', { d: 'm4.5 7.8 7.5 4.3 7.5-4.3M12 12v9' })]);
+  return h('svg', common, [h('circle', { cx: '12', cy: '12', r: '9' }), h('path', { d: 'm8 12 2.6 2.6L16.5 9' })]);
+}
+
 const OrderDetailPage = {
   props: {
     tradeNo: { type: String, required: true },
@@ -2439,10 +2447,10 @@ const OrderDetailPage = {
       const productDescription = selectedPackage?.description || order.plan?.content || '';
       const statusStep = Number(order.status) === 3 ? 4 : (Number(order.status) === 1 ? 3 : 1);
       const progressItems = [
-        ['提交订单', order.created_at, '▣'],
-        ['支付成功', completed || Number(order.status) === 1 ? order.updated_at || order.created_at : null, '¥'],
-        ['处理完成', completed ? order.updated_at || order.created_at : null, '◇'],
-        ['已完成', completed ? order.updated_at || order.created_at : null, '✓'],
+        ['提交订单', order.created_at, 'submit'],
+        ['支付成功', completed || Number(order.status) === 1 ? order.updated_at || order.created_at : null, 'payment'],
+        ['处理完成', completed ? order.updated_at || order.created_at : null, 'process'],
+        ['已完成', completed ? order.updated_at || order.created_at : null, 'complete'],
       ];
       const infoRow = (label, value, tone = '') => h('div', { class: 'order-info-row' }, [h('span', label), h('strong', { class: tone ? `is-${tone}` : '' }, value)]);
       return h('section', { class: 'order-detail-page' }, [
@@ -2466,7 +2474,7 @@ const OrderDetailPage = {
             h('section', { class: 'order-detail-card order-progress-card' }, [
               h('h3', '订单状态'),
               h('div', { class: 'order-progress' }, progressItems.map((item, index) => h('div', { class: ['order-progress-item', index < statusStep ? 'is-done' : ''] }, [
-                h('div', { class: 'order-progress-mark' }, item[2]),
+                h('div', { class: 'order-progress-mark' }, orderProgressIcon(item[2])),
                 h('strong', item[0]),
                 h('span', item[1] ? time(item[1]) : '等待处理'),
               ]))),
@@ -2514,10 +2522,6 @@ const OrderDetailPage = {
               infoRow(completed ? '支付金额' : '待付金额', money(completed ? paidAmount : order.total_amount, currencySymbol()), 'accent'),
               infoRow('订单类型', isDigital ? '数字商品' : '订阅套餐'),
             ].filter(Boolean)),
-            h('section', { class: 'order-detail-card order-security-card' }, [
-              h('span', '♢'),
-              h('div', [h('h3', '安全提示'), h('p', '请妥善保存账号及交付信息，不要泄露给他人。'), h('p', '如遇问题，请及时通过工单联系管理员。')]),
-            ]),
           ]),
         ]),
         h('footer', { class: 'order-detail-footer' }, [

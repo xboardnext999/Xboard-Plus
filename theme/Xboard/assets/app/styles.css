@@ -2688,6 +2688,7 @@ td {
 .order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 18px; left: calc(50% + 22px); width: calc(100% - 44px); height: 2px; background: var(--line); content: ''; }
 .order-progress-item.is-done:not(:last-child)::after { background: #35c976; }
 .order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--panel-soft); color: var(--muted); font-size: 13px; font-weight: 900; }
+.order-progress-mark svg { width: 19px; height: 19px; }
 .order-progress-item.is-done .order-progress-mark { background: rgba(83, 112, 255, .12); color: #5370ff; }
 .order-progress-item:last-child.is-done .order-progress-mark { background: #23b965; box-shadow: 0 0 0 7px rgba(35, 185, 101, .1); color: #fff; }
 .order-progress-item strong { color: var(--text); font-size: 13px; }
@@ -2753,11 +2754,6 @@ td {
 .order-log-list span,
 .order-log-list time { color: var(--muted); font-size: 10px; }
 .order-log-list time { text-align: right; }
-
-.order-security-card { display: flex; align-items: flex-start; gap: 13px; background: linear-gradient(135deg, rgba(108, 92, 231, .055), var(--card-bg)); }
-.order-security-card > span { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 10px; background: rgba(108, 92, 231, .1); color: var(--primary-strong); font-size: 18px; }
-.order-security-card h3 { margin: 2px 0 10px; font-size: 14px; }
-.order-security-card p { margin: 5px 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 
 .order-detail-footer { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 2px 24px 8px; }
 .order-detail-footer a { min-width: 170px; min-height: 44px; justify-content: center; }
