@@ -2487,7 +2487,7 @@ const OrderDetailPage = {
           h('main', { class: 'order-detail-main' }, [
             h('section', { class: 'order-detail-card order-progress-card' }, [
               h('h3', '订单状态'),
-              h('div', { class: 'order-progress' }, progressItems.map((item, index) => h('div', { class: ['order-progress-item', index < statusStep ? 'is-done' : ''] }, [
+              h('div', { class: ['order-progress', completed ? 'is-complete' : ''] }, progressItems.map((item, index) => h('div', { class: ['order-progress-item', index < statusStep ? 'is-done' : ''] }, [
                 h('div', { class: 'order-progress-mark' }, orderProgressIcon(item[2])),
                 h('strong', item[0]),
                 h('span', item[1] ? time(item[1]) : '等待处理'),
