@@ -2405,39 +2405,34 @@ const OrderDetailPage = {
       const isDigital = order.plan?.product_type === 'digital';
       const balanceAmount = Number(order.balance_amount || 0);
       const paidAmount = Math.max(0, Number(order.total_amount || 0) + balanceAmount);
+      const discountAmount = Math.max(0, Number(order.discount_amount || 0));
       const paymentName = balanceAmount > 0
         ? (Number(order.total_amount || 0) > 0 && order.payment?.name ? `余额 + ${order.payment.name}` : '本地余额支付')
         : (order.payment?.name || '—');
-      return h('section', { class: 'panel detail-panel' }, [
+      const productImage = order.plan?.product_config?.image_url || '';
+      const statusStep = Number(order.status) === 3 ? 4 : (Number(order.status) === 1 ? 3 : 1);
+      const progressItems = [
+        ['提交订单', order.created_at],
+        ['支付成功', completed || Number(order.status) === 1 ? order.updated_at || order.created_at : null],
+        ['处理完成', completed ? order.updated_at || order.created_at : null],
+        ['已完成', completed ? order.updated_at || order.created_at : null],
+      ];
+      const infoRow = (label, value, accent = false) => h('div', { class: 'order-info-row' }, [h('span', label), h('strong', { class: accent ? 'is-accent' : '' }, value)]);
+      return h('section', { class: 'order-detail-page' }, [
         pageError(local.error),
-        completed ? h('section', { class: 'order-success-hero' }, [
-          h('span', { class: 'order-success-icon', 'aria-hidden': 'true' }, '✓'),
-          h('div', { class: 'order-success-copy' }, [
-            h('small', 'PAYMENT SUCCESS'),
-            h('h1', isDigital ? '支付成功，商品已交付' : '支付成功'),
-            h('p', isDigital ? '订单已完成，交付内容已保存到当前订单中。' : '订单支付已完成，可在订单记录中随时查看。'),
-          ]),
-          h('div', { class: 'order-success-actions' }, [
-            isDigital ? h('a', { class: 'primary-button', href: '#/digital' }, '继续选购') : null,
-            h('a', { class: 'secondary-button', href: '#/orders' }, '全部订单'),
-          ].filter(Boolean)),
-        ]) : null,
-        h('div', { class: 'panel-heading' }, [
-          h('div', [h('small', 'ORDER DETAILS'), h('h2', order.plan?.name || '订单详情'), h('p', `订单号 ${order.trade_no || props.tradeNo}`)]),
-          h('a', { class: 'secondary-button', href: '#/orders' }, '返回列表'),
+        h('header', { class: 'order-detail-title' }, [
+          h('a', { href: '#/orders', 'aria-label': '返回订单列表' }, '←'),
+          h('h1', '订单详情'),
         ]),
-        statCards([
-          { label: completed ? '支付金额' : '待付金额', value: money(completed ? paidAmount : order.total_amount, currencySymbol()), hint: paymentName },
-          Number(order.discount_amount) > 0 ? { label: '优惠抵扣', value: `-${money(order.discount_amount, currencySymbol())}` } : null,
-          Number(order.group_buy_discount_amount) > 0 ? {
-            label: '拼团优惠',
-            value: `-${money(order.group_buy_discount_amount, currencySymbol())}`,
-            hint: order.group_buy_group_id ? `团 #${order.group_buy_group_id}` : '',
-          } : null,
-          { label: '手续费', value: money(order.handling_amount, currencySymbol()) },
-          balanceAmount > 0 ? { label: '余额抵扣', value: `-${money(balanceAmount, currencySymbol())}`, hint: '已从账户余额扣除' } : null,
-          { label: '订单状态', value: statusText(order.status, orderStatus), hint: `创建于 ${time(order.created_at)}` },
-        ].filter(Boolean)),
+        h('section', { class: 'order-summary-card' }, [
+          h('div', { class: ['order-summary-image', productImage ? '' : 'is-placeholder'], style: productImage ? { backgroundImage: `url(${productImage})` } : null }, productImage ? null : (order.plan?.name || '商').slice(0, 1)),
+          h('div', { class: 'order-summary-copy' }, [
+            h('div', [h('h2', order.plan?.name || '订单商品'), h('span', { class: ['badge', completed ? 'ok' : ''] }, statusText(order.status, orderStatus))]),
+            h('p', [h('span', '订单号：'), h('b', order.trade_no || props.tradeNo), h('button', { type: 'button', class: 'order-copy-icon', onClick: () => copyText(order.trade_no || props.tradeNo).then(() => toast('订单号已复制')) }, '⧉')]),
+            h('p', [h('span', '创建时间：'), time(order.created_at)]),
+          ]),
+          h('div', { class: 'order-summary-amount' }, [h('strong', money(completed ? paidAmount : order.total_amount, currencySymbol())), h('span', '共 1 件商品')]),
+        ]),
         Number(order.status) === 0 ? h('div', { class: 'checkout-box', 'data-checkout': props.tradeNo }, [
           h('h3', '支付订单'),
           paymentMethods(local.methods || [], props.method || order.payment_id),
@@ -2448,17 +2443,59 @@ const OrderDetailPage = {
           local.paymentMessage ? h('div', { class: 'success-box' }, local.paymentMessage) : null,
           local.paymentHtml ? h('div', { class: 'payment-frame', innerHTML: local.paymentHtml }) : null,
         ]) : null,
-        (order.digital_delivery || []).length ? h('section', { class: 'digital-order-delivery' }, [
-          h('div', { class: 'digital-order-delivery-head' }, [
-            h('div', [h('small', 'DELIVERY'), h('h3', '商品交付凭证'), h('p', `共 ${(order.digital_delivery || []).length} 项内容，请及时保存。`)]),
-            h('span', '交付完成'),
+        h('div', { class: 'order-detail-grid' }, [
+          h('main', { class: 'order-detail-main' }, [
+            h('section', { class: 'order-detail-card order-progress-card' }, [
+              h('h3', '订单状态'),
+              h('div', { class: 'order-progress' }, progressItems.map((item, index) => h('div', { class: ['order-progress-item', index < statusStep ? 'is-done' : ''] }, [
+                h('div', { class: 'order-progress-mark' }, index === 3 && completed ? '✓' : String(index + 1)),
+                h('strong', item[0]),
+                h('span', item[1] ? time(item[1]) : '等待处理'),
+              ]))),
+            ]),
+            h('section', { class: 'order-detail-card order-product-section' }, [
+              h('h3', '商品信息'),
+              h('div', { class: 'order-product-line' }, [
+                h('div', { class: ['order-product-thumb', productImage ? '' : 'is-placeholder'], style: productImage ? { backgroundImage: `url(${productImage})` } : null }, productImage ? null : (order.plan?.name || '商').slice(0, 1)),
+                h('div', [h('strong', order.plan?.name || '订单商品'), h('span', '数量 1')]),
+                h('div', [h('b', money(completed ? paidAmount : order.total_amount, currencySymbol())), h('span', '×1')]),
+              ]),
+              order.plan?.content ? h('div', { class: 'order-product-description' }, [h('h4', '商品描述'), h('div', { innerHTML: safeBody(order.plan.content) })]) : null,
+              (order.digital_delivery || []).length ? h('div', { class: 'order-delivery-section' }, [
+                h('div', { class: 'order-delivery-heading' }, [h('div', [h('h4', '交付信息'), h('p', `共 ${(order.digital_delivery || []).length} 项内容，请及时保存。`)]), h('span', '已交付')]),
+                ...(order.digital_delivery || []).map((item, index) => h('div', { class: 'order-delivery-content' }, [
+                  h('div', [h('strong', `交付内容 ${index + 1}`), h('span', time(item.delivered_at))]),
+                  h('pre', item.content),
+                  h('button', { class: 'secondary-button', type: 'button', onClick: () => copyText(item.content).then(() => toast('交付内容已复制')) }, '复制内容'),
+                ])),
+                h('p', { class: 'order-delivery-tip' }, 'ⓘ 请妥善保管以上信息，避免泄露给他人。'),
+              ]) : (completed && isDigital ? h('div', { class: 'success-box' }, '交付内容正在生成，请稍后刷新。') : null),
+            ]),
           ]),
-          ...(order.digital_delivery || []).map((item, index) => h('div', { class: 'digital-order-delivery-item' }, [
-            h('div', { class: 'digital-delivery-label' }, [h('strong', `交付内容 ${index + 1}`), h('span', time(item.delivered_at))]),
-            h('pre', item.content),
-            h('div', [h('span', '请妥善保存，避免泄露给他人'), h('button', { class: 'primary-button digital-copy-button', type: 'button', onClick: () => copyText(item.content).then(() => toast('交付内容已复制')) }, '复制交付内容')]),
-          ])),
-        ]) : (Number(order.status) === 3 && order.plan?.product_type === 'digital' ? h('div', { class: 'success-box' }, '订单已完成，交付内容正在生成，请稍后刷新。') : null),
+          h('aside', { class: 'order-detail-aside' }, [
+            h('section', { class: 'order-detail-card' }, [
+              h('h3', '订单信息'),
+              infoRow('订单号', order.trade_no || props.tradeNo),
+              infoRow('支付方式', paymentName),
+              infoRow('商品金额', money(paidAmount + discountAmount, currencySymbol())),
+              infoRow('优惠金额', discountAmount ? `-${money(discountAmount, currencySymbol())}` : money(0, currencySymbol()), discountAmount > 0),
+              balanceAmount > 0 ? infoRow('余额抵扣', `-${money(balanceAmount, currencySymbol())}`) : null,
+              infoRow(completed ? '支付金额' : '待付金额', money(completed ? paidAmount : order.total_amount, currencySymbol()), true),
+              infoRow('订单类型', isDigital ? '数字商品' : '订阅套餐'),
+            ].filter(Boolean)),
+            h('section', { class: 'order-detail-card' }, [
+              h('h3', '操作记录'),
+              h('div', { class: 'order-log-list' }, [
+                completed ? h('div', [h('i', { class: 'is-success' }), h('div', [h('strong', '订单完成'), h('span', isDigital ? '数字商品已完成交付' : '订单已处理完成')]), h('time', time(order.updated_at || order.created_at))]) : null,
+                h('div', [h('i' ), h('div', [h('strong', completed ? '支付成功' : '订单创建'), h('span', completed ? `${paymentName} ${money(paidAmount, currencySymbol())}` : '等待完成支付')]), h('time', time(order.created_at))]),
+              ].filter(Boolean)),
+            ]),
+          ]),
+        ]),
+        h('footer', { class: 'order-detail-footer' }, [
+          h('a', { class: 'secondary-button', href: '#/orders' }, '返回列表'),
+          isDigital ? h('a', { class: 'primary-button', href: '#/digital' }, '再次购买') : null,
+        ].filter(Boolean)),
       ]);
     };
   },
