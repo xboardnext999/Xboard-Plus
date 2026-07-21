@@ -3212,6 +3212,9 @@ td {
 }
 
 .toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   transform: translateY(-8px);
   opacity: 0;
   min-width: 200px;
@@ -3223,6 +3226,21 @@ td {
   color: var(--text);
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
+
+.toast-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(35, 185, 101, .12);
+  color: #20a85b;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.toast-message { line-height: 1.45; }
 
 .toast.is-visible {
   transform: translateY(0);
@@ -3237,6 +3255,8 @@ td {
   border-color: rgba(255, 116, 109, 0.34);
   color: var(--red);
 }
+
+.toast-error .toast-icon { background: rgba(255, 116, 109, .12); color: var(--red); }
 
 @keyframes routeProgress {
   0% {

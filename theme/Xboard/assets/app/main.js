@@ -944,7 +944,10 @@ const ToastStack = {
     return () => h('div', { class: 'toast-stack' }, state.toasts.map((item) => h('div', {
       key: item.id,
       class: ['toast', `toast-${item.type}`, item.visible ? 'is-visible' : ''],
-    }, item.message)));
+    }, [
+      h('span', { class: 'toast-icon', 'aria-hidden': 'true' }, item.type === 'error' ? '!' : '✓'),
+      h('span', { class: 'toast-message' }, item.message),
+    ])));
   },
 };
 
