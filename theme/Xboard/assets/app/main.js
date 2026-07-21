@@ -2375,6 +2375,17 @@ function digitalDeliveryFields(content) {
   return rows.length ? rows : [{ label: '内容', value: raw }];
 }
 
+function digitalDeliveryFile(content) {
+  const raw = String(content ?? '').trim();
+  const match = raw.match(/https?:\/\/[^\s"'<>]+/i);
+  if (!match) return null;
+  const url = match[0];
+  const clean = url.split(/[?#]/)[0];
+  const name = decodeURIComponent(clean.split('/').pop() || '交付文件');
+  const extension = name.includes('.') ? name.split('.').pop().toUpperCase() : '文件';
+  return { url, name, meta: extension };
+}
+
 function orderProgressIcon(type) {
   const common = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' };
   if (type === 'submit') return h('svg', common, [h('rect', { x: '6', y: '4', width: '12', height: '16', rx: '2' }), h('path', { d: 'M9 4.5V3h6v1.5M9 9h6M9 13h4' })]);
@@ -2487,7 +2498,6 @@ const OrderDetailPage = {
                 h('div', [h('b', money(completed ? paidAmount : order.total_amount, currencySymbol())), h('span', '×1')]),
               ]),
               h('div', { class: 'order-product-description' }, [
-                h('h4', '商品详情'),
                 h('div', { class: 'order-product-specs' }, [
                   h('div', [h('span', '商品描述'), h('div', { class: 'order-product-spec-value', innerHTML: safeBody(productDescription || '—') })]),
                   h('div', [h('span', '商品规格'), h('strong', selectedPackage?.name || order.period || '默认规格')]),
@@ -2495,19 +2505,33 @@ const OrderDetailPage = {
                   h('div', [h('span', '单价'), h('strong', money(completed ? paidAmount : order.total_amount, currencySymbol()))]),
                 ]),
               ]),
-              (order.digital_delivery || []).length ? h('div', { class: 'order-delivery-section' }, [
-                h('div', { class: 'order-delivery-heading' }, [h('div', [h('h4', '交付信息'), h('p', `共 ${(order.digital_delivery || []).length} 项内容，请及时保存。`)]), h('span', '已交付')]),
-                ...(order.digital_delivery || []).map((item, index) => h('div', { class: 'order-delivery-content' }, [
-                  h('div', [h('strong', `交付凭证 ${index + 1}`), h('span', time(item.delivered_at))]),
-                  h('div', { class: 'order-delivery-fields' }, digitalDeliveryFields(item.content).map((field) => h('div', [
+            ]),
+            (order.digital_delivery || []).length ? h('section', { class: 'order-detail-card order-delivery-card' }, [
+              h('div', { class: 'order-delivery-heading' }, [
+                h('div', [h('h3', '交付物'), h('p', `共 ${(order.digital_delivery || []).length} 项内容，请及时保存。`)]),
+                h('span', '已交付'),
+              ]),
+              h('div', { class: 'order-delivery-list' }, (order.digital_delivery || []).map((item, index) => {
+                const file = digitalDeliveryFile(item.content);
+                const fields = digitalDeliveryFields(item.content);
+                return h('article', { class: 'order-delivery-content' }, [
+                  h('div', { class: 'order-delivery-icon', 'aria-hidden': 'true' }, file ? '▤' : '⌘'),
+                  h('div', { class: 'order-delivery-copy' }, [
+                    h('strong', file ? (file.name || `交付文件 ${index + 1}`) : `交付内容 ${index + 1}`),
+                    h('span', file ? file.meta : (fields[0]?.label || '数字内容')),
+                  ]),
+                  h('time', time(item.delivered_at)),
+                  file
+                    ? h('a', { class: 'secondary-button order-delivery-action', href: file.url, target: '_blank', rel: 'noopener noreferrer', download: '' }, '↓ 下载')
+                    : h('button', { class: 'secondary-button order-delivery-action', type: 'button', onClick: () => copyText(item.content).then(() => toast('交付内容已复制')) }, '复制'),
+                  file ? null : h('div', { class: 'order-delivery-fields' }, fields.map((field) => h('div', [
                     h('span', field.label),
                     h('strong', field.value),
                     h('button', { type: 'button', title: `复制${field.label}`, onClick: () => copyText(field.value).then(() => toast(`${field.label}已复制`)) }, '⧉'),
                   ]))),
-                  h('button', { class: 'secondary-button', type: 'button', onClick: () => copyText(item.content).then(() => toast('全部交付内容已复制')) }, '复制全部'),
-                ])),
-              ]) : (completed && isDigital ? h('div', { class: 'success-box' }, '交付内容正在生成，请稍后刷新。') : null),
-            ]),
+                ]);
+              })),
+            ]) : (completed && isDigital ? h('div', { class: 'success-box' }, '交付内容正在生成，请稍后刷新。') : null),
           ]),
           h('aside', { class: 'order-detail-aside' }, [
             h('section', { class: 'order-detail-card' }, [
