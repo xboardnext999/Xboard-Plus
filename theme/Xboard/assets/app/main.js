@@ -2284,6 +2284,11 @@ const DigitalCheckoutPage = {
       const quote = local.quote || {};
       const original = quote.original_amount ?? (local.items || []).reduce((sum, item) => sum + (item.package?.price || 0) * item.quantity, 0);
       const pay = quote.pay_amount ?? quote.total_amount ?? original;
+      const couponDiscount = Number(quote.coupon_discount_amount || 0);
+      const vipDiscount = Number(quote.vip_discount_amount || 0);
+      const groupDiscount = Number(quote.group_buy_discount_amount || 0);
+      const balanceAmount = Number(quote.balance_amount || 0);
+      const handlingAmount = Number(quote.handling_amount || 0);
       const balanceSelected = selectedMethod.value === balanceMethodId;
       const balanceInsufficient = balanceSelected && Boolean(local.quote) && !local.quoteLoading && Number(pay) > 0;
       const paymentOptions = [
@@ -2302,7 +2307,15 @@ const DigitalCheckoutPage = {
           h('aside', { class: 'store-checkout-panel store-checkout-summary' }, [
             h('h2', '提交订单'),
             h('p', '订单金额以服务端计算为准'),
-            h('div', [quoteLine('商品数量', String((local.items || []).reduce((sum, item) => sum + item.quantity, 0))), quoteLine('原始金额', money(original, currencySymbol())), quoteLine('优惠券', money(quote.discount_amount || 0, currencySymbol())), quoteLine('余额抵扣', money(quote.balance_amount || 0, currencySymbol()))]),
+            h('div', [
+              quoteLine('商品数量', String((local.items || []).reduce((sum, item) => sum + item.quantity, 0))),
+              quoteLine('原始金额', money(original, currencySymbol())),
+              couponDiscount > 0 ? quoteLine('优惠券折扣', `-${money(couponDiscount, currencySymbol())}`, 'ok') : null,
+              vipDiscount > 0 ? quoteLine('会员折扣', `-${money(vipDiscount, currencySymbol())}`, 'ok') : null,
+              groupDiscount > 0 ? quoteLine('拼团折扣', `-${money(groupDiscount, currencySymbol())}`, 'ok') : null,
+              balanceAmount > 0 ? quoteLine('余额抵扣', `-${money(balanceAmount, currencySymbol())}`, 'ok') : null,
+              handlingAmount > 0 ? quoteLine('支付手续费', money(handlingAmount, currencySymbol()), 'warn') : null,
+            ]),
             h('div', { class: 'store-checkout-total' }, [h('span', '应付金额（预估）'), h('strong', local.quoteLoading ? '计算中…' : money(pay, currencySymbol()))]),
             h('h3', '支付方式'),
             h('div', { class: 'payment-methods digital-payment-methods' }, paymentOptions.map((method) => h('label', { class: ['payment-method', String(method.id) === balanceMethodId ? 'balance-payment-method' : ''] }, [
