@@ -1098,6 +1098,7 @@ body{font-size:13px}.brand{font-size:13px}.nav-group h3{font-size:10px}.nav-item
   gap: 18px;
 }
 .modal-card > .panel-head:first-child > button.btn:last-child {
+  position: relative;
   display: grid;
   place-items: center;
   width: 36px !important;
@@ -1116,9 +1117,26 @@ body{font-size:13px}.brand{font-size:13px}.nav-group h3{font-size:10px}.nav-item
   box-shadow: none;
 }
 .modal-card > .panel-head:first-child > button.btn:last-child::before {
-  content: "\00d7";
-  font: 400 22px/1 ui-sans-serif, system-ui, sans-serif;
-  transform: translateY(-1px);
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 17px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.modal-card > .panel-head:first-child > button.btn:last-child::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 17px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 .modal-card > .panel-head:first-child > button.btn:last-child:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
