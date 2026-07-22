@@ -2400,7 +2400,7 @@ function orderProgressIcon(type) {
 const OrderProgressFlow = {
   setup() {
     const svg = ref(null);
-    const geometry = reactive({ width: 0, height: 0, path: '' });
+    const geometry = reactive({ width: 0, height: 0, connectors: '', rings: '', path: '' });
     let observer = null;
     let frame = 0;
 
@@ -2422,6 +2422,8 @@ const OrderProgressFlow = {
           };
         });
         let path = '';
+        let connectors = '';
+        let rings = '';
         points.forEach((point, index) => {
           const left = point.x - point.radius;
           const right = point.x + point.radius;
@@ -2430,14 +2432,25 @@ const OrderProgressFlow = {
           const previous = points[index - 1];
           const lineStart = index === 0 ? 0 : previous.x + previous.radius;
           path += ` M ${lineStart} ${point.y} L ${left} ${point.y}`;
+          connectors += ` M ${lineStart} ${point.y} L ${left} ${point.y}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${top}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${right} ${point.y}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${bottom}`;
           path += ` A ${point.radius} ${point.radius} 0 0 1 ${left} ${point.y}`;
-          if (index === points.length - 1) path += ` M ${right} ${point.y} L ${bounds.width} ${point.y}`;
+          rings += ` M ${left} ${point.y}`;
+          rings += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${top}`;
+          rings += ` A ${point.radius} ${point.radius} 0 0 1 ${right} ${point.y}`;
+          rings += ` A ${point.radius} ${point.radius} 0 0 1 ${point.x} ${bottom}`;
+          rings += ` A ${point.radius} ${point.radius} 0 0 1 ${left} ${point.y}`;
+          if (index === points.length - 1) {
+            path += ` M ${right} ${point.y} L ${bounds.width} ${point.y}`;
+            connectors += ` M ${right} ${point.y} L ${bounds.width} ${point.y}`;
+          }
         });
         geometry.width = bounds.width;
         geometry.height = bounds.height;
+        geometry.connectors = connectors;
+        geometry.rings = rings;
         geometry.path = path;
       });
     };
@@ -2459,7 +2472,8 @@ const OrderProgressFlow = {
       preserveAspectRatio: 'none',
       'aria-hidden': 'true',
     }, geometry.path ? [
-      h('path', { class: 'order-progress-flow-base', d: geometry.path, pathLength: 100 }),
+      h('path', { class: 'order-progress-flow-connectors', d: geometry.connectors }),
+      h('path', { class: 'order-progress-flow-rings', d: geometry.rings }),
       h('path', { class: 'order-progress-flow-trail', d: geometry.path, pathLength: 100 }),
       h('path', { class: 'order-progress-flow-head', d: geometry.path, pathLength: 100 }),
     ] : null);
