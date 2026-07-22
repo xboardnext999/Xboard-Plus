@@ -594,7 +594,7 @@ onMounted(load);
                 :style="
                     banner.image_url
                         ? {
-                              backgroundImage: `linear-gradient(90deg,rgba(20,16,48,.82),rgba(72,52,180,.16)),url(${banner.image_url})`,
+                              backgroundImage: `linear-gradient(90deg,rgba(8, 25, 52,.82),rgba(37, 99, 235,.16)),url(${banner.image_url})`,
                           }
                         : {}
                 "

@@ -262,7 +262,7 @@
 
 .digital-faq-manage-list article.is-dragging {
   opacity: .38;
-  background: rgba(108, 92, 231, .08);
+  background: rgba(37, 99, 235, .08);
   transform: scale(.995);
 }
 
@@ -281,7 +281,7 @@
   align-items: center;
   gap: 10px;
   min-height: 66px;
-  border: 1px solid rgba(108, 92, 231, .2);
+  border: 1px solid rgba(37, 99, 235, .2);
   border-radius: 14px;
   box-sizing: border-box;
   overflow: hidden;
@@ -326,7 +326,7 @@
 .digital-faq-manage-list article > div:nth-child(2) { min-width: 0; }
 .digital-faq-manage-list strong { display: block; overflow: hidden; color: var(--text); font-size: 12px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
 .digital-faq-manage-list p { display: -webkit-box; overflow: hidden; margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.digital-faq-sort { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: rgba(108, 92, 231, .09); color: var(--primary); font-size: 11px; font-weight: 800; }
+.digital-faq-sort { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: rgba(37, 99, 235, .09); color: var(--primary); font-size: 11px; font-weight: 800; }
 .digital-faq-actions { display: flex; align-items: center; gap: 5px; }
 
 @media (max-width: 900px) {
