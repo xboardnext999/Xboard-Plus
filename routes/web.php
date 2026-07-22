@@ -99,9 +99,21 @@ Route::get('/', function (Request $request) {
         ], $themeService->getConfig($theme) ?: []);
 
         $assetVersion = app(UpdateService::class)->getCurrentVersion();
-        $mainAssetPath = $themeService->getThemePath($theme) . '/assets/app/main.js';
-        if (File::exists($mainAssetPath)) {
-            $assetVersion .= '-' . File::lastModified($mainAssetPath);
+        $themeAssetPath = $themeService->getThemePath($theme) . '/assets/app';
+        $versionedAssets = [
+            $themeAssetPath . '/main.js',
+            $themeAssetPath . '/styles.css',
+            $themeAssetPath . '/store-service.css',
+            $themeAssetPath . '/icons/Logo.webp',
+        ];
+        $latestAssetModifiedAt = 0;
+        foreach ($versionedAssets as $assetPath) {
+            if (File::exists($assetPath)) {
+                $latestAssetModifiedAt = max($latestAssetModifiedAt, File::lastModified($assetPath));
+            }
+        }
+        if ($latestAssetModifiedAt > 0) {
+            $assetVersion .= '-' . $latestAssetModifiedAt;
         }
 
         $frontendSettings = [

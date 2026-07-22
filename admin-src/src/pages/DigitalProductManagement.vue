@@ -545,7 +545,7 @@ onMounted(load);
 
         <div class="digital-kpi-grid">
             <article class="panel digital-kpi">
-                <i class="violet"><AppIcon name="Package" :size="22" /></i>
+                <i class="brand"><AppIcon name="Package" :size="22" /></i>
                 <div>
                     <span>商品总数</span><strong>{{ rows.length }}</strong
                     ><small>全部数字商品</small>
@@ -577,7 +577,7 @@ onMounted(load);
                 </div>
             </article>
             <article class="panel digital-kpi">
-                <i class="violet">¥</i>
+                <i class="brand">¥</i>
                 <div>
                     <span>已交付</span
                     ><strong>{{

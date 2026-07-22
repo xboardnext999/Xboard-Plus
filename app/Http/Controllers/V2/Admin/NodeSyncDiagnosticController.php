@@ -1014,7 +1014,7 @@ class NodeSyncDiagnosticController extends Controller
     th { background:hsl(var(--background)); color:hsl(var(--muted-foreground)); font-size:.875rem; line-height:1.25rem; font-weight:500; }
     tr:last-child td { border-bottom:0; }
     .name { white-space:normal; min-width:220px; font-weight:500; }
-    .tag { display:inline-flex; align-items:center; border-radius:999px; padding:2px 8px; font-size:.75rem; line-height:1rem; font-weight:500; background:#eef2ff; color:#3730a3; }
+    .tag { display:inline-flex; align-items:center; border-radius:999px; padding:2px 8px; font-size:.75rem; line-height:1rem; font-weight:500; background:#eff6ff; color:#1d4ed8; }
     .status-badge { display:inline-flex; align-items:center; justify-content:center; min-width:48px; height:24px; padding:0 9px; border-radius:7px; font-size:.75rem; line-height:1rem; font-weight:500; }
     .status-badge.ok { background:#ecfdf5; color:#047857; }
     .status-badge.warn { background:#fff7ed; color:#c2410c; }
@@ -1043,7 +1043,7 @@ class NodeSyncDiagnosticController extends Controller
     .status-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:hsl(var(--background)); box-shadow:0 1px 2px rgba(0,0,0,.05); font-size:.75rem; line-height:1rem; font-weight:500; }
     .status-pill.ok { color:hsl(var(--foreground)); }
     .status-pill.bad { color:#dc2626; }
-    .sync-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:#eef2ff; color:#3730a3; font-size:.75rem; line-height:1rem; font-weight:500; }
+    .sync-pill { display:inline-flex; align-items:center; justify-content:center; min-width:56px; height:24px; padding:0 9px; border-radius:7px; background:#eff6ff; color:#1d4ed8; font-size:.75rem; line-height:1rem; font-weight:500; }
     .sync-pill.ok { background:#ecfdf5; color:#047857; }
     .sync-pill.wait { background:#fff7ed; color:#c2410c; }
     .sync-pill.muted-pill { background:#f1f5f9; color:#64748b; }

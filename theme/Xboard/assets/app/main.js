@@ -133,6 +133,10 @@ function siteLogoUrl() {
   return `/${logo.replace(/^\//, '')}`;
 }
 
+function siteLogoClass() {
+  return String(settings.logo || '').trim() ? 'brand-logo' : 'brand-logo brand-logo-default';
+}
+
 function currentTitle(name) {
   if (name === 'digital-checkout') return '订单结算';
   if (name === 'digital-detail') return '商品详情';
@@ -985,7 +989,7 @@ const AppShell = {
       return h('div', { class: 'app-shell' }, [
         h('aside', { class: 'sidebar' }, [
           h('a', { class: 'brand brand-with-logo', href: '#/dashboard', 'aria-label': appName() }, [
-            h('img', { class: 'brand-logo', src: siteLogoUrl(), alt: '' }),
+            h('img', { class: siteLogoClass(), src: siteLogoUrl(), alt: '' }),
             h('span', [h('b', appName())]),
           ]),
           h('nav', { class: 'nav' }, navGroups().map((group) => h('div', { class: 'nav-group', key: group.name || 'main' }, [
@@ -1135,7 +1139,7 @@ const AuthLayout = {
       h('section', { class: 'auth-shell' }, [
         h('div', { class: 'auth-visual' }, [
           h('a', { class: 'brand brand-with-logo', href: '#/login', 'aria-label': appName() }, [
-            h('img', { class: 'brand-logo', src: siteLogoUrl(), alt: '' }),
+            h('img', { class: siteLogoClass(), src: siteLogoUrl(), alt: '' }),
             h('span', [h('b', appName())]),
           ]),
           h('section', { class: 'page-hero' }, [
