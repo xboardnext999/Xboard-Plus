@@ -2418,7 +2418,7 @@ const OrderProgressFlow = {
           return {
             x: rect.left - bounds.left + rect.width / 2,
             y: rect.top - bounds.top + rect.height / 2,
-            radius: rect.width / 2 + 3,
+            radius: rect.width / 2 + 1,
           };
         });
         let path = '';

@@ -2686,7 +2686,7 @@ td {
 .order-progress { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); }
 .order-progress-flow { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .order-progress-flow path { fill: none; vector-effect: non-scaling-stroke; }
-.order-progress-flow-base { stroke: #a5d8bf; stroke-width: 1.5; }
+.order-progress-flow-base { stroke: #7edba6; stroke-width: 1.5; }
 .order-progress-flow-trail,
 .order-progress-flow-head { stroke-linecap: round; will-change: stroke-dashoffset, opacity; animation: order-progress-flow 13s cubic-bezier(.45, 0, .2, 1) infinite; }
 .order-progress-flow-trail { stroke: rgba(105, 203, 156, .28); stroke-width: 2.4; stroke-dasharray: 2.4 97.6; filter: drop-shadow(0 0 1.5px rgba(91, 190, 143, .12)); }
@@ -2698,13 +2698,13 @@ td {
   69%, 100% { stroke-dashoffset: -100; opacity: 0; }
 }
 .order-progress-item { position: relative; display: grid; justify-items: center; gap: 8px; color: var(--muted); text-align: center; }
-.order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 18px; left: calc(50% + 22px); width: calc(100% - 44px); height: 2px; background: var(--line); content: ''; }
-.order-progress-item.is-done:not(:last-child)::after { background: #a5d8bf; }
+.order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 22px; left: calc(50% + 25px); width: calc(100% - 50px); height: 2px; background: var(--line); content: ''; }
+.order-progress-item.is-done:not(:last-child)::after { background: #7edba6; }
 .order-progress.is-complete .order-progress-item:not(:last-child)::after { display: none; }
-.order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--panel-soft); color: var(--muted); font-size: 13px; font-weight: 900; }
-.order-progress-mark svg { width: 19px; height: 19px; }
-.order-progress-item.is-done .order-progress-mark { background: rgba(80, 201, 139, .13); color: #43b97c; }
-.order-progress-item:last-child.is-done .order-progress-mark { background: rgba(80, 201, 139, .15); box-shadow: 0 0 0 5px rgba(80, 201, 139, .045); color: #43ad76; }
+.order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--card-bg); color: var(--muted); font-size: 13px; font-weight: 900; }
+.order-progress-mark svg { width: 21px; height: 21px; }
+.order-progress-item.is-done .order-progress-mark,
+.order-progress-item:last-child.is-done .order-progress-mark { background: var(--card-bg); box-shadow: none; color: #39c878; }
 .order-progress-item strong { color: var(--text); font-size: 14px; }
 .order-progress-item span { font-size: 12px; font-variant-numeric: tabular-nums; }
 
@@ -2795,8 +2795,8 @@ td {
   .order-detail-card { padding: 16px; }
   .order-progress { grid-template-columns: 1fr; gap: 14px; }
   .order-progress-flow { display: none; }
-  .order-progress-item { grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; justify-items: start; text-align: left; }
-  .order-progress-item:not(:last-child)::after { top: 38px; bottom: -14px; left: 18px; width: 2px; height: auto; }
+  .order-progress-item { grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; justify-items: start; text-align: left; }
+  .order-progress-item:not(:last-child)::after { top: 46px; bottom: -14px; left: 22px; width: 2px; height: auto; }
   .order-progress.is-complete .order-progress-item:not(:last-child)::after { display: block; }
   .order-product-line { grid-template-columns: auto minmax(0, 1fr); }
   .order-product-line > div:last-child { grid-column: 2; justify-items: start; }
