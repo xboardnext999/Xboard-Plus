@@ -478,6 +478,15 @@ function markdownBody(source = '') {
     .replace(/\n/g, '<br>');
 }
 
+function planDescriptionBody(source = '') {
+  const content = String(source || '').trim();
+  if (!content) return '<p>稳定、安全的网络订阅服务。</p>';
+  if (/<\/?[a-z][\s\S]*>/i.test(content)) return safeBody(content);
+  return markdownBody(content)
+    .replace(/<\/h([1-3])><br>/g, '</h$1>')
+    .replace(/(?:<li>[\s\S]*?<\/li>(?:<br>)?)+/g, (list) => `<ul>${list.replace(/<br>/g, '')}</ul>`);
+}
+
 const digitalCartStorageKey = 'xboard-digital-cart-v1';
 function loadDigitalCart() {
   try { return JSON.parse(localStorage.getItem(digitalCartStorageKey) || '[]'); } catch { return []; }
@@ -1708,6 +1717,7 @@ const PlanPurchaseCard = {
     plan: { type: Object, required: true },
     index: { type: Number, default: 0 },
     methods: { type: Array, default: () => [] },
+    methodsError: { type: String, default: '' },
     groupBuy: { type: Object, default: () => ({ activities: [], groups: [] }) },
   },
   setup(props) {
@@ -1733,6 +1743,7 @@ const PlanPurchaseCard = {
     async function refreshQuote() {
       if (!selectedPeriod.value) {
         local.quote = null;
+        local.quoteLoading = false;
         return;
       }
 
@@ -1761,6 +1772,10 @@ const PlanPurchaseCard = {
 
     function scheduleQuote() {
       clearTimeout(quoteTimer);
+      quoteSeq += 1;
+      local.quote = null;
+      local.quoteError = '';
+      local.quoteLoading = Boolean(selectedPeriod.value);
       quoteTimer = setTimeout(refreshQuote, 260);
     }
 
@@ -1841,93 +1856,145 @@ const PlanPurchaseCard = {
       );
       const quote = local.quote || {};
       const original = quote.original_amount ?? Number(props.plan[selectedPeriod.value] || 0);
-      const discount = Number(quote.discount_amount || 0) + Number(quote.surplus_amount || 0);
+      const totalDiscount = Number(quote.discount_amount || 0);
+      const couponDiscount = Number(quote.coupon_discount_amount || 0);
+      const groupBuyDiscount = Number(quote.group_buy_discount_amount || 0);
+      const vipDiscount = Number(quote.vip_discount_amount || 0);
+      const otherDiscount = Math.max(totalDiscount - couponDiscount - groupBuyDiscount - vipDiscount, 0);
+      const surplus = Number(quote.surplus_amount || 0);
       const balance = Number(quote.balance_amount || 0);
       const handling = Number(quote.handling_amount || 0);
       const payAmount = quote.pay_amount ?? quote.total_amount ?? original;
+      const traffic = props.plan.transfer_enable
+        ? bytes(Number(props.plan.transfer_enable) * 1024 * 1024 * 1024)
+        : '不限流量';
+      const tierLabel = props.index === 1 ? '推荐套餐' : (props.index === 0 ? '基础套餐' : '订阅套餐');
+      const paymentCovered = Boolean(local.quote) && Number(payAmount || 0) <= 0;
+      const paymentPending = local.quoteLoading && !local.quote;
+      const requiresPaymentMethod = Number(payAmount || 0) > 0;
+      const paymentEmptyTitle = props.methodsError ? '支付方式加载失败' : '暂无可用支付方式';
+      const paymentEmptyHint = props.methodsError || '请联系管理员配置支付渠道';
+      const quoteLines = [
+        quoteLine('套餐原价', money(original, currencySymbol())),
+        couponDiscount > 0 ? quoteLine('优惠券', `-${money(couponDiscount, currencySymbol())}`, 'ok') : null,
+        vipDiscount > 0 ? quoteLine('会员优惠', `-${money(vipDiscount, currencySymbol())}`, 'ok') : null,
+        groupBuyDiscount > 0 ? quoteLine('拼团优惠', `-${money(groupBuyDiscount, currencySymbol())}`, 'ok') : null,
+        otherDiscount > 0 ? quoteLine('活动优惠', `-${money(otherDiscount, currencySymbol())}`, 'ok') : null,
+        surplus > 0 ? quoteLine('套餐折抵', `-${money(surplus, currencySymbol())}`, 'ok') : null,
+        balance > 0 ? quoteLine('余额抵扣', `-${money(balance, currencySymbol())}`, 'ok') : null,
+        handling > 0 ? quoteLine('支付手续费', money(handling, currencySymbol()), 'warn') : null,
+      ].filter(Boolean);
 
       return h('form', {
         class: ['plan-card', props.index === 1 ? 'hot' : ''],
         onSubmit: buyPlan,
       }, [
-        h('small', props.index === 1 ? 'Popular' : (props.index === 0 ? 'Starter' : 'Plan')),
-        h('div', { class: 'plan-head' }, [
-          h('h2', props.plan.name),
-          h('span', props.plan.transfer_enable ? bytes(Number(props.plan.transfer_enable) * 1024 * 1024 * 1024) : '不限流量'),
-        ]),
-        h('div', { class: 'plan-content', innerHTML: safeBody(props.plan.content) }),
-        h('div', { class: 'plan-meta' }, [
-          h('span', `速度 ${props.plan.speed_limit || '不限'}`),
-          h('span', `设备 ${props.plan.device_limit || '不限'}`),
-        ]),
-        h('label', ['周期', h('select', {
-          name: 'period',
-          value: selectedPeriod.value,
-          onChange: (event) => { selectedPeriod.value = event.target.value; },
-        }, options.map((item) => h('option', { value: item.key }, item.label)))]),
-        h('label', ['优惠码', h('input', {
-          name: 'coupon_code',
-          value: couponCode.value,
-          placeholder: '输入后自动计算',
-          onInput: (event) => { couponCode.value = event.target.value; },
-        })]),
-        h('div', { class: 'plan-field' }, [
-          h('span', '支付方式'),
-          props.methods?.length ? h('div', { class: 'payment-methods plan-payment-methods' }, props.methods.map((method, index) => h('label', { class: 'payment-method' }, [
-            h('input', {
-              type: 'radio',
-              name: `method-${props.plan.id}`,
-              value: method.id,
-              checked: String(selectedMethod.value || props.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0),
-              onChange: (event) => { selectedMethod.value = event.target.value; },
-            }),
-            method.icon
-              ? h('img', { src: method.icon, alt: '' })
-              : h('span', { class: 'pay-icon' }, '¥'),
-            h('span', method.name || method.payment || `支付方式 ${method.id}`),
-          ]))) : emptyBlock('暂无可用支付方式'),
-        ]),
-        activities.length ? h('div', { class: 'plan-field group-buy-field' }, [
-          h('span', '拼团优惠'),
-          h('select', {
-            value: selectedGroupActivity.value,
-            onChange: (event) => {
-              selectedGroupActivity.value = event.target.value;
-              selectedGroup.value = '';
-            },
-          }, [
-            h('option', { value: '' }, '不参与拼团'),
-            ...activities.map((activity) => h('option', { value: activity.id }, `${activity.title} · ${activity.group_size}人成团`)),
+        h('section', { class: 'plan-product' }, [
+          h('div', { class: 'plan-tier' }, [
+            h('span', tierLabel),
+            props.index === 1 ? h('em', '推荐') : null,
           ]),
-          selectedGroupActivity.value ? h('div', { class: 'group-buy-actions' }, [
-            groups.length ? h('select', {
-              value: selectedGroup.value,
-              onChange: (event) => { selectedGroup.value = event.target.value; },
-            }, [
-              h('option', { value: '' }, '自己开团'),
-              ...groups.map((group) => h('option', { value: group.id }, `加入团 #${group.id} · ${group.current_count}/${group.required_count}`)),
+          h('div', { class: 'plan-head' }, [
+            h('div', [
+              h('h2', props.plan.name),
+              h('p', '适合日常稳定使用的订阅方案'),
+            ]),
+            h('div', { class: 'plan-traffic' }, [
+              h('small', '套餐流量'),
+              h('strong', traffic),
+            ]),
+          ]),
+          h('div', { class: 'plan-content', innerHTML: planDescriptionBody(props.plan.content) }),
+          h('div', { class: 'plan-meta' }, [
+            h('span', [h('small', '速率限制'), h('strong', props.plan.speed_limit ? `${props.plan.speed_limit} Mbps` : '不限速')]),
+            h('span', [h('small', '在线设备'), h('strong', props.plan.device_limit ? `${props.plan.device_limit} 台` : '不限设备')]),
+            h('span', [h('small', '流量额度'), h('strong', traffic)]),
+          ]),
+        ]),
+        h('aside', { class: 'plan-checkout' }, [
+          h('div', { class: 'plan-checkout-head' }, [
+            h('div', [h('small', 'ORDER CONFIGURATION'), h('h3', '购买配置')]),
+            h('span', '价格将自动计算'),
+          ]),
+          h('div', { class: 'plan-checkout-fields' }, [
+            h('label', { class: 'plan-control' }, [h('span', '购买周期'), h('select', {
+              name: 'period',
+              value: selectedPeriod.value,
+              onChange: (event) => { selectedPeriod.value = event.target.value; },
+            }, options.map((item) => h('option', { value: item.key }, item.label)))]),
+            h('label', { class: 'plan-control' }, [h('span', '优惠码'), h('input', {
+              name: 'coupon_code',
+              value: couponCode.value,
+              placeholder: '选填，输入后自动计算',
+              onInput: (event) => { couponCode.value = event.target.value; },
+            })]),
+            h('div', { class: 'plan-field' }, [
+              h('span', '支付方式'),
+              props.methods?.length ? h('div', { class: 'payment-methods plan-payment-methods' }, props.methods.map((method, index) => h('label', { class: 'payment-method' }, [
+                h('input', {
+                  type: 'radio',
+                  name: `method-${props.plan.id}`,
+                  value: method.id,
+                  checked: String(selectedMethod.value || props.methods[0]?.id) === String(method.id) || (!selectedMethod.value && index === 0),
+                  onChange: (event) => { selectedMethod.value = event.target.value; },
+                }),
+                method.icon
+                  ? h('img', { src: method.icon, alt: '' })
+                  : h('span', { class: 'pay-icon' }, '¥'),
+                h('span', method.name || method.payment || `支付方式 ${method.id}`),
+              ]))) : h('div', { class: ['plan-payment-empty', paymentCovered ? 'is-covered' : '', paymentPending ? 'is-loading' : ''] }, [
+                h('i', paymentPending ? '…' : (paymentCovered ? '✓' : '!')),
+                h('div', [
+                  h('strong', paymentPending ? '正在核算支付金额' : (paymentCovered ? '无需额外支付' : paymentEmptyTitle)),
+                  h('span', paymentPending ? '请稍候，正在获取最新结算结果' : (paymentCovered ? '优惠与余额已覆盖本次金额' : paymentEmptyHint)),
+                ]),
+              ]),
+            ]),
+            activities.length ? h('div', { class: 'plan-field group-buy-field' }, [
+              h('span', '拼团优惠'),
+              h('select', {
+                value: selectedGroupActivity.value,
+                onChange: (event) => {
+                  selectedGroupActivity.value = event.target.value;
+                  selectedGroup.value = '';
+                },
+              }, [
+                h('option', { value: '' }, '不参与拼团'),
+                ...activities.map((activity) => h('option', { value: activity.id }, `${activity.title} · ${activity.group_size}人成团`)),
+              ]),
+              selectedGroupActivity.value ? h('div', { class: 'group-buy-actions' }, [
+                groups.length ? h('select', {
+                  value: selectedGroup.value,
+                  onChange: (event) => { selectedGroup.value = event.target.value; },
+                }, [
+                  h('option', { value: '' }, '自己开团'),
+                  ...groups.map((group) => h('option', { value: group.id }, `加入团 #${group.id} · ${group.current_count}/${group.required_count}`)),
+                ]) : null,
+                h('button', { class: 'secondary-button', type: 'button', disabled: local.groupCreating, onClick: createGroup }, local.groupCreating ? '开团中...' : '创建拼团'),
+              ]) : null,
             ]) : null,
-            h('button', { class: 'secondary-button', type: 'button', disabled: local.groupCreating, onClick: createGroup }, local.groupCreating ? '开团中...' : '创建拼团'),
-          ]) : null,
-        ]) : null,
-        h('div', { class: 'plan-quote' }, [
-          h('div', { class: 'plan-quote-main' }, [
-            h('span', '预计实付'),
-            h('strong', local.quoteLoading ? '计算中...' : money(payAmount, currencySymbol())),
           ]),
-          h('div', { class: 'plan-quote-lines' }, [
-            quoteLine('套餐原价', money(original, currencySymbol())),
-            quoteLine('优惠/折抵', discount > 0 ? `-${money(discount, currencySymbol())}` : money(0, currencySymbol()), discount > 0 ? 'ok' : ''),
-            quoteLine('余额抵扣', balance > 0 ? `-${money(balance, currencySymbol())}` : money(0, currencySymbol()), balance > 0 ? 'ok' : ''),
-            quoteLine('支付手续费', money(handling, currencySymbol()), handling > 0 ? 'warn' : ''),
+          h('div', { class: 'plan-quote' }, [
+            h('div', { class: 'plan-quote-main' }, [
+              h('span', '预计实付'),
+              h('strong', local.quoteLoading ? '计算中...' : money(payAmount, currencySymbol())),
+            ]),
+            h('div', { class: 'plan-quote-lines' }, [
+              ...quoteLines,
+            ]),
+            local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
           ]),
-          local.quoteError ? h('p', { class: 'quote-error' }, local.quoteError) : null,
+          h('button', {
+            class: 'primary-button plan-submit',
+            type: 'submit',
+            disabled: local.submitting
+              || local.quoteLoading
+              || Boolean(local.quoteError)
+              || !selectedPeriod.value
+              || (requiresPaymentMethod && !selectedMethod.value),
+          }, local.submitting ? '正在创建订单…' : '确认购买'),
+          h('p', { class: 'plan-submit-note' }, '提交前请确认套餐周期与支付信息'),
         ]),
-        h('button', {
-          class: 'primary-button',
-          type: 'submit',
-          disabled: local.submitting || local.quoteLoading || Boolean(local.quoteError) || !selectedPeriod.value,
-        }, local.submitting ? '创建中...' : '选择套餐'),
       ]);
     };
   },
@@ -1935,10 +2002,14 @@ const PlanPurchaseCard = {
 
 const PlansPage = {
   setup() {
+    const selectedPlanId = ref('');
     const local = useAsyncPage(async (page) => {
       const [plans, methods, groupBuy] = await Promise.all([
         api.get('/user/plan/fetch'),
-        api.get('/user/order/getPaymentMethod').catch(() => []),
+        api.get('/user/order/getPaymentMethod').catch((error) => {
+          page.methodsError = error.message || '支付渠道请求失败，请稍后重试';
+          return [];
+        }),
         api.get('/user/group-buy/fetch').catch(() => ({ activities: [], groups: [] })),
       ]);
       page.plans = normalizeCollection(plans);
@@ -1946,17 +2017,48 @@ const PlansPage = {
       page.groupBuy = groupBuy || { activities: [], groups: [] };
     });
 
-    return () => h('div', [
-      pageError(local.error),
-      h('div', { class: 'plan-grid' }, (local.plans || []).map((plan, index) => h(PlanPurchaseCard, {
-        key: plan.id,
-        plan,
-        index,
-        methods: local.methods || [],
-        groupBuy: local.groupBuy || { activities: [], groups: [] },
-      }))),
-      local.ready && !(local.plans || []).length ? emptyBlock('暂无可购买套餐') : null,
-    ]);
+    watch(() => local.plans, (plans) => {
+      const list = Array.isArray(plans) ? plans : [];
+      if (!list.length) {
+        selectedPlanId.value = '';
+        return;
+      }
+      if (!list.some((plan) => String(plan.id) === String(selectedPlanId.value))) {
+        selectedPlanId.value = String(list[0].id);
+      }
+    }, { immediate: true });
+
+    return () => {
+      const plans = local.plans || [];
+      const selectedIndex = Math.max(0, plans.findIndex((plan) => String(plan.id) === String(selectedPlanId.value)));
+      const selectedPlan = plans[selectedIndex] || null;
+
+      return h('div', { class: 'plan-purchase-page' }, [
+        pageError(local.error),
+        plans.length > 1 ? h('nav', { class: 'plan-selector', 'aria-label': '选择套餐' }, plans.map((plan, index) => {
+          const option = periodOptions(plan)[0];
+          const isActive = String(plan.id) === String(selectedPlan?.id);
+          return h('button', {
+            type: 'button',
+            class: ['plan-selector-card', isActive ? 'active' : ''],
+            onClick: () => { selectedPlanId.value = String(plan.id); },
+          }, [
+            h('span', index === 1 ? '推荐' : `套餐 ${index + 1}`),
+            h('strong', plan.name),
+            h('small', option?.label || '查看套餐价格'),
+          ]);
+        })) : null,
+        selectedPlan ? h('div', { class: 'plan-grid' }, [h(PlanPurchaseCard, {
+          key: selectedPlan.id,
+          plan: selectedPlan,
+          index: selectedIndex,
+          methods: local.methods || [],
+          methodsError: local.methodsError || '',
+          groupBuy: local.groupBuy || { activities: [], groups: [] },
+        })]) : null,
+        local.ready && !plans.length ? emptyBlock('暂无可购买套餐') : null,
+      ]);
+    };
   },
 };
 
