@@ -2689,16 +2689,6 @@ td {
 .order-progress-flow-connectors { stroke: #8bdcaf; stroke-width: 1.4; }
 .order-progress-flow-ring-back { stroke: rgba(57, 200, 120, .26); stroke-width: 4; }
 .order-progress-flow-rings { stroke: #fff; stroke-width: 2.2; }
-.order-progress-flow-trail,
-.order-progress-flow-head { stroke-linecap: round; will-change: stroke-dashoffset, opacity; animation: order-progress-flow 13s cubic-bezier(.45, 0, .2, 1) infinite; }
-.order-progress-flow-trail { stroke: rgba(105, 203, 156, .28); stroke-width: 2.4; stroke-dasharray: 2.4 97.6; filter: drop-shadow(0 0 1.5px rgba(91, 190, 143, .12)); }
-.order-progress-flow-head { stroke: rgba(244, 255, 249, .9); stroke-width: 2.1; stroke-dasharray: .22 99.78; filter: drop-shadow(0 0 2px rgba(67, 165, 116, .2)); }
-@keyframes order-progress-flow {
-  0%, 7% { stroke-dashoffset: 0; opacity: 0; }
-  10% { opacity: .72; }
-  64% { stroke-dashoffset: -100; opacity: .72; }
-  69%, 100% { stroke-dashoffset: -100; opacity: 0; }
-}
 .order-progress-item { position: relative; display: grid; justify-items: center; gap: 8px; color: var(--muted); text-align: center; }
 .order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 22px; left: calc(50% + 25px); width: calc(100% - 50px); height: 2px; background: var(--line); content: ''; }
 .order-progress-item.is-done:not(:last-child)::after { background: #7edba6; }
@@ -2776,8 +2766,6 @@ td {
   .order-loading-back,
   .order-loading-summary,
   .order-loading-grid > div { animation: none; }
-  .order-progress-flow-trail,
-  .order-progress-flow-head { display: none; animation: none!important; }
 }
 
 @media (max-width: 980px) {
