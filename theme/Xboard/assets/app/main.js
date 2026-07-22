@@ -2473,6 +2473,7 @@ const OrderProgressFlow = {
       'aria-hidden': 'true',
     }, geometry.path ? [
       h('path', { class: 'order-progress-flow-connectors', d: geometry.connectors }),
+      h('path', { class: 'order-progress-flow-ring-back', d: geometry.rings }),
       h('path', { class: 'order-progress-flow-rings', d: geometry.rings }),
       h('path', { class: 'order-progress-flow-trail', d: geometry.path, pathLength: 100 }),
       h('path', { class: 'order-progress-flow-head', d: geometry.path, pathLength: 100 }),
