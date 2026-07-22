@@ -2700,13 +2700,11 @@ td {
 .order-progress-item strong { color: var(--text); font-size: 14px; }
 .order-progress-item span { font-size: 12px; font-variant-numeric: tabular-nums; }
 
-.order-product-line { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; }
-.order-product-line > div:nth-child(2),
-.order-product-line > div:last-child { display: grid; gap: 4px; }
+.order-product-line { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; }
+.order-product-line > div:nth-child(2) { display: grid; gap: 4px; }
 .order-product-line strong,
 .order-product-line b { font-size: 14px; }
 .order-product-line span { color: var(--muted); font-size: 13px; }
-.order-product-line > div:last-child { justify-items: end; }
 .order-product-description { margin-top: 20px; }
 .order-product-description > div { color: var(--muted); font-size: 12px; line-height: 1.7; }
 .order-product-description > div > :first-child { margin-top: 0; }

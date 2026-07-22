@@ -2586,7 +2586,6 @@ const OrderDetailPage = {
               h('div', { class: 'order-product-line' }, [
                 h('div', { class: ['order-product-thumb', productImage ? '' : 'is-placeholder'], style: productImage ? { backgroundImage: `url(${productImage})` } : null }, productImage ? null : (order.plan?.name || '商').slice(0, 1)),
                 h('div', [h('strong', order.plan?.name || '订单商品'), h('span', selectedPackage?.name || '数量 1')]),
-                h('div', [h('b', money(completed ? paidAmount : order.total_amount, currencySymbol())), h('span', '×1')]),
               ]),
               h('div', { class: 'order-product-description' }, [
                 h('div', { class: 'order-product-specs' }, [
@@ -2599,7 +2598,7 @@ const OrderDetailPage = {
             ]),
             (order.digital_delivery || []).length ? h('section', { class: 'order-detail-card order-delivery-card' }, [
               h('div', { class: 'order-delivery-heading' }, [
-                h('div', [h('h3', '交付信息'), h('p', `共 ${(order.digital_delivery || []).length} 项`)]),
+                h('div', [h('h3', '交付信息')]),
               ]),
               h('div', { class: 'order-delivery-list' }, (order.digital_delivery || []).map((item, index) => {
                 const file = digitalDeliveryFile(item.content);
