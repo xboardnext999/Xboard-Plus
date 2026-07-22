@@ -6,8 +6,8 @@
   --text: #111827;
   --muted: #64748b;
   --border: #e5e7eb;
-  --brand: #6c5cff;
-  --brand-weak: #eeecfc;
+  --brand: #2563eb;
+  --brand-weak: #eff6ff;
   --danger: #dc2626;
   --success: #16a34a;
   --shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
@@ -155,7 +155,7 @@ select {
 input:focus,
 select:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(108, 92, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .filters {
