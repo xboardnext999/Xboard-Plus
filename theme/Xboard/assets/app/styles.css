@@ -2686,8 +2686,8 @@ td {
 .order-progress { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); }
 .order-progress-flow { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .order-progress-flow path { fill: none; vector-effect: non-scaling-stroke; }
-.order-progress-flow-connectors { stroke: #7edba6; stroke-width: 1.5; }
-.order-progress-flow-rings { stroke: rgba(255, 255, 255, .96); stroke-width: 2; filter: drop-shadow(0 0 1px rgba(57, 200, 120, .34)); }
+.order-progress-flow-connectors { stroke: #8bdcaf; stroke-width: 1.5; }
+.order-progress-flow-rings { stroke: #fff; stroke-width: 2.6; filter: drop-shadow(0 0 1px rgba(57, 200, 120, .56)) drop-shadow(0 2px 4px rgba(15, 23, 42, .08)); }
 .order-progress-flow-trail,
 .order-progress-flow-head { stroke-linecap: round; will-change: stroke-dashoffset, opacity; animation: order-progress-flow 13s cubic-bezier(.45, 0, .2, 1) infinite; }
 .order-progress-flow-trail { stroke: rgba(105, 203, 156, .28); stroke-width: 2.4; stroke-dasharray: 2.4 97.6; filter: drop-shadow(0 0 1.5px rgba(91, 190, 143, .12)); }
@@ -2702,10 +2702,10 @@ td {
 .order-progress-item:not(:last-child)::after { position: absolute; z-index: 0; top: 22px; left: calc(50% + 25px); width: calc(100% - 50px); height: 2px; background: var(--line); content: ''; }
 .order-progress-item.is-done:not(:last-child)::after { background: #7edba6; }
 .order-progress.is-complete .order-progress-item:not(:last-child)::after { display: none; }
-.order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--card-bg); color: var(--muted); font-size: 13px; font-weight: 900; }
+.order-progress-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--card-bg); box-shadow: 0 2px 8px rgba(15, 23, 42, .045); color: var(--muted); font-size: 13px; font-weight: 900; }
 .order-progress-mark svg { width: 21px; height: 21px; }
 .order-progress-item.is-done .order-progress-mark,
-.order-progress-item:last-child.is-done .order-progress-mark { background: var(--card-bg); box-shadow: none; color: #39c878; }
+.order-progress-item:last-child.is-done .order-progress-mark { background: var(--card-bg); box-shadow: 0 2px 8px rgba(15, 23, 42, .045); color: #39c878; }
 .order-progress-item strong { color: var(--text); font-size: 14px; }
 .order-progress-item span { font-size: 12px; font-variant-numeric: tabular-nums; }
 
