@@ -42,6 +42,8 @@ function defaultForm() {
         password: "",
         plan_id: null,
         transfer_gb: 0,
+        upload_gb: 0,
+        download_gb: 0,
         expired_at: "",
         balance: 0,
         commission_balance: 0,
@@ -169,6 +171,8 @@ function edit(u) {
         password: "",
         plan_id: u.plan_id,
         transfer_gb: Number(bytesGB(u.transfer_enable).toFixed(3)),
+        upload_gb: Number(bytesGB(u.u).toFixed(3)),
+        download_gb: Number(bytesGB(u.d).toFixed(3)),
         expired_at: localInput(u.expired_at),
         balance: Number(u.balance || 0),
         commission_balance: Number(u.commission_balance || 0),
@@ -204,6 +208,8 @@ async function save() {
             transfer_enable: Math.round(
                 Number(form.transfer_gb || 0) * 1073741824,
             ),
+            u: Math.round(Number(form.upload_gb || 0) * 1073741824),
+            d: Math.round(Number(form.download_gb || 0) * 1073741824),
             expired_at: form.expired_at
                 ? Math.floor(new Date(form.expired_at).getTime() / 1000)
                 : null,
@@ -520,7 +526,8 @@ function downloadCreated() {
                                     ><em
                                         :class="{ danger: usage(u) >= 90 }"
                                         :style="{ width: `${usage(u)}%` }" /></i
-                                ><small>已使用 {{ usage(u) }}%</small>
+                                ><small>已使用 {{ usage(u) }}%</small
+                                ><small>上行 {{ traffic(u.u) }} · 下行 {{ traffic(u.d) }}</small>
                             </div>
                         </td>
                         <td>
@@ -667,6 +674,20 @@ function downloadCreated() {
                             type="number"
                             min="0"
                             step="0.01" /></label
+                    ><label class="field"
+                        ><span>已用上行（GB）</span
+                        ><input
+                            v-model.number="form.upload_gb"
+                            type="number"
+                            min="0"
+                            step="0.001" /></label
+                    ><label class="field"
+                        ><span>已用下行（GB）</span
+                        ><input
+                            v-model.number="form.download_gb"
+                            type="number"
+                            min="0"
+                            step="0.001" /></label
                     ><label class="field"
                         ><span>余额（元）</span
                         ><input
