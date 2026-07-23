@@ -562,7 +562,8 @@ function downloadCreated() {
                             <span>{{ time(u.last_login_at) }}</span
                             ><small>创建 {{ time(u.created_at) }}</small>
                         </td>
-                        <td class="actions user-actions">
+                        <td class="right">
+                            <div class="actions user-actions">
                             <button
                                 class="btn btn-ghost btn-sm"
                                 :disabled="busy === u.id"
@@ -596,6 +597,7 @@ function downloadCreated() {
                                     </button>
                                 </div>
                             </details>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
