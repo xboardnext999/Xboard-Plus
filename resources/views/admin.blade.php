@@ -15,82 +15,65 @@
     };
   </script>
   @php
-    $vueManifestPath = public_path('assets/admin-vue/manifest.json');
-    $useVueAdmin = file_exists($vueManifestPath);
-    $assetDirectory = $useVueAdmin ? 'admin-vue' : 'admin';
-    $manifestPath = $useVueAdmin ? $vueManifestPath : public_path('assets/admin/manifest.json');
+    $manifestPath = public_path('assets/admin-react/manifest.json');
     $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null;
-    $entry = is_array($manifest) ? ($manifest['index.html'] ?? null) : null;
-    $scripts = [];
+    $entryKey = null;
+
+    if (is_array($manifest)) {
+      foreach ($manifest as $chunkName => $chunk) {
+        if (is_array($chunk) && !empty($chunk['isEntry'])) {
+          $entryKey = $chunkName;
+          break;
+        }
+      }
+    }
+
+    $entry = $entryKey !== null ? ($manifest[$entryKey] ?? null) : null;
+    abort_unless(is_array($entry) && !empty($entry['file']), 503, 'Admin React assets are missing. Run the admin frontend build.');
+
     $styles = [];
-    $locales = [];
+    $modulePreloads = [];
+    $visited = [];
 
-    if (is_array($entry)) {
-      $visited = [];
-      $collectAssets = function ($chunkName) use (&$collectAssets, &$manifest, &$visited, &$scripts, &$styles) {
-        if (isset($visited[$chunkName]) || !isset($manifest[$chunkName]) || !is_array($manifest[$chunkName])) {
-          return;
+    $collectAssets = function ($chunkName) use (&$collectAssets, &$manifest, &$visited, &$styles, &$modulePreloads, $entryKey) {
+      if (isset($visited[$chunkName]) || !isset($manifest[$chunkName]) || !is_array($manifest[$chunkName])) {
+        return;
+      }
+
+      $visited[$chunkName] = true;
+      $chunk = $manifest[$chunkName];
+
+      if (!empty($chunk['css']) && is_array($chunk['css'])) {
+        foreach ($chunk['css'] as $cssFile) {
+          $styles[$cssFile] = $cssFile;
         }
+      }
 
-        $visited[$chunkName] = true;
-        $chunk = $manifest[$chunkName];
-
-        if (!empty($chunk['css']) && is_array($chunk['css'])) {
-          foreach ($chunk['css'] as $cssFile) {
-            $styles[$cssFile] = $cssFile;
-          }
+      if (!empty($chunk['imports']) && is_array($chunk['imports'])) {
+        foreach ($chunk['imports'] as $import) {
+          $collectAssets($import);
         }
+      }
 
-        if (!empty($chunk['imports']) && is_array($chunk['imports'])) {
-          foreach ($chunk['imports'] as $import) {
-            $collectAssets($import);
-          }
-        }
+      if ($chunkName !== $entryKey && !empty($chunk['file']) && str_ends_with($chunk['file'], '.js')) {
+        $modulePreloads[$chunk['file']] = $chunk['file'];
+      }
+    };
 
-        if (!empty($chunk['isEntry']) && !empty($chunk['file'])) {
-          $scripts[$chunk['file']] = $chunk['file'];
-        }
-      };
-
-      $collectAssets('index.html');
-    }
-
-    foreach (glob(public_path('assets/admin/locales/*.js')) ?: [] as $localeFile) {
-      $locales[] = 'locales/' . basename($localeFile);
-    }
-    sort($locales);
+    $collectAssets($entryKey);
   @endphp
 
-  @if($entry && count($scripts) > 0)
-    @foreach($styles as $css)
-      <link rel="stylesheet" crossorigin href="/assets/{{ $assetDirectory }}/{{ $css }}" />
-    @endforeach
-    @unless($useVueAdmin)
-      @foreach($locales as $locale)
-        <script src="/assets/admin/{{ $locale }}"></script>
-      @endforeach
-    @endunless
-    @foreach($scripts as $js)
-      <script type="module" crossorigin src="/assets/{{ $assetDirectory }}/{{ $js }}"></script>
-    @endforeach
-  @else
-    {{-- Fallback: hardcoded paths for backward compatibility --}}
-    <script type="module" crossorigin src="/assets/admin/assets/index.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/admin/assets/index.css" />
-    <link rel="stylesheet" crossorigin href="/assets/admin/assets/vendor.css">
-    <script src="/assets/admin/locales/en-US.js"></script>
-    <script src="/assets/admin/locales/zh-CN.js"></script>
-    <script src="/assets/admin/locales/ko-KR.js"></script>
-  @endif
-  @unless($useVueAdmin)
-    <script src="/assets/admin/logo-upload.js?v={{ rawurlencode($version) }}" defer></script>
-    <script src="/assets/admin/group-buy-entry.js?v={{ rawurlencode($version) }}" defer></script>
-    <script src="/assets/admin/subscription-transfer-settings.js?v={{ rawurlencode($version) }}-package-cache-v1" defer></script>
-  @endunless
+  @foreach($styles as $css)
+    <link rel="stylesheet" crossorigin href="/assets/admin-react/{{ $css }}" />
+  @endforeach
+  @foreach($modulePreloads as $js)
+    <link rel="modulepreload" crossorigin href="/assets/admin-react/{{ $js }}" />
+  @endforeach
+  <script type="module" crossorigin src="/assets/admin-react/{{ $entry['file'] }}"></script>
 </head>
 
 <body>
-  <div id="{{ $useVueAdmin ? 'app' : 'root' }}"></div>
+  <div id="root"></div>
 </body>
 
 </html>

@@ -366,8 +366,9 @@ class ThemeService
      */
     public function refreshCurrentTheme(): bool
     {
+        $currentTheme = admin_setting('current_theme', admin_setting('frontend_theme', 'Xboard'));
+
         try {
-            $currentTheme = admin_setting('current_theme');
             if (!$currentTheme) {
                 return false;
             }

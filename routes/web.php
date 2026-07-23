@@ -103,7 +103,7 @@ Route::get('/', function (Request $request) {
         $versionedAssets = [
             $themeAssetPath . '/main.js',
             $themeAssetPath . '/styles.css',
-            $themeAssetPath . '/store-service.css',
+            $themeAssetPath . '/manifest.json',
             $themeAssetPath . '/icons/Logo.webp',
         ];
         $latestAssetModifiedAt = 0;

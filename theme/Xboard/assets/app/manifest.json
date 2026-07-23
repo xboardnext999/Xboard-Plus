@@ -1,0 +1,248 @@
+{
+  "_input-_ryjdhZy.js": {
+    "file": "chunks/input-_ryjdhZy.js",
+    "name": "input",
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "src/main.tsx"
+    ]
+  },
+  "_progress-CCosFisV.js": {
+    "file": "chunks/progress-CCosFisV.js",
+    "name": "progress",
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "src/main.tsx"
+    ]
+  },
+  "_select-CMmZi0UK.js": {
+    "file": "chunks/select-CMmZi0UK.js",
+    "name": "select",
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-radix-C4JSRjdl.js",
+      "src/main.tsx",
+      "_vendor-icons-C_taFPL-.js"
+    ]
+  },
+  "_vendor-icons-C_taFPL-.js": {
+    "file": "chunks/vendor-icons-C_taFPL-.js",
+    "name": "vendor-icons",
+    "imports": [
+      "_vendor-react-BglHUnBE.js"
+    ]
+  },
+  "_vendor-query-jy3Adc3U.js": {
+    "file": "chunks/vendor-query-jy3Adc3U.js",
+    "name": "vendor-query",
+    "imports": [
+      "_vendor-react-BglHUnBE.js"
+    ]
+  },
+  "_vendor-radix-C4JSRjdl.js": {
+    "file": "chunks/vendor-radix-C4JSRjdl.js",
+    "name": "vendor-radix",
+    "imports": [
+      "_vendor-react-BglHUnBE.js"
+    ]
+  },
+  "_vendor-react-BglHUnBE.js": {
+    "file": "chunks/vendor-react-BglHUnBE.js",
+    "name": "vendor-react"
+  },
+  "_vendor-utils-CqV1vbOk.js": {
+    "file": "chunks/vendor-utils-CqV1vbOk.js",
+    "name": "vendor-utils",
+    "imports": [
+      "_vendor-react-BglHUnBE.js"
+    ]
+  },
+  "node_modules/@fontsource-variable/inter/files/inter-cyrillic-ext-wght-normal.woff2": {
+    "file": "assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2",
+    "src": "node_modules/@fontsource-variable/inter/files/inter-cyrillic-ext-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/inter/files/inter-cyrillic-wght-normal.woff2": {
+    "file": "assets/inter-cyrillic-wght-normal-DqGufNeO.woff2",
+    "src": "node_modules/@fontsource-variable/inter/files/inter-cyrillic-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/inter/files/inter-greek-ext-wght-normal.woff2": {
+    "file": "assets/inter-greek-ext-wght-normal-DlzME5K_.woff2",
+    "src": "node_modules/@fontsource-variable/inter/files/inter-greek-ext-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/inter/files/inter-greek-wght-normal.woff2": {
+    "file": "assets/inter-greek-wght-normal-CkhJZR-_.woff2",
+    "src": "node_modules/@fontsource-variable/inter/files/inter-greek-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2": {
+    "file": "assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+    "src": "node_modules/@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2": {
+    "file": "assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+    "src": "node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/inter/files/inter-vietnamese-wght-normal.woff2": {
+    "file": "assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2",
+    "src": "node_modules/@fontsource-variable/inter/files/inter-vietnamese-wght-normal.woff2"
+  },
+  "src/main.tsx": {
+    "file": "main.js",
+    "name": "main",
+    "src": "src/main.tsx",
+    "isEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "_vendor-radix-C4JSRjdl.js",
+      "_vendor-icons-C_taFPL-.js"
+    ],
+    "dynamicImports": [
+      "src/pages/auth.tsx",
+      "src/pages/dashboard.tsx",
+      "src/pages/subscriptions.tsx",
+      "src/pages/plans.tsx",
+      "src/pages/digital.tsx",
+      "src/pages/orders.tsx",
+      "src/pages/recharge.tsx",
+      "src/pages/account.tsx"
+    ],
+    "assets": [
+      "assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2",
+      "assets/inter-cyrillic-wght-normal-DqGufNeO.woff2",
+      "assets/inter-greek-ext-wght-normal-DlzME5K_.woff2",
+      "assets/inter-greek-wght-normal-CkhJZR-_.woff2",
+      "assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2",
+      "assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+      "assets/inter-latin-wght-normal-Dx4kXJAl.woff2"
+    ]
+  },
+  "src/pages/account.tsx": {
+    "file": "chunks/account-BOoiZFfu.js",
+    "name": "account",
+    "src": "src/pages/account.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "src/main.tsx",
+      "_vendor-radix-C4JSRjdl.js",
+      "_vendor-icons-C_taFPL-.js",
+      "_input-_ryjdhZy.js",
+      "_select-CMmZi0UK.js"
+    ]
+  },
+  "src/pages/auth.tsx": {
+    "file": "chunks/auth-CogFxzP7.js",
+    "name": "auth",
+    "src": "src/pages/auth.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "src/main.tsx",
+      "_input-_ryjdhZy.js",
+      "_vendor-icons-C_taFPL-.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-radix-C4JSRjdl.js"
+    ]
+  },
+  "src/pages/dashboard.tsx": {
+    "file": "chunks/dashboard-C48NiWwL.js",
+    "name": "dashboard",
+    "src": "src/pages/dashboard.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "src/main.tsx",
+      "_progress-CCosFisV.js",
+      "_vendor-icons-C_taFPL-.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "_vendor-radix-C4JSRjdl.js"
+    ]
+  },
+  "src/pages/digital.tsx": {
+    "file": "chunks/digital-D0_fIEcd.js",
+    "name": "digital",
+    "src": "src/pages/digital.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "src/main.tsx",
+      "_input-_ryjdhZy.js",
+      "_select-CMmZi0UK.js",
+      "_vendor-icons-C_taFPL-.js",
+      "_vendor-radix-C4JSRjdl.js"
+    ]
+  },
+  "src/pages/orders.tsx": {
+    "file": "chunks/orders-DtnaNvfm.js",
+    "name": "orders",
+    "src": "src/pages/orders.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "src/main.tsx",
+      "_vendor-icons-C_taFPL-.js",
+      "_vendor-radix-C4JSRjdl.js"
+    ]
+  },
+  "src/pages/plans.tsx": {
+    "file": "chunks/plans-j4VtFisu.js",
+    "name": "plans",
+    "src": "src/pages/plans.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "src/main.tsx",
+      "_input-_ryjdhZy.js",
+      "_select-CMmZi0UK.js",
+      "_vendor-icons-C_taFPL-.js",
+      "_vendor-radix-C4JSRjdl.js"
+    ]
+  },
+  "src/pages/recharge.tsx": {
+    "file": "chunks/recharge-CyZn0rjA.js",
+    "name": "recharge",
+    "src": "src/pages/recharge.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "src/main.tsx",
+      "_input-_ryjdhZy.js",
+      "src/pages/orders.tsx",
+      "_vendor-icons-C_taFPL-.js",
+      "_vendor-radix-C4JSRjdl.js"
+    ]
+  },
+  "src/pages/subscriptions.tsx": {
+    "file": "chunks/subscriptions-DD0M4B-f.js",
+    "name": "subscriptions",
+    "src": "src/pages/subscriptions.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor-react-BglHUnBE.js",
+      "_vendor-query-jy3Adc3U.js",
+      "_vendor-utils-CqV1vbOk.js",
+      "src/main.tsx",
+      "_input-_ryjdhZy.js",
+      "_progress-CCosFisV.js",
+      "_vendor-icons-C_taFPL-.js",
+      "_vendor-radix-C4JSRjdl.js"
+    ]
+  },
+  "style.css": {
+    "file": "styles.css",
+    "src": "style.css"
+  }
+}

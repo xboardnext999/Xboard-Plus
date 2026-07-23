@@ -1,4 +1,0 @@
-[submodule "public/assets/admin"]
-	path = public/assets/admin
-	url = https://github.com/xboardnext999/Xboard-Plus.git
-	branch = admin-dist

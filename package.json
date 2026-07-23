@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "check:react-migration": "node scripts/check-react-migration.mjs",
+    "build:frontends": "node scripts/build-frontends.mjs"
+  },
   "dependencies": {
     "chokidar": "^4.0.3"
   }

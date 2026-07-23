@@ -16,8 +16,8 @@ Xboard Plus is a modern panel system built on Laravel 12, focusing on providing 
 ## ✨ Features
 
 - 🚀 Built with Laravel 12 + Octane for significant performance gains
-- 🎨 Redesigned admin interface (React + Shadcn UI)
-- 📱 Modern user frontend (Vue3 + TypeScript)
+- 🎨 React 19 admin interface powered by shadcn/ui
+- 📱 React 19 user frontend powered by shadcn/ui and TypeScript
 - 🐳 Ready-to-use Docker deployment solution
 - 🎯 Optimized system architecture for better maintainability
 
@@ -60,9 +60,9 @@ docker compose up -d
 
 ## 🛠️ Tech Stack
 
-- Backend: Laravel 11 + Octane
-- Admin Panel: React + Shadcn UI + TailwindCSS
-- User Frontend: Vue3 + TypeScript + NaiveUI
+- Backend: Laravel 12 + Octane
+- Admin Panel: React 19 + shadcn/ui + Tailwind CSS
+- User Frontend: React 19 + shadcn/ui + TypeScript + TanStack Query
 - Deployment: Docker + Docker Compose
 - Caching: Redis + Octane Cache
 
