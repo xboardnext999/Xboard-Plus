@@ -1362,10 +1362,8 @@ td {
   height: 248px;
   margin: 0 -6px 14px;
   border-radius: 18px;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(37, 99, 235, 0.10), transparent 30%),
-    radial-gradient(circle at 82% 30%, rgba(24, 189, 118, 0.10), transparent 30%),
-    linear-gradient(135deg, rgba(122, 202, 223, 0.72), rgba(244, 251, 253, 0.96));
+  border: 1px solid rgba(226, 232, 240, 0.72);
+  background: #fbfcff;
 }
 
 :root[data-theme="dark"] .dashboard-leaflet-shell {
@@ -1378,18 +1376,33 @@ td {
 .dashboard-leaflet-map {
   width: 100%;
   height: 100%;
-  background: #7acadf;
+  background: #fbfcff;
 }
 
 .dashboard-leaflet-map .leaflet-container {
-  background: #7acadf;
+  background: #fbfcff;
+}
+
+:root[data-theme="light"] .dashboard-leaflet-map .leaflet-tile-pane {
+  filter: saturate(0.45) contrast(0.88) brightness(1.055);
+  opacity: 0.82;
+}
+
+:root[data-theme="dark"] .dashboard-leaflet-map,
+:root[data-theme="dark"] .dashboard-leaflet-map .leaflet-container {
+  background: #111827;
+}
+
+:root[data-theme="dark"] .dashboard-leaflet-map .leaflet-tile-pane {
+  filter: invert(0.88) hue-rotate(180deg) brightness(0.72) contrast(0.88);
+  opacity: 0.56;
 }
 
 .dashboard-leaflet-map .leaflet-control-zoom {
   overflow: hidden;
   border: 0;
   border-radius: 12px;
-  box-shadow: var(--surface-shadow);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
 .dashboard-leaflet-map .leaflet-control-zoom a {

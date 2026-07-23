@@ -808,7 +808,7 @@ const DashboardNodeMap = {
           minZoom: 1,
           maxZoom: 5,
         });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
           crossOrigin: true,
           detectRetina: false,
           keepBuffer: 5,
