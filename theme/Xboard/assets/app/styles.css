@@ -1065,6 +1065,11 @@ td {
   padding: 22px;
 }
 
+.dashboard-subscription-card {
+  display: flex;
+  flex-direction: column;
+}
+
 .dashboard-card-head {
   display: flex;
   align-items: flex-start;
@@ -1102,7 +1107,8 @@ td {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
   gap: 28px;
-  align-items: end;
+  align-items: center;
+  flex: 1;
 }
 
 .dashboard-usage-number strong {
@@ -1115,7 +1121,8 @@ td {
 
 .dashboard-usage-chart {
   display: grid;
-  gap: 10px;
+  align-content: center;
+  gap: 12px;
 }
 
 .progress-label {
@@ -1141,21 +1148,36 @@ td {
   background: linear-gradient(90deg, var(--green), var(--primary));
 }
 
-.dashboard-usage-chart svg {
-  width: 100%;
-  height: 108px;
+.dashboard-usage-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
 }
 
-.dashboard-usage-chart path {
-  fill: none;
-  stroke: #60a5fa;
-  stroke-width: 3;
+.dashboard-usage-stats > div {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  min-height: 76px;
+  border-radius: 12px;
+  background: var(--panel-soft);
+  padding: 12px 14px;
 }
 
-.dashboard-usage-chart circle {
-  fill: #93c5fd;
-  stroke: var(--panel-strong);
-  stroke-width: 3;
+.dashboard-usage-stats small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dashboard-usage-stats strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .danger-text {
