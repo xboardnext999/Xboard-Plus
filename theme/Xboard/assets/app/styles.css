@@ -568,7 +568,7 @@ td {
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
 }
 
 .round-chip,
@@ -601,22 +601,26 @@ td {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  min-height: 34px;
-  border: 0;
+  position: relative;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
   border-radius: 999px;
-  background: transparent;
+  background: var(--card-bg);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
   color: var(--soft);
   overflow: visible;
   padding: 0;
-  transition: background 0.16s ease, color 0.16s ease;
+  transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 }
 
 .top-action-button:hover {
-  background: var(--control-bg);
+  background: var(--card-bg);
   color: var(--text);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.11);
+  transform: translateY(-1px);
 }
 
 .top-action-icon {
@@ -630,6 +634,19 @@ td {
 .notification-icon {
   width: 18px;
   height: 18px;
+}
+
+.notification-button::after {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--card-bg);
+  border-radius: 50%;
+  background: #4f46e5;
+  box-sizing: content-box;
+  content: "";
 }
 
 :root[data-theme="dark"] .notification-icon {
@@ -647,27 +664,30 @@ td {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  border: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
   border-radius: 999px;
-  background: transparent;
+  background: var(--card-bg);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
   color: var(--text);
   padding: 0;
-  transition: background 0.16s ease;
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 }
 
 .language-trigger:hover {
-  background: var(--control-bg);
+  background: var(--card-bg);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.11);
+  transform: translateY(-1px);
 }
 
 :root[data-theme="light"] .language-trigger {
-  background: transparent;
+  background: var(--card-bg);
 }
 
 :root[data-theme="light"] .language-trigger:hover {
-  background: var(--control-bg);
+  background: var(--card-bg);
 }
 
 .language-trigger-icon {
