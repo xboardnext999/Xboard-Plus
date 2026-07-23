@@ -1384,8 +1384,8 @@ td {
 }
 
 :root[data-theme="light"] .dashboard-leaflet-map .leaflet-tile-pane {
-  filter: saturate(0.45) contrast(0.88) brightness(1.055);
-  opacity: 0.82;
+  filter: sepia(0.07) hue-rotate(168deg) saturate(0.72) contrast(0.82) brightness(1.08);
+  opacity: 0.76;
 }
 
 :root[data-theme="dark"] .dashboard-leaflet-map,

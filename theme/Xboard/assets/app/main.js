@@ -808,11 +808,10 @@ const DashboardNodeMap = {
           minZoom: 1,
           maxZoom: 5,
         });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
           crossOrigin: true,
           detectRetina: false,
           keepBuffer: 5,
-          subdomains: 'abcd',
           updateInterval: 250,
           updateWhenIdle: true,
           updateWhenZooming: false,
