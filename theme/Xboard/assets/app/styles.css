@@ -1384,8 +1384,8 @@ td {
 }
 
 :root[data-theme="light"] .dashboard-leaflet-map .leaflet-tile-pane {
-  filter: grayscale(1) contrast(0.58) brightness(1.34);
-  opacity: 0.48;
+  filter: grayscale(1) contrast(0.55) brightness(1.48);
+  opacity: 0.58;
 }
 
 :root[data-theme="dark"] .dashboard-leaflet-map,
