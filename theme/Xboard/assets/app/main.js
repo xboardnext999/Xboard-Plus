@@ -1361,7 +1361,6 @@ const DashboardPage = {
       const planStatusOk = Boolean(subscribe.plan?.name);
       const planStatusText = planStatusOk ? '正常' : '未订阅';
       const usageLimitText = usage.total ? bytes(usage.total) : '不限量';
-      const usageRemainingText = usage.total ? bytes(Math.max(usage.total - usage.used, 0)) : '不限量';
       const serverRows = servers.slice(0, 5).map((node, index) => [
         `#${index + 1}`,
         [h('i', { class: `node-dot dot-${index % 3}` }), node.name || '-'],
@@ -1395,7 +1394,6 @@ const DashboardPage = {
               h('div', { class: 'dashboard-usage-number' }, [
                 h('small', '本周期已用流量'),
                 h('strong', bytes(usage.used)),
-                h('span', { class: 'trend-pill up' }, `${usage.ratio}% 已使用`),
               ]),
               h('div', { class: 'dashboard-usage-chart' }, [
                 h('div', { class: 'progress-label' }, [
@@ -1403,11 +1401,6 @@ const DashboardPage = {
                   h('strong', `${bytes(usage.used)} / ${usage.total ? bytes(usage.total) : '不限量'}`),
                 ]),
                 h('div', { class: 'dashboard-progress' }, [h('i', { style: { width: `${usage.ratio}%` } })]),
-                h('div', { class: 'dashboard-usage-stats' }, [
-                  h('div', [h('small', '已使用'), h('strong', bytes(usage.used))]),
-                  h('div', [h('small', '剩余流量'), h('strong', usageRemainingText)]),
-                  h('div', [h('small', '总流量'), h('strong', usageLimitText)]),
-                ]),
               ]),
             ]),
           ]),
