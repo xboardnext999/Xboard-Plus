@@ -34,7 +34,7 @@ function extensions(field) {
       '&': { height: '560px', backgroundColor: 'transparent', fontSize: '13px' },
       '.cm-scroller': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', lineHeight: '1.65' },
       '.cm-content': { padding: '14px 0' }, '.cm-gutters': { backgroundColor: 'transparent', border: 'none', color: '#7890aa' },
-      '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'rgba(37, 99, 235, .06)' },
+      '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'rgba(2, 123, 254, .06)' },
       '&.cm-focused': { outline: 'none' }, '.cm-foldGutter': { width: '14px' },
     }),
     EditorView.updateListener.of((update) => {

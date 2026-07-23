@@ -8,8 +8,8 @@
   --muted: #64748b;
   --muted-2: #94a3b8;
   --border: #e5e7eb;
-  --brand: #2563eb;
-  --brand-soft: #eff6ff;
+  --brand: #027bfe;
+  --brand-soft: rgba(2, 123, 254, 0.10);
   --primary: var(--brand);
   --line: var(--border);
   --card-bg: var(--panel-bg);
@@ -42,8 +42,8 @@
   --muted: #a3adc2;
   --muted-2: #748198;
   --border: rgba(148, 163, 184, 0.22);
-  --brand: #60a5fa;
-  --brand-soft: rgba(96, 165, 250, 0.16);
+  --brand: #027bfe;
+  --brand-soft: rgba(2, 123, 254, 0.18);
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.16);
   --success: #34d399;
@@ -1190,4 +1190,29 @@ body{font-size:13px}.brand{font-size:13px}.nav-group h3{font-size:10px}.nav-item
     min-width: 0;
     flex: 1 1 calc(50% - 5px);
   }
+}
+
+/* Keep every brand-blue surface on the same product color. */
+.dashboard-date,
+.eyebrow,
+.dashboard-kpi-icon,
+.dashboard-kpi.traffic .dashboard-kpi-icon,
+.dashboard-tasks > a:hover strong,
+.runtime-grid > div,
+.ranking-list > b.top,
+.ranking-link:hover,
+.queue-mode-note,
+.job-scope > div span,
+.digital-kpi > i.brand,
+.digital-kpi > i.blue {
+  color: var(--brand);
+}
+.chart-line { stroke: var(--brand); }
+.traffic-bar i,
+.traffic-legend i.download,
+.ranking-name em {
+  background: var(--brand);
+}
+.digital-product-thumb {
+  background: linear-gradient(135deg, var(--brand), var(--brand));
 }

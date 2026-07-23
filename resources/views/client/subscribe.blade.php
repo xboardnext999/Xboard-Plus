@@ -10,7 +10,7 @@
       --bg: #ffffff;
       --text: #000000;
       --text-secondary: #666666;
-      --primary: #2196f3;
+      --primary: #027bfe;
       --success: #4caf50;
       --danger: #f44336;
       --border: #eee;
