@@ -1391,10 +1391,6 @@ const DashboardPage = {
               ]),
             ]),
             h('div', { class: 'dashboard-usage-layout' }, [
-              h('div', { class: 'dashboard-usage-number' }, [
-                h('small', '本周期已用流量'),
-                h('strong', bytes(usage.used)),
-              ]),
               h('div', { class: 'dashboard-usage-chart' }, [
                 h('div', { class: 'progress-label' }, [
                   h('span', '流量进度'),

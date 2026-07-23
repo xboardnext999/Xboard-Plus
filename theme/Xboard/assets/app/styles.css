@@ -1104,19 +1104,8 @@ td {
 }
 
 .dashboard-usage-layout {
-  display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
-  gap: 28px;
-  align-items: center;
-  flex: 1;
-}
-
-.dashboard-usage-number strong {
   display: block;
-  margin: 10px 0 10px;
-  color: var(--text);
-  font-size: 42px;
-  line-height: 0.95;
+  flex: 1;
 }
 
 .dashboard-usage-chart {
@@ -3727,10 +3716,6 @@ td {
   }
 
   .store-hero-grid{grid-template-columns:1fr;margin-bottom:30px}.store-banner{min-height:280px;padding:28px}.store-banner p{margin-bottom:42px}.store-notice-panel{padding:22px}.store-checkout-layout{grid-template-columns:1fr}.store-checkout-summary{position:static}.store-modal-product{align-items:flex-start}.store-modal-image{width:120px;height:120px}
-
-  .dashboard-usage-layout {
-    grid-template-columns: 1fr;
-  }
 
   .dashboard-card,
   .dashboard-metric {
