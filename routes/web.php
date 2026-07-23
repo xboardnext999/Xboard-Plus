@@ -101,7 +101,6 @@ Route::get('/', function (Request $request) {
         $assetVersion = app(UpdateService::class)->getCurrentVersion();
         $themeAssetPath = $themeService->getThemePath($theme) . '/assets/app';
         $versionedAssets = [
-            $themeAssetPath . '/main.js',
             $themeAssetPath . '/styles.css',
             $themeAssetPath . '/manifest.json',
             $themeAssetPath . '/icons/Logo.webp',

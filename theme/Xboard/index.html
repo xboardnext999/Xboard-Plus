@@ -11,7 +11,12 @@
 <body>
   <script src="./env.js"></script>
   <div id="app"></div>
-  <script type="module" src="./assets/app/main.js"></script>
+  <script type="module">
+    const manifest = await fetch("./assets/app/manifest.json").then((response) => response.json());
+    const entry = Object.values(manifest).find((chunk) => chunk && chunk.isEntry);
+    if (!entry?.file) throw new Error("User React entry is missing");
+    await import(`./assets/app/${entry.file}`);
+  </script>
 </body>
 
 </html>

@@ -67,7 +67,7 @@
     <link rel="stylesheet" href="{{ $assetBase }}{{ $css }}?v={{ $assetVersion }}">
   @endforeach
   @foreach($modulePreloads as $js)
-    <link rel="modulepreload" crossorigin href="{{ $assetBase }}{{ $js }}?v={{ $assetVersion }}">
+    <link rel="modulepreload" crossorigin href="{{ $assetBase }}{{ $js }}">
   @endforeach
 </head>
 
@@ -78,7 +78,7 @@
     window.settings = {!! $frontend_settings_json ?? '{}' !!};
   </script>
   <div id="app"></div>
-  <script type="module" src="{{ $assetBase }}{{ $entry['file'] }}?v={{ $assetVersion }}"></script>
+  <script type="module" src="{{ $assetBase }}{{ $entry['file'] }}"></script>
   {!! $theme_config['custom_html'] ?? '' !!}
 </body>
 

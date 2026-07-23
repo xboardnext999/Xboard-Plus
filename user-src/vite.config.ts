@@ -1,5 +1,5 @@
 import path from "node:path"
-import { rm } from "node:fs/promises"
+import { readdir, rm } from "node:fs/promises"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import { defineConfig, type Plugin } from "vite"
@@ -21,7 +21,13 @@ const cleanGeneratedAssets = (): Plugin => ({
     const outputRoot = path.resolve(__dirname, "../theme/Xboard/assets/app")
     // Keep the hand-maintained icons/ and flags/ directories while preventing
     // stale hashed route chunks or font assets from surviving a new build.
+    const generatedEntries = await readdir(outputRoot, { withFileTypes: true })
+      .then((entries) => entries
+        .filter((entry) => entry.isFile() && /^main(?:-[A-Za-z0-9_-]+)?\.js$/.test(entry.name))
+        .map((entry) => rm(path.join(outputRoot, entry.name), { force: true })))
+      .catch(() => [])
     await Promise.all([
+      ...generatedEntries,
       rm(path.join(outputRoot, "chunks"), { recursive: true, force: true }),
       rm(path.join(outputRoot, "assets"), { recursive: true, force: true }),
     ])
@@ -43,7 +49,11 @@ export default defineConfig({
     rollupOptions: {
       input: path.resolve(__dirname, "src/main.tsx"),
       output: {
-        entryFileNames: "main.js",
+        // Keep the entry URL content-addressed. Route chunks import shared
+        // providers back from the entry; a query-string cache key on only the
+        // initial request would otherwise make the browser instantiate the
+        // entry (and its React contexts) twice.
+        entryFileNames: "main-[hash].js",
         chunkFileNames: "chunks/[name]-[hash].js",
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined
