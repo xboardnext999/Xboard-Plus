@@ -705,6 +705,34 @@ function dashboardQuickCard({ href, icon, tone, title, description }) {
   ]);
 }
 
+function dashboardTrafficChart(usage) {
+  const ratio = Math.max(0, Math.min(Number(usage.ratio) || 0, 100));
+  const points = ratio > 0
+    ? '8,78 64,67 120,56 176,48 232,52 288,38 344,45 400,27 456,16'
+    : '8,78 64,72 120,74 176,65 232,68 288,58 344,61 400,50 456,54';
+  return h('div', { class: 'dashboard-traffic-visual' }, [
+    h('div', { class: 'dashboard-traffic-ring', style: { '--usage-ratio': `${ratio * 3.6}deg` } }, [
+      h('div', [h('strong', `${ratio}%`), h('span', '已使用')]),
+    ]),
+    h('div', { class: 'dashboard-traffic-chart-area' }, [
+      h('div', { class: 'dashboard-traffic-total' }, [
+        h('strong', bytes(usage.used)),
+        h('span', `/ ${usage.total ? bytes(usage.total) : '不限量'}`),
+      ]),
+      h('div', { class: 'dashboard-traffic-progress' }, [h('i', { style: { width: `${ratio}%` } })]),
+      h('svg', { class: 'dashboard-traffic-sparkline', viewBox: '0 0 464 92', preserveAspectRatio: 'none', 'aria-hidden': 'true' }, [
+        h('defs', [h('linearGradient', { id: 'dashboardTrafficFill', x1: '0', y1: '0', x2: '0', y2: '1' }, [
+          h('stop', { offset: '0%', 'stop-color': '#027bfe', 'stop-opacity': '.20' }),
+          h('stop', { offset: '100%', 'stop-color': '#027bfe', 'stop-opacity': '0' }),
+        ])]),
+        h('path', { class: 'dashboard-traffic-area', d: `M ${points.replaceAll(' ', ' L ')} L 456,92 L 8,92 Z` }),
+        h('polyline', { points }),
+        h('circle', { cx: '456', cy: ratio > 0 ? '16' : '54', r: '4' }),
+      ]),
+    ]),
+  ]);
+}
+
 const DashboardNodeMap = {
   name: 'DashboardNodeMap',
   props: {
@@ -1369,9 +1397,16 @@ const DashboardPage = {
         nodeIsOnline(node) ? badge('在线', 'ok') : badge('离线', 'danger'),
       ]);
       const notices = local.notices || [];
+      const currentHour = new Date().getHours();
+      const greeting = currentHour < 6 ? '夜深了' : currentHour < 12 ? '早上好' : currentHour < 18 ? '下午好' : '晚上好';
+      const displayName = user.name || user.email?.split('@')[0] || '欢迎回来';
 
       return h('div', [
         pageError(local.error),
+        h('section', { class: 'dashboard-welcome' }, [
+          h('div', [h('h1', `${greeting}，${displayName} 👋`), h('p', '欢迎回来，今天一切运行良好！')]),
+          h('div', { class: 'dashboard-welcome-status' }, [h('i'), h('span', '服务运行正常')]),
+        ]),
         h('section', { class: 'dashboard-metrics' }, [
           h('article', { class: 'dashboard-metric' }, [dashboardMetricBody('账户余额', money(user.balance, currencySymbol()), '可用余额'), dashboardMetricIcon('Dollar.webp', 'balance')]),
           h('article', { class: 'dashboard-metric' }, [
@@ -1384,21 +1419,13 @@ const DashboardPage = {
         h('section', { class: 'dashboard-overview-grid' }, [
           h('article', { class: 'dashboard-card dashboard-subscription-card' }, [
             h('div', { class: 'dashboard-card-head' }, [
-              h('div', [h('small', '订阅概览'), h('h2', planName)]),
+              h('div', [h('small', '订阅概览'), h('h2', planName), h('p', { class: 'dashboard-card-subtitle' }, '流量使用进度')]),
               h('div', { class: 'dashboard-actions' }, [
                 miniButton('购买套餐', { href: '#/plans', class: 'primary-mini' }),
                 miniButton('查看订阅', { href: '#/subscribe' }),
               ]),
             ]),
-            h('div', { class: 'dashboard-usage-layout' }, [
-              h('div', { class: 'dashboard-usage-chart' }, [
-                h('div', { class: 'progress-label' }, [
-                  h('span', '流量进度'),
-                  h('strong', `${bytes(usage.used)} / ${usage.total ? bytes(usage.total) : '不限量'}`),
-                ]),
-                h('div', { class: 'dashboard-progress' }, [h('i', { style: { width: `${usage.ratio}%` } })]),
-              ]),
-            ]),
+            dashboardTrafficChart(usage),
           ]),
           dashboardNodeStatusCard(servers.length, servers.length ? onlineCount : 0, offlineCount, nodeRegions),
         ]),
