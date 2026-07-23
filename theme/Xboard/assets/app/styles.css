@@ -1363,7 +1363,7 @@ td {
   margin: 0 -6px 14px;
   border-radius: 18px;
   border: 1px solid rgba(226, 232, 240, 0.72);
-  background: #fbfcff;
+  background: #fff;
 }
 
 :root[data-theme="dark"] .dashboard-leaflet-shell {
@@ -1376,16 +1376,16 @@ td {
 .dashboard-leaflet-map {
   width: 100%;
   height: 100%;
-  background: #fbfcff;
+  background: #fff;
 }
 
 .dashboard-leaflet-map .leaflet-container {
-  background: #fbfcff;
+  background: #fff;
 }
 
 :root[data-theme="light"] .dashboard-leaflet-map .leaflet-tile-pane {
-  filter: sepia(0.07) hue-rotate(168deg) saturate(0.72) contrast(0.82) brightness(1.08);
-  opacity: 0.76;
+  filter: grayscale(1) contrast(0.58) brightness(1.34);
+  opacity: 0.48;
 }
 
 :root[data-theme="dark"] .dashboard-leaflet-map,
