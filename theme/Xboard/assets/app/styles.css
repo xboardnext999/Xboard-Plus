@@ -30,8 +30,8 @@
   --workspace-bg: transparent;
   --topbar-bg: transparent;
   --nav-hover-bg: rgba(255, 255, 255, 0.06);
-  --nav-active-bg: rgba(255, 255, 255, 0.10);
-  --nav-active-text: #027bfe;
+  --nav-active-bg: #027bfe;
+  --nav-active-text: #000;
   --nav-text: var(--muted);
   --nav-group-text: var(--soft);
   --focus-border: rgba(2, 123, 254, 0.72);
@@ -69,8 +69,8 @@
   --workspace-bg: #f8fafc;
   --topbar-bg: transparent;
   --nav-hover-bg: rgba(2, 123, 254, 0.08);
-  --nav-active-bg: rgba(2, 123, 254, 0.10);
-  --nav-active-text: #027bfe;
+  --nav-active-bg: #027bfe;
+  --nav-active-text: #000;
   --nav-text: #000;
   --nav-group-text: #8f98a8;
   --focus-border: rgba(2, 123, 254, 0.62);
